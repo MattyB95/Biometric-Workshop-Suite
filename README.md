@@ -20,8 +20,8 @@ These tiny timing differences form a biometric "fingerprint" of how you type. Th
 - **Enrol** — students type a fixed phrase 5 times to build their profile
 - **Identify** — type the phrase once and see ranked confidence scores for all enrolled students
 - **Students** — view, delete, or reset enrolled profiles
-- Profiles are stored locally in `profiles.json` — no internet connection required
 - Works in any modern web browser
+- Three hosting options: run locally, deploy to GitHub Pages, or host on Render
 
 ---
 
@@ -130,14 +130,63 @@ Open `app.py` and edit the constants near the top:
 
 ---
 
+## Hosting Options
+
+### Option A — GitHub Pages (static, no server needed)
+
+The `docs/` folder contains a fully self-contained version of the app with all logic in JavaScript and profiles stored in the browser's `localStorage`.
+
+1. Push the repository to GitHub.
+2. Go to **Settings → Pages** and set the source to **Deploy from a branch**, branch `main`, folder `/docs`.
+3. Your app will be live at `https://<username>.github.io/<repo-name>/`.
+
+> **Note:** Profiles are stored in the browser only. All students must use the same browser on the same device, or use the **Export / Import** feature on the Students tab to transfer profiles between browsers.
+
+The static version also supports changing the typing phrase and enrolment sample count from the **Students → Settings** panel, without editing any code.
+
+---
+
+### Option B — Render (hosted Flask app, shared across devices)
+
+The Flask version supports multiple devices simultaneously — ideal if students each have their own laptop or tablet.
+
+1. Push the repository to GitHub.
+2. Sign up at [render.com](https://render.com) and click **New → Web Service**.
+3. Connect your GitHub repository. Render will detect `render.yaml` automatically and configure everything.
+4. Click **Deploy**. Your app will be live at `https://keystroke-dynamics-demo.onrender.com` (or similar).
+5. Share the URL with your students.
+
+> **Note:** Render's free tier spins down after 15 minutes of inactivity. The first request after a sleep may take ~30 seconds. Profiles are stored in `profiles.json` on the server's disk and will be reset when the service redeploys.
+
+To run in production mode locally (mirrors Render):
+```bash
+just serve
+```
+
+---
+
+### Option C — Local network (no deployment required)
+
+```bash
+just run-network
+```
+
+Then share your machine's local IP (e.g. `http://192.168.1.42:5000`) with students on the same WiFi. No accounts or deployment needed.
+
+---
+
 ## Project Structure
 
 ```
 .
 ├── app.py               # Flask backend — routes and matching algorithm
 ├── templates/
-│   └── index.html       # Single-page frontend (HTML + CSS + JS)
-├── profiles.json        # Created automatically on first enrolment
+│   └── index.html       # Frontend for the Flask version
+├── docs/
+│   └── index.html       # Standalone static version (GitHub Pages)
+├── render.yaml          # Render deployment config (Option B)
+├── justfile             # Task runner shortcuts
+├── profiles.json        # Created automatically on first enrolment (Flask version)
 ├── pyproject.toml       # Project metadata and dependencies
 └── README.md
 ```

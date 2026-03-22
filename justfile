@@ -22,6 +22,10 @@ reset:
     rm -f profiles.json
     @echo "All profiles deleted."
 
+# Run with gunicorn (production mode, mirrors Render)
+serve:
+    uv run gunicorn --bind 0.0.0.0:5000 app:app
+
 # Show currently enrolled students
 profiles:
     @python3 -c "
