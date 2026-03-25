@@ -4,7 +4,7 @@ import math
 
 import pytest
 
-from app import compute_distance, mean_and_std
+from src.app import compute_distance, mean_and_std
 
 
 class TestMeanAndStd:

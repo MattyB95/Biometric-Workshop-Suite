@@ -5,8 +5,8 @@ import time
 
 import pytest
 
-import app as flask_app_module
-from app import app as flask_app
+import src.app as flask_app_module
+from src.app import app as flask_app
 
 
 @pytest.fixture

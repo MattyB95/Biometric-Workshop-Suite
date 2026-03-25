@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Keystroke Dynamics Demo</title>
+  <title>Keystroke Dynamics &mdash; Biometric Workshop</title>
   <style>
     /* ── Reset & base ─────────────────────────────────────────────────── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -39,6 +39,23 @@
       align-items: center;
       gap: 14px;
     }
+    .btn-home {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text-dim);
+      font-size: 0.8rem;
+      font-weight: 500;
+      text-decoration: none;
+      transition: all 0.15s;
+      margin-left: auto;
+      white-space: nowrap;
+    }
+    .btn-home:hover { color: var(--text); background: rgba(255,255,255,0.12); }
     .header-icon {
       font-size: 2rem;
       filter: drop-shadow(0 0 8px #6366f188);
@@ -347,11 +364,12 @@
 <body>
 
 <header>
-  <div class="header-icon">&#x1F511;</div>
+  <div class="header-icon">&#x2328;&#xFE0F;</div>
   <div>
-    <h1>Keystroke Dynamics Demo</h1>
-    <p>Biometric Authentication &mdash; Workshop</p>
+    <h1>Keystroke Dynamics</h1>
+    <p>Biometric Workshop Suite</p>
   </div>
+  <a href="/" class="btn-home">&#x2190; All Modules</a>
 </header>
 
 <div class="tabs">

@@ -5,9 +5,16 @@ from typing import Any
 
 from flask import Flask, Response, jsonify, render_template, request
 
-app = Flask(__name__)
+_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-PROFILES_FILE: str = "profiles.json"
+app = Flask(
+    __name__,
+    template_folder=os.path.join(_ROOT, "templates"),
+    static_folder=os.path.join(_ROOT, "static"),
+    static_url_path="/static",
+)
+
+PROFILES_FILE: str = os.path.join(_ROOT, "profiles.json")
 PHRASE = "the quick brown fox"
 ENROLL_SAMPLES_REQUIRED = 5
 
@@ -84,10 +91,20 @@ def compute_distance(timing: dict[str, Any], profile: dict[str, Any]) -> float:
 
 
 @app.route("/")
-def index() -> str:
+def home() -> str:
+    return render_template("home.html")
+
+
+@app.route("/keystroke")
+def keystroke() -> str:
     return render_template(
-        "index.html", phrase=PHRASE, enroll_samples=ENROLL_SAMPLES_REQUIRED
+        "keystroke.html", phrase=PHRASE, enroll_samples=ENROLL_SAMPLES_REQUIRED
     )
+
+
+@app.route("/face")
+def face() -> str:
+    return render_template("face.html")
 
 
 @app.route("/api/enroll", methods=["POST"])

@@ -1,0 +1,1195 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Face Recognition &mdash; Biometric Workshop</title>
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      :root {
+        --bg: #0f172a;
+        --surface: #1e293b;
+        --surface2: #273548;
+        --border: #334155;
+        --accent: #06b6d4;
+        --accent-h: #22d3ee;
+        --success: #22c55e;
+        --warning: #f59e0b;
+        --error: #ef4444;
+        --text: #f1f5f9;
+        --text-dim: #94a3b8;
+        --radius: 10px;
+
+        /* landmark region colours */
+        --col-jaw: #3b82f6;
+        --col-brow: #f59e0b;
+        --col-nose: #22c55e;
+        --col-eye: #ef4444;
+        --col-mouth: #a855f7;
+      }
+
+      body {
+        font-family: "Segoe UI", system-ui, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      /* ── Header ── */
+      header {
+        background: linear-gradient(135deg, #0c1a2e 0%, #1e293b 100%);
+        border-bottom: 1px solid var(--border);
+        padding: 16px 24px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+      .header-icon {
+        font-size: 2rem;
+        filter: drop-shadow(0 0 8px #06b6d488);
+      }
+      header h1 {
+        font-size: 1.3rem;
+        font-weight: 700;
+      }
+      header p {
+        font-size: 0.8rem;
+        color: var(--text-dim);
+        margin-top: 2px;
+      }
+      .btn-home {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 14px;
+        background: rgba(255, 255, 255, 0.07);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        color: var(--text-dim);
+        font-size: 0.8rem;
+        font-weight: 500;
+        text-decoration: none;
+        transition: all 0.15s;
+        margin-left: auto;
+      }
+      .btn-home:hover {
+        color: var(--text);
+        background: rgba(255, 255, 255, 0.12);
+      }
+
+      /* ── Layout ── */
+      .workspace {
+        display: grid;
+        grid-template-columns: 1fr 340px;
+        gap: 20px;
+        padding: 20px 24px;
+        flex: 1;
+        max-width: 1100px;
+        margin: 0 auto;
+        width: 100%;
+      }
+      @media (max-width: 820px) {
+        .workspace {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      /* ── Camera panel ── */
+      .camera-panel {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+      .video-wrapper {
+        position: relative;
+        background: #000;
+        border-radius: var(--radius);
+        overflow: hidden;
+        border: 1px solid var(--border);
+        aspect-ratio: 4/3;
+        width: 100%;
+      }
+      .video-wrapper video,
+      .video-wrapper canvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .video-wrapper canvas {
+        pointer-events: none;
+      }
+
+      .camera-overlay-msg {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        background: rgba(0, 0, 0, 0.7);
+        color: var(--text-dim);
+        font-size: 0.9rem;
+        text-align: center;
+        padding: 20px;
+        z-index: 5;
+      }
+      .camera-overlay-msg .big-icon {
+        font-size: 2.5rem;
+      }
+
+      .fps-badge {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: rgba(0, 0, 0, 0.65);
+        border-radius: 4px;
+        padding: 3px 8px;
+        font-size: 0.75rem;
+        color: var(--success);
+        font-family: monospace;
+        z-index: 4;
+      }
+      .detect-badge {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        background: rgba(0, 0, 0, 0.65);
+        border-radius: 4px;
+        padding: 3px 8px;
+        font-size: 0.75rem;
+        color: var(--accent-h);
+        z-index: 4;
+      }
+
+      /* Controls */
+      .camera-controls {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 9px 20px;
+        border: none;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+      .btn-primary {
+        background: var(--accent);
+        color: #0f172a;
+      }
+      .btn-primary:hover:not(:disabled) {
+        background: var(--accent-h);
+      }
+      .btn-ghost {
+        background: var(--surface2);
+        color: var(--text-dim);
+      }
+      .btn-ghost:hover:not(:disabled) {
+        color: var(--text);
+      }
+      .btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+
+      .overlay-toggle {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-left: auto;
+        font-size: 0.8rem;
+        color: var(--text-dim);
+      }
+      .toggle-switch {
+        position: relative;
+        width: 36px;
+        height: 20px;
+        background: var(--border);
+        border-radius: 99px;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+      .toggle-switch.on {
+        background: var(--accent);
+      }
+      .toggle-switch::after {
+        content: "";
+        position: absolute;
+        width: 14px;
+        height: 14px;
+        background: #fff;
+        border-radius: 50%;
+        top: 3px;
+        left: 3px;
+        transition: transform 0.2s;
+      }
+      .toggle-switch.on::after {
+        transform: translateX(16px);
+      }
+
+      /* ── Legend ── */
+      .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 0.75rem;
+        color: var(--text-dim);
+      }
+      .legend-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+
+      /* ── Data panel ── */
+      .data-panel {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+
+      /* Card */
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        overflow: hidden;
+      }
+      .card-header {
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--border);
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--text-dim);
+        font-weight: 600;
+      }
+      .card-body {
+        padding: 14px 16px;
+      }
+
+      /* Detection stats */
+      .stat-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 6px 0;
+        font-size: 0.82rem;
+        border-bottom: 1px solid var(--border);
+      }
+      .stat-row:last-child {
+        border-bottom: none;
+      }
+      .stat-label {
+        color: var(--text-dim);
+      }
+      .stat-value {
+        font-weight: 600;
+        font-family: monospace;
+      }
+      .stat-value.good {
+        color: var(--success);
+      }
+      .stat-value.dim {
+        color: var(--text-dim);
+      }
+
+      /* Confidence bar */
+      .conf-wrap {
+        margin-top: 10px;
+      }
+      .conf-label {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.75rem;
+        color: var(--text-dim);
+        margin-bottom: 5px;
+      }
+      .bar-track {
+        height: 6px;
+        background: var(--border);
+        border-radius: 3px;
+        overflow: hidden;
+      }
+      .bar-fill {
+        height: 100%;
+        border-radius: 3px;
+        background: linear-gradient(90deg, var(--accent), var(--accent-h));
+        transition: width 0.3s ease;
+      }
+
+      /* Landmark region rows */
+      .region-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 6px 0;
+        border-bottom: 1px solid var(--border);
+        font-size: 0.82rem;
+      }
+      .region-row:last-child {
+        border-bottom: none;
+      }
+      .region-swatch {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+      .region-name {
+        flex: 1;
+      }
+      .region-count {
+        font-family: monospace;
+        font-size: 0.75rem;
+        color: var(--text-dim);
+      }
+      .region-bar-track {
+        width: 60px;
+        height: 4px;
+        background: var(--border);
+        border-radius: 2px;
+        overflow: hidden;
+      }
+      .region-bar-fill {
+        height: 100%;
+        border-radius: 2px;
+      }
+
+      /* Feature vector grid */
+      .descriptor-grid {
+        display: grid;
+        grid-template-columns: repeat(16, 1fr);
+        gap: 2px;
+      }
+      .desc-cell {
+        aspect-ratio: 1;
+        border-radius: 2px;
+        transition: background 0.15s;
+      }
+
+      .feature-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .feature-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.8rem;
+      }
+      .feature-name {
+        width: 130px;
+        color: var(--text-dim);
+        flex-shrink: 0;
+        font-size: 0.75rem;
+      }
+      .feature-bar-track {
+        flex: 1;
+        height: 8px;
+        background: var(--surface2);
+        border-radius: 4px;
+        overflow: hidden;
+        position: relative;
+      }
+      .feature-bar-fill {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        border-radius: 4px;
+        transition:
+          width 0.2s,
+          left 0.2s;
+      }
+      .feature-val {
+        width: 44px;
+        text-align: right;
+        font-family: monospace;
+        font-size: 0.72rem;
+        color: var(--text-dim);
+      }
+
+      /* Pipeline explainer */
+      .pipeline {
+        display: flex;
+        align-items: center;
+        gap: 0;
+        padding: 0 0 20px;
+        overflow-x: auto;
+      }
+      .pipeline-step {
+        flex: 1;
+        min-width: 120px;
+        text-align: center;
+        padding: 16px 10px;
+      }
+      .pipeline-step .step-icon {
+        font-size: 1.6rem;
+        margin-bottom: 8px;
+      }
+      .pipeline-step .step-title {
+        font-size: 0.8rem;
+        font-weight: 700;
+        margin-bottom: 4px;
+      }
+      .pipeline-step .step-desc {
+        font-size: 0.7rem;
+        color: var(--text-dim);
+        line-height: 1.4;
+      }
+      .pipeline-arrow {
+        font-size: 1.2rem;
+        color: var(--border);
+        flex-shrink: 0;
+      }
+
+      /* Status msg */
+      .status-bar {
+        padding: 8px 12px;
+        border-radius: 6px;
+        font-size: 0.82rem;
+        background: var(--surface2);
+        color: var(--text-dim);
+        border: 1px solid var(--border);
+      }
+      .status-bar.running {
+        background: #0c2a1a;
+        border-color: var(--success);
+        color: #86efac;
+      }
+      .status-bar.loading {
+        background: #1a1a0c;
+        border-color: var(--warning);
+        color: #fcd34d;
+      }
+      .status-bar.error {
+        background: #1a0c0c;
+        border-color: var(--error);
+        color: #fca5a5;
+      }
+
+      /* ── Section below workspace ── */
+      .explainer {
+        max-width: 1100px;
+        margin: 0 auto 24px;
+        padding: 0 24px;
+        width: 100%;
+      }
+      .explainer .card {
+        overflow: visible;
+      }
+      .explainer .card-body {
+        padding: 20px 24px;
+      }
+
+      footer {
+        text-align: center;
+        padding: 16px;
+        font-size: 0.75rem;
+        color: var(--text-dim);
+        border-top: 1px solid var(--border);
+        margin-top: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- ═══════════════════════════════════════════════════════════════ Header -->
+    <header>
+      <div class="header-icon">&#x1F9D1;</div>
+      <div>
+        <h1>Face Recognition</h1>
+        <p>Biometric Workshop Suite &mdash; Feature Visualisation</p>
+      </div>
+      <a href="/" class="btn-home">&#x2190; All Modules</a>
+    </header>
+
+    <!-- ═══════════════════════════════════════════════════════════ Workspace -->
+    <div class="workspace">
+      <!-- LEFT: Camera + canvas -->
+      <div class="camera-panel">
+        <div class="video-wrapper" id="videoWrapper">
+          <video id="video" autoplay muted playsinline></video>
+          <canvas id="overlay"></canvas>
+
+          <div class="camera-overlay-msg" id="overlayMsg">
+            <div class="big-icon">&#x1F4F7;</div>
+            <div id="overlayText">Loading face detection models&hellip;</div>
+            <div id="overlaySubtext" style="font-size: 0.75rem; margin-top: 4px"></div>
+          </div>
+
+          <div class="fps-badge" id="fpsBadge" style="display: none">0 fps</div>
+          <div class="detect-badge" id="detectBadge" style="display: none">No face</div>
+        </div>
+
+        <div class="camera-controls">
+          <button class="btn btn-primary" id="btnStart" disabled>&#x25B6; Start Camera</button>
+          <button class="btn btn-ghost" id="btnStop" disabled>&#x25A0; Stop</button>
+          <div class="overlay-toggle">
+            <span>Overlay</span>
+            <div class="toggle-switch on" id="overlayToggle" title="Toggle landmark overlay"></div>
+          </div>
+        </div>
+
+        <div id="statusBar" class="status-bar loading">Loading models from CDN&hellip;</div>
+
+        <div class="legend">
+          <div class="legend-item">
+            <div class="legend-dot" style="background: var(--col-jaw)"></div>
+            Jawline
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot" style="background: var(--col-brow)"></div>
+            Eyebrows
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot" style="background: var(--col-nose)"></div>
+            Nose
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot" style="background: var(--col-eye)"></div>
+            Eyes
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot" style="background: var(--col-mouth)"></div>
+            Mouth
+          </div>
+        </div>
+      </div>
+      <!-- /camera-panel -->
+
+      <!-- RIGHT: Data panels -->
+      <div class="data-panel">
+        <!-- Detection info -->
+        <div class="card">
+          <div class="card-header">Detection</div>
+          <div class="card-body">
+            <div class="stat-row">
+              <span class="stat-label">Status</span>
+              <span class="stat-value dim" id="statStatus">Idle</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">Bounding box</span>
+              <span class="stat-value dim" id="statBbox">&mdash;</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">Face size</span>
+              <span class="stat-value dim" id="statSize">&mdash;</span>
+            </div>
+            <div class="conf-wrap">
+              <div class="conf-label">
+                <span>Detection score</span>
+                <span id="confPct">0%</span>
+              </div>
+              <div class="bar-track">
+                <div class="bar-fill" id="confBar" style="width: 0%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Landmark regions -->
+        <div class="card">
+          <div class="card-header">Facial Landmarks (68 pts)</div>
+          <div class="card-body">
+            <div class="region-row">
+              <div class="region-swatch" style="background: var(--col-jaw)"></div>
+              <span class="region-name">Jawline</span>
+              <span class="region-count">17 pts</span>
+              <div class="region-bar-track">
+                <div class="region-bar-fill" style="background: var(--col-jaw); width: 100%"></div>
+              </div>
+            </div>
+            <div class="region-row">
+              <div class="region-swatch" style="background: var(--col-brow)"></div>
+              <span class="region-name">Eyebrows</span>
+              <span class="region-count">10 pts</span>
+              <div class="region-bar-track">
+                <div class="region-bar-fill" style="background: var(--col-brow); width: 59%"></div>
+              </div>
+            </div>
+            <div class="region-row">
+              <div class="region-swatch" style="background: var(--col-nose)"></div>
+              <span class="region-name">Nose</span>
+              <span class="region-count">9 pts</span>
+              <div class="region-bar-track">
+                <div class="region-bar-fill" style="background: var(--col-nose); width: 53%"></div>
+              </div>
+            </div>
+            <div class="region-row">
+              <div class="region-swatch" style="background: var(--col-eye)"></div>
+              <span class="region-name">Eyes</span>
+              <span class="region-count">12 pts</span>
+              <div class="region-bar-track">
+                <div class="region-bar-fill" style="background: var(--col-eye); width: 70%"></div>
+              </div>
+            </div>
+            <div class="region-row">
+              <div class="region-swatch" style="background: var(--col-mouth)"></div>
+              <span class="region-name">Mouth</span>
+              <span class="region-count">20 pts</span>
+              <div class="region-bar-track">
+                <div
+                  class="region-bar-fill"
+                  style="background: var(--col-mouth); width: 100%"
+                ></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Geometric biometric features -->
+        <div class="card">
+          <div class="card-header">Extracted Biometric Features</div>
+          <div class="card-body">
+            <div class="feature-list" id="featureList">
+              <div
+                style="
+                  color: var(--text-dim);
+                  font-size: 0.8rem;
+                  text-align: center;
+                  padding: 12px 0;
+                "
+              >
+                Start camera to see live features
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Feature vector heatmap -->
+        <div class="card">
+          <div class="card-header">Feature Vector Heatmap (16 features)</div>
+          <div class="card-body">
+            <div class="descriptor-grid" id="descriptorGrid">
+              <!-- filled by JS -->
+            </div>
+            <p
+              style="font-size: 0.7rem; color: var(--text-dim); margin-top: 10px; line-height: 1.5"
+            >
+              Each cell is one geometric feature normalised 0&ndash;1. Darker = smaller value. In
+              deep-learning systems, this vector has 128 dimensions.
+            </p>
+          </div>
+        </div>
+      </div>
+      <!-- /data-panel -->
+    </div>
+    <!-- /workspace -->
+
+    <!-- ═══════════════════════════════════════════════════════ Pipeline explainer -->
+    <div class="explainer">
+      <div class="card">
+        <div class="card-header">How face recognition works</div>
+        <div class="card-body">
+          <div class="pipeline">
+            <div class="pipeline-step">
+              <div class="step-icon">&#x1F4F7;</div>
+              <div class="step-title">1. Capture</div>
+              <div class="step-desc">A camera frame is grabbed and passed to the detector</div>
+            </div>
+            <div class="pipeline-arrow">&#x2192;</div>
+            <div class="pipeline-step">
+              <div class="step-icon">&#x1F4E6;</div>
+              <div class="step-title">2. Detect</div>
+              <div class="step-desc">
+                A neural net (SSD MobileNet) finds face bounding boxes in the image
+              </div>
+            </div>
+            <div class="pipeline-arrow">&#x2192;</div>
+            <div class="pipeline-step">
+              <div class="step-icon">&#x1F4CD;</div>
+              <div class="step-title">3. Landmarks</div>
+              <div class="step-desc">
+                68 key points are located on the face (eyes, nose, mouth, jaw)
+              </div>
+            </div>
+            <div class="pipeline-arrow">&#x2192;</div>
+            <div class="pipeline-step">
+              <div class="step-icon">&#x1F4CF;</div>
+              <div class="step-title">4. Geometry</div>
+              <div class="step-desc">
+                Distances and ratios between landmarks form a compact feature vector
+              </div>
+            </div>
+            <div class="pipeline-arrow">&#x2192;</div>
+            <div class="pipeline-step">
+              <div class="step-icon">&#x1F50D;</div>
+              <div class="step-title">5. Match</div>
+              <div class="step-desc">
+                The vector is compared against stored templates using cosine or Euclidean distance
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      Biometric Workshop Suite &mdash; Face Recognition Module &mdash; All processing is local; no
+      data leaves your device.
+    </footer>
+
+    <!-- ═══════════════════════════════════════════════════════════════ Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+    <script>
+      /* global faceapi */
+      // ─── Config ───────────────────────────────────────────────────────────────
+      const MODEL_URL = "https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/";
+
+      const REGIONS = {
+        jaw: { range: [0, 16], color: "#3b82f6", label: "Jawline" },
+        rbrow: { range: [17, 21], color: "#f59e0b", label: "R. Brow" },
+        lbrow: { range: [22, 26], color: "#f59e0b", label: "L. Brow" },
+        nose: { range: [27, 35], color: "#22c55e", label: "Nose" },
+        reye: { range: [36, 41], color: "#ef4444", label: "R. Eye" },
+        leye: { range: [42, 47], color: "#ef4444", label: "L. Eye" },
+        mouth: { range: [48, 67], color: "#a855f7", label: "Mouth" },
+      };
+
+      // ─── DOM refs ─────────────────────────────────────────────────────────────
+      const video = document.getElementById("video");
+      const overlay = document.getElementById("overlay");
+      const ctx = overlay.getContext("2d");
+      const overlayMsg = document.getElementById("overlayMsg");
+      const overlayText = document.getElementById("overlayText");
+      const overlaySub = document.getElementById("overlaySubtext");
+      const fpsBadge = document.getElementById("fpsBadge");
+      const detectBadge = document.getElementById("detectBadge");
+      const btnStart = document.getElementById("btnStart");
+      const btnStop = document.getElementById("btnStop");
+      const overlayToggle = document.getElementById("overlayToggle");
+      const statusBar = document.getElementById("statusBar");
+      const statStatus = document.getElementById("statStatus");
+      const statBbox = document.getElementById("statBbox");
+      const statSize = document.getElementById("statSize");
+      const confPct = document.getElementById("confPct");
+      const confBar = document.getElementById("confBar");
+      const featureList = document.getElementById("featureList");
+      const descriptorGrid = document.getElementById("descriptorGrid");
+
+      // ─── State ────────────────────────────────────────────────────────────────
+      let running = false;
+      let showOverlay = true;
+      let frameCount = 0;
+      let lastFpsTime = performance.now();
+      let rafId = null;
+      let stream = null;
+
+      // ─── Helpers ──────────────────────────────────────────────────────────────
+      function dist(a, b) {
+        return Math.hypot(a.x - b.x, a.y - b.y);
+      }
+      function midpoint(pts) {
+        const x = pts.reduce((s, p) => s + p.x, 0) / pts.length;
+        const y = pts.reduce((s, p) => s + p.y, 0) / pts.length;
+        return { x, y };
+      }
+
+      // ─── Geometric feature extraction from 68 landmarks ───────────────────────
+      // Returns an array of { label, value (0–1), raw, unit } objects.
+      function extractFeatures(pts) {
+        const faceWidth = dist(pts[0], pts[16]); // jaw width
+        const faceHeight = dist(midpoint([pts[0], pts[16]]), pts[8]); // jaw mid → chin
+
+        // Eye centres
+        const rEyePts = pts.slice(36, 42);
+        const lEyePts = pts.slice(42, 48);
+        const rEyeC = midpoint(rEyePts);
+        const lEyeC = midpoint(lEyePts);
+
+        // Eye aspect ratios (EAR) — used in blink / liveness detection
+        const rEAR =
+          (dist(pts[37], pts[41]) + dist(pts[38], pts[40])) / (2 * dist(pts[36], pts[39]));
+        const lEAR =
+          (dist(pts[43], pts[47]) + dist(pts[44], pts[46])) / (2 * dist(pts[42], pts[45]));
+
+        const eyeGap = dist(rEyeC, lEyeC); // inter-ocular distance
+        const noseTip = pts[30];
+        const noseWidth = dist(pts[31], pts[35]);
+        const mouthW = dist(pts[48], pts[54]);
+        const upperLip = pts[62];
+        const lowerLip = pts[66];
+        const mouthH = dist(upperLip, lowerLip);
+        const MAR = mouthH / mouthW; // mouth aspect ratio
+        const philtrum = dist(noseTip, pts[51]); // nose tip → upper lip
+        const chinY = pts[8];
+        const noseToEye = dist(noseTip, midpoint([rEyeC, lEyeC]));
+        const chinToNose = dist(chinY, noseTip);
+        const jawAngle = Math.atan2(pts[16].y - pts[0].y, pts[16].x - pts[0].x) * (180 / Math.PI);
+        const brow2Eye = dist(midpoint(pts.slice(17, 22)), rEyeC) / faceHeight; // brow raise
+        const eyeToNose = dist(midpoint([rEyeC, lEyeC]), noseTip) / faceHeight;
+
+        // Normalise values to 0–1 for display (using typical face-proportion ranges)
+        const clamp = (v, lo, hi) => Math.max(0, Math.min(1, (v - lo) / (hi - lo)));
+
+        return [
+          {
+            label: "Inter-ocular dist",
+            value: clamp(eyeGap / faceWidth, 0.3, 0.7),
+            raw: (eyeGap / faceWidth).toFixed(3),
+            unit: "ratio",
+          },
+          {
+            label: "Eye aspect ratio (R)",
+            value: clamp(rEAR, 0.1, 0.5),
+            raw: rEAR.toFixed(3),
+            unit: "EAR",
+          },
+          {
+            label: "Eye aspect ratio (L)",
+            value: clamp(lEAR, 0.1, 0.5),
+            raw: lEAR.toFixed(3),
+            unit: "EAR",
+          },
+          {
+            label: "Nose width",
+            value: clamp(noseWidth / faceWidth, 0.1, 0.4),
+            raw: (noseWidth / faceWidth).toFixed(3),
+            unit: "ratio",
+          },
+          {
+            label: "Mouth width",
+            value: clamp(mouthW / faceWidth, 0.2, 0.6),
+            raw: (mouthW / faceWidth).toFixed(3),
+            unit: "ratio",
+          },
+          {
+            label: "Mouth aspect ratio",
+            value: clamp(MAR, 0.0, 0.6),
+            raw: MAR.toFixed(3),
+            unit: "MAR",
+          },
+          {
+            label: "Philtrum length",
+            value: clamp(philtrum / faceHeight, 0.05, 0.25),
+            raw: (philtrum / faceHeight).toFixed(3),
+            unit: "ratio",
+          },
+          {
+            label: "Face width/height",
+            value: clamp(faceWidth / faceHeight, 0.6, 1.4),
+            raw: (faceWidth / faceHeight).toFixed(3),
+            unit: "ratio",
+          },
+          {
+            label: "Nose-to-eye dist",
+            value: clamp(noseToEye / faceHeight, 0.15, 0.4),
+            raw: (noseToEye / faceHeight).toFixed(3),
+            unit: "ratio",
+          },
+          {
+            label: "Chin-to-nose dist",
+            value: clamp(chinToNose / faceHeight, 0.2, 0.55),
+            raw: (chinToNose / faceHeight).toFixed(3),
+            unit: "ratio",
+          },
+          {
+            label: "Jaw symmetry",
+            value: clamp(Math.abs(jawAngle), 0, 15) / 15,
+            raw: Math.abs(jawAngle).toFixed(1),
+            unit: "deg",
+          },
+          {
+            label: "Brow height",
+            value: clamp(brow2Eye, 0.05, 0.2),
+            raw: brow2Eye.toFixed(3),
+            unit: "ratio",
+          },
+          {
+            label: "Eye-to-nose ratio",
+            value: clamp(eyeToNose, 0.2, 0.5),
+            raw: eyeToNose.toFixed(3),
+            unit: "ratio",
+          },
+          {
+            label: "L/R eye balance",
+            value: clamp(Math.abs(rEAR - lEAR), 0, 0.15),
+            raw: Math.abs(rEAR - lEAR).toFixed(3),
+            unit: "delta",
+          },
+          {
+            label: "Nose bridge length",
+            value: clamp(dist(pts[27], pts[30]) / faceHeight, 0.1, 0.35),
+            raw: (dist(pts[27], pts[30]) / faceHeight).toFixed(3),
+            unit: "ratio",
+          },
+          {
+            label: "Mouth-to-chin dist",
+            value: clamp(dist(pts[57], chinY) / faceHeight, 0.05, 0.2),
+            raw: (dist(pts[57], chinY) / faceHeight).toFixed(3),
+            unit: "ratio",
+          },
+        ];
+      }
+
+      // ─── Render feature list ──────────────────────────────────────────────────
+      function renderFeatures(features) {
+        featureList.innerHTML = features
+          .map((f) => {
+            const pct = Math.round(f.value * 100);
+            // bar from centre for ratios near 0.5
+            const barWidth = Math.abs(pct - 50);
+            const barStart = pct < 50 ? pct : 50;
+            const barColor = f.value > 0.65 ? "#06b6d4" : f.value < 0.35 ? "#f59e0b" : "#22c55e";
+            return `
+      <div class="feature-row">
+        <span class="feature-name">${f.label}</span>
+        <div class="feature-bar-track">
+          <div class="feature-bar-fill"
+               style="left:${barStart}%;width:${barWidth}%;background:${barColor}"></div>
+        </div>
+        <span class="feature-val">${f.raw}</span>
+      </div>`;
+          })
+          .join("");
+      }
+
+      // ─── Render heatmap cells ─────────────────────────────────────────────────
+      function initDescriptorGrid() {
+        descriptorGrid.innerHTML = "";
+        for (let i = 0; i < 16; i++) {
+          const cell = document.createElement("div");
+          cell.className = "desc-cell";
+          cell.id = `dc${i}`;
+          cell.style.background = "#1e293b";
+          cell.title = `Feature ${i + 1}`;
+          descriptorGrid.appendChild(cell);
+        }
+      }
+
+      function updateDescriptorGrid(features) {
+        features.forEach((f, i) => {
+          const cell = document.getElementById(`dc${i}`);
+          if (!cell) return;
+          const v = f.value;
+          // hue: 200 (blue) for high, 30 (amber) for low
+          const hue = Math.round(200 - v * 170);
+          const sat = Math.round(40 + v * 50);
+          const lig = Math.round(15 + v * 45);
+          cell.style.background = `hsl(${hue},${sat}%,${lig}%)`;
+          cell.title = `${f.label}: ${f.raw}`;
+        });
+      }
+
+      // ─── Draw landmark overlay ────────────────────────────────────────────────
+      function drawLandmarks(landmarks, box, score, scaleX, scaleY) {
+        const pts = landmarks.positions;
+
+        if (showOverlay) {
+          // Bounding box
+          ctx.strokeStyle = "#06b6d4";
+          ctx.lineWidth = 2;
+          ctx.strokeRect(box.x * scaleX, box.y * scaleY, box.width * scaleX, box.height * scaleY);
+
+          // Score label
+          ctx.fillStyle = "#06b6d4";
+          ctx.font = "13px monospace";
+          ctx.fillText(`${(score * 100).toFixed(0)}%`, box.x * scaleX + 4, box.y * scaleY - 6);
+
+          // Landmarks by region
+          Object.values(REGIONS).forEach((region) => {
+            const [lo, hi] = region.range;
+            for (let i = lo; i <= hi; i++) {
+              const p = pts[i];
+              ctx.beginPath();
+              ctx.arc(p.x * scaleX, p.y * scaleY, 2.5, 0, Math.PI * 2);
+              ctx.fillStyle = region.color;
+              ctx.fill();
+            }
+          });
+
+          // Connect landmark groups with lines for eyes and mouth
+          const drawPolyline = (indices, close) => {
+            ctx.beginPath();
+            indices.forEach((idx, n) => {
+              const p = pts[idx];
+              n === 0
+                ? ctx.moveTo(p.x * scaleX, p.y * scaleY)
+                : ctx.lineTo(p.x * scaleX, p.y * scaleY);
+            });
+            if (close) ctx.closePath();
+            ctx.stroke();
+          };
+
+          ctx.lineWidth = 1;
+          ctx.strokeStyle = "rgba(239,68,68,0.6)";
+          drawPolyline([36, 37, 38, 39, 40, 41], true); // right eye
+          drawPolyline([42, 43, 44, 45, 46, 47], true); // left eye
+          ctx.strokeStyle = "rgba(168,85,247,0.6)";
+          drawPolyline([48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59], true); // outer mouth
+          ctx.strokeStyle = "rgba(34,197,94,0.6)";
+          drawPolyline([27, 28, 29, 30], false); // nose bridge
+          drawPolyline([31, 32, 33, 34, 35], false); // nose base
+        }
+      }
+
+      // ─── Detection loop ───────────────────────────────────────────────────────
+      async function detect() {
+        if (!running) return;
+
+        // Match canvas to actual displayed video size
+        const rect = video.getBoundingClientRect();
+        overlay.width = rect.width;
+        overlay.height = rect.height;
+        ctx.clearRect(0, 0, overlay.width, overlay.height);
+
+        const scaleX = rect.width / video.videoWidth;
+        const scaleY = rect.height / video.videoHeight;
+
+        const result = await faceapi
+          .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
+          .withFaceLandmarks(true); // use tiny model
+
+        if (result) {
+          const { detection, landmarks } = result;
+          const box = detection.box;
+          const score = detection.score;
+
+          drawLandmarks(landmarks, box, score, scaleX, scaleY);
+
+          // Update detection stats
+          statStatus.textContent = "Detected";
+          statStatus.className = "stat-value good";
+          statBbox.textContent = `${Math.round(box.x)},${Math.round(box.y)} ${Math.round(box.width)}x${Math.round(box.height)}`;
+          statSize.textContent = `${Math.round(box.width)}x${Math.round(box.height)} px`;
+          confPct.textContent = `${(score * 100).toFixed(1)}%`;
+          confBar.style.width = `${(score * 100).toFixed(1)}%`;
+          detectBadge.textContent = "Face detected";
+          detectBadge.style.color = "#86efac";
+
+          // Extract + render biometric features
+          const features = extractFeatures(landmarks.positions);
+          renderFeatures(features);
+          updateDescriptorGrid(features);
+        } else {
+          statStatus.textContent = "No face";
+          statStatus.className = "stat-value dim";
+          statBbox.textContent = "\u2014";
+          statSize.textContent = "\u2014";
+          confPct.textContent = "0%";
+          confBar.style.width = "0%";
+          detectBadge.textContent = "No face";
+          detectBadge.style.color = "#94a3b8";
+        }
+
+        // FPS counter
+        frameCount++;
+        const now = performance.now();
+        if (now - lastFpsTime >= 1000) {
+          fpsBadge.textContent = `${frameCount} fps`;
+          frameCount = 0;
+          lastFpsTime = now;
+        }
+
+        rafId = requestAnimationFrame(detect);
+      }
+
+      // ─── Camera start/stop ────────────────────────────────────────────────────
+      async function startCamera() {
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+          video.srcObject = stream;
+          await new Promise((res) => video.addEventListener("loadedmetadata", res, { once: true }));
+
+          overlayMsg.style.display = "none";
+          fpsBadge.style.display = "block";
+          detectBadge.style.display = "block";
+          btnStart.disabled = true;
+          btnStop.disabled = false;
+          running = true;
+
+          setStatus("Detecting&hellip;", "running");
+          detect();
+        } catch (err) {
+          setStatus(`Camera error: ${err.message}`, "error");
+        }
+      }
+
+      function stopCamera() {
+        running = false;
+        if (rafId) cancelAnimationFrame(rafId);
+        if (stream) {
+          stream.getTracks().forEach((t) => t.stop());
+          stream = null;
+        }
+        video.srcObject = null;
+        ctx.clearRect(0, 0, overlay.width, overlay.height);
+        fpsBadge.style.display = "none";
+        detectBadge.style.display = "none";
+        overlayMsg.style.display = "flex";
+        overlayText.textContent = "Camera stopped";
+        overlaySub.textContent = "";
+        btnStart.disabled = false;
+        btnStop.disabled = true;
+        statStatus.textContent = "Idle";
+        statStatus.className = "stat-value dim";
+        setStatus("Camera stopped. Press Start Camera to resume.", "");
+      }
+
+      function setStatus(msg, type) {
+        statusBar.innerHTML = msg;
+        statusBar.className = `status-bar ${type}`;
+      }
+
+      // ─── Overlay toggle ───────────────────────────────────────────────────────
+      overlayToggle.addEventListener("click", () => {
+        showOverlay = !showOverlay;
+        overlayToggle.classList.toggle("on", showOverlay);
+      });
+
+      btnStart.addEventListener("click", startCamera);
+      btnStop.addEventListener("click", stopCamera);
+
+      // ─── Load models ──────────────────────────────────────────────────────────
+      (async function loadModels() {
+        initDescriptorGrid();
+        overlayText.textContent = "Loading face detection models\u2026";
+        overlaySub.textContent = "This may take a moment on first load.";
+
+        try {
+          await Promise.all([
+            faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+            faceapi.nets.faceLandmark68TinyNet.loadFromUri(MODEL_URL),
+          ]);
+
+          overlayMsg.style.display = "none";
+          btnStart.disabled = false;
+          setStatus("Models loaded. Press <strong>Start Camera</strong> to begin.", "");
+        } catch (err) {
+          overlayText.textContent = "Failed to load models";
+          overlaySub.textContent = err.message;
+          setStatus(`Model load failed: ${err.message}`, "error");
+          // eslint-disable-next-line no-console
+          console.error("face-api model load error:", err);
+        }
+      })();
+    </script>
+  </body>
+</html>

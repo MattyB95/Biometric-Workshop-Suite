@@ -3,9 +3,9 @@ import globals from "globals";
 
 export default [
   {
-    // Only lint the static version — templates/index.html has Jinja2
-    // expressions inside <script> blocks that ESLint cannot parse as JS.
-    files: ["docs/**/*.html"],
+    // Lint all docs/ HTML and templates that contain pure JS (no Jinja2).
+    // templates/keystroke.html is excluded — Jinja2 {{ }} inside <script> breaks the parser.
+    files: ["docs/**/*.html", "templates/face.html", "templates/home.html"],
     plugins: { html },
     languageOptions: {
       ecmaVersion: 2022,

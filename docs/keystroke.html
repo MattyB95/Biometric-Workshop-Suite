@@ -1,0 +1,1478 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Keystroke Dynamics &mdash; Biometric Workshop</title>
+    <style>
+      /* ── Reset & base ─────────────────────────────────────────────────── */
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      :root {
+        --bg: #0f172a;
+        --surface: #1e293b;
+        --surface2: #273548;
+        --border: #334155;
+        --accent: #6366f1;
+        --accent-h: #818cf8;
+        --success: #22c55e;
+        --warning: #f59e0b;
+        --error: #ef4444;
+        --text: #f1f5f9;
+        --text-dim: #94a3b8;
+        --radius: 10px;
+      }
+
+      body {
+        font-family: "Segoe UI", system-ui, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+      }
+
+      /* ── Header ───────────────────────────────────────────────────────── */
+      header {
+        background: linear-gradient(135deg, #1e1b4b 0%, #1e293b 100%);
+        border-bottom: 1px solid var(--border);
+        padding: 18px 24px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+      .header-icon {
+        font-size: 2rem;
+        filter: drop-shadow(0 0 8px #6366f188);
+      }
+      header h1 {
+        font-size: 1.4rem;
+        font-weight: 700;
+        letter-spacing: -0.3px;
+      }
+      header p {
+        font-size: 0.8rem;
+        color: var(--text-dim);
+        margin-top: 2px;
+      }
+      .header-badge {
+        margin-left: auto;
+        font-size: 0.7rem;
+        padding: 3px 10px;
+        border-radius: 99px;
+        border: 1px solid var(--border);
+        color: var(--text-dim);
+      }
+
+      /* ── Tabs ─────────────────────────────────────────────────────────── */
+      .tabs {
+        display: flex;
+        gap: 4px;
+        padding: 16px 24px 0;
+        border-bottom: 1px solid var(--border);
+        background: var(--surface);
+      }
+      .tab-btn {
+        padding: 10px 22px;
+        background: transparent;
+        border: none;
+        border-radius: var(--radius) var(--radius) 0 0;
+        color: var(--text-dim);
+        font-size: 0.95rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+        position: relative;
+        bottom: -1px;
+      }
+      .tab-btn:hover {
+        color: var(--text);
+        background: var(--surface2);
+      }
+      .tab-btn.active {
+        color: var(--accent-h);
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-bottom-color: var(--bg);
+      }
+
+      /* ── Main content ─────────────────────────────────────────────────── */
+      main {
+        padding: 32px 24px;
+        max-width: 760px;
+        margin: 0 auto;
+      }
+      .tab-panel {
+        display: none;
+      }
+      .tab-panel.active {
+        display: block;
+      }
+
+      /* ── Card ─────────────────────────────────────────────────────────── */
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 24px;
+        margin-bottom: 20px;
+      }
+      .card h2 {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-dim);
+        margin-bottom: 16px;
+      }
+
+      /* ── Form controls ────────────────────────────────────────────────── */
+      label {
+        display: block;
+        font-size: 0.85rem;
+        color: var(--text-dim);
+        margin-bottom: 6px;
+      }
+      input[type="text"] {
+        width: 100%;
+        padding: 10px 14px;
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        color: var(--text);
+        font-size: 1rem;
+        outline: none;
+        transition: border-color 0.2s;
+      }
+      input[type="text"]:focus {
+        border-color: var(--accent);
+      }
+
+      /* ── Buttons ─────────────────────────────────────────────────────── */
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 22px;
+        border: none;
+        border-radius: 6px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+      .btn-primary {
+        background: var(--accent);
+        color: #fff;
+      }
+      .btn-primary:hover:not(:disabled) {
+        background: var(--accent-h);
+      }
+      .btn-danger {
+        background: #7f1d1d;
+        color: #fca5a5;
+      }
+      .btn-danger:hover:not(:disabled) {
+        background: #991b1b;
+      }
+      .btn-ghost {
+        background: var(--surface2);
+        color: var(--text-dim);
+      }
+      .btn-ghost:hover:not(:disabled) {
+        color: var(--text);
+      }
+      .btn-success {
+        background: #14532d;
+        color: #86efac;
+      }
+      .btn-success:hover:not(:disabled) {
+        background: #166534;
+      }
+      .btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+
+      /* ── Phrase display ───────────────────────────────────────────────── */
+      .phrase-target {
+        font-family: "Courier New", monospace;
+        font-size: 1.5rem;
+        font-weight: bold;
+        letter-spacing: 3px;
+        padding: 20px;
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 2px;
+        margin: 16px 0;
+        min-height: 72px;
+        align-items: center;
+        cursor: pointer;
+      }
+      .char-box {
+        display: inline-block;
+        width: 22px;
+        text-align: center;
+        border-radius: 3px;
+        padding: 2px 0;
+        transition: all 0.1s;
+      }
+      .char-box.space {
+        width: 14px;
+      }
+      .char-box.pending {
+        color: var(--text-dim);
+      }
+      .char-box.current {
+        color: var(--text);
+        background: var(--accent);
+        box-shadow: 0 0 8px var(--accent);
+        animation: pulse 1s infinite;
+      }
+      .char-box.correct {
+        color: var(--success);
+      }
+      .char-box.error-flash {
+        color: var(--error);
+        animation: shake 0.3s;
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.6;
+        }
+      }
+      @keyframes shake {
+        0%,
+        100% {
+          transform: translateX(0);
+        }
+        25% {
+          transform: translateX(-4px);
+        }
+        75% {
+          transform: translateX(4px);
+        }
+      }
+
+      /* ── Invisible keystroke capture input ─────────────────────────────── */
+      .typing-input {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+        width: 1px;
+        height: 1px;
+      }
+
+      /* ── Attempt dots ─────────────────────────────────────────────────── */
+      .attempt-dots {
+        display: flex;
+        gap: 8px;
+        margin: 12px 0;
+      }
+      .dot {
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: var(--border);
+        border: 2px solid var(--border);
+        transition: all 0.3s;
+      }
+      .dot.done {
+        background: var(--success);
+        border-color: var(--success);
+      }
+      .dot.current {
+        background: var(--accent);
+        border-color: var(--accent);
+        box-shadow: 0 0 6px var(--accent);
+        animation: pulse 1.2s infinite;
+      }
+
+      /* ── Status messages ──────────────────────────────────────────────── */
+      .status-msg {
+        padding: 12px 16px;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        margin-top: 14px;
+        display: none;
+      }
+      .status-msg.info {
+        background: #1e3a5f;
+        border: 1px solid #3b82f6;
+        color: #93c5fd;
+        display: block;
+      }
+      .status-msg.success {
+        background: #14532d;
+        border: 1px solid var(--success);
+        color: #86efac;
+        display: block;
+      }
+      .status-msg.error {
+        background: #450a0a;
+        border: 1px solid var(--error);
+        color: #fca5a5;
+        display: block;
+      }
+      .status-msg.warning {
+        background: #431407;
+        border: 1px solid var(--warning);
+        color: #fcd34d;
+        display: block;
+      }
+
+      /* ── Results ──────────────────────────────────────────────────────── */
+      .result-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .result-item {
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 12px 16px;
+      }
+      .result-item.best-match {
+        border-color: var(--accent);
+        box-shadow: 0 0 12px #6366f133;
+      }
+      .result-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+      }
+      .result-name {
+        font-weight: 700;
+        font-size: 1.05rem;
+      }
+      .result-badge {
+        font-size: 0.75rem;
+        padding: 2px 8px;
+        border-radius: 99px;
+        background: var(--accent);
+        color: #fff;
+      }
+      .result-pct {
+        font-size: 0.85rem;
+        color: var(--text-dim);
+      }
+      .bar-track {
+        height: 8px;
+        background: var(--border);
+        border-radius: 4px;
+        overflow: hidden;
+      }
+      .bar-fill {
+        height: 100%;
+        border-radius: 4px;
+        background: linear-gradient(90deg, var(--accent), var(--accent-h));
+        transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      .result-item.best-match .bar-fill {
+        background: linear-gradient(90deg, var(--success), #4ade80);
+      }
+
+      /* ── Student list ─────────────────────────────────────────────────── */
+      .student-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 16px;
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        margin-bottom: 8px;
+      }
+      .student-name {
+        font-weight: 600;
+      }
+      .student-meta {
+        font-size: 0.8rem;
+        color: var(--text-dim);
+        margin-top: 2px;
+      }
+
+      /* ── Misc ─────────────────────────────────────────────────────────── */
+      .row {
+        display: flex;
+        gap: 12px;
+        align-items: flex-end;
+      }
+      .row .grow {
+        flex: 1;
+      }
+      .btn-row {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 14px;
+      }
+      .section-title {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--text-dim);
+        margin-bottom: 12px;
+      }
+      .tip {
+        font-size: 0.8rem;
+        color: var(--text-dim);
+        margin-top: 8px;
+        line-height: 1.5;
+      }
+      .empty-state {
+        text-align: center;
+        padding: 40px;
+        color: var(--text-dim);
+      }
+      .divider {
+        border: none;
+        border-top: 1px solid var(--border);
+        margin: 20px 0;
+      }
+
+      /* ── Profile stats modal ──────────────────────────────────────────── */
+      .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.75);
+        z-index: 100;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      }
+      .modal {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        max-width: 780px;
+        width: 100%;
+        max-height: 90vh;
+        overflow-y: auto;
+      }
+      .modal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 18px 24px;
+        border-bottom: 1px solid var(--border);
+        position: sticky;
+        top: 0;
+        background: var(--surface);
+        z-index: 1;
+      }
+      .modal-header h2 {
+        font-size: 1rem;
+        font-weight: 700;
+      }
+      .btn-icon {
+        background: none;
+        border: none;
+        color: var(--text-dim);
+        font-size: 1.5rem;
+        cursor: pointer;
+        line-height: 1;
+        padding: 2px 8px;
+        border-radius: 4px;
+      }
+      .btn-icon:hover {
+        color: var(--text);
+        background: var(--surface2);
+      }
+      .modal-body {
+        padding: 24px;
+      }
+      .stat-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 10px;
+        margin-bottom: 24px;
+      }
+      .stat-card {
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 12px;
+        text-align: center;
+      }
+      .stat-value {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: var(--accent-h);
+      }
+      .stat-label {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-dim);
+        margin-top: 4px;
+      }
+      .chart-section {
+        margin-bottom: 28px;
+      }
+      .chart-title {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-dim);
+        margin-bottom: 10px;
+      }
+      .chart-wrap {
+        position: relative;
+        height: 200px;
+      }
+      .chart-note {
+        font-size: 0.75rem;
+        color: var(--text-dim);
+        line-height: 1.6;
+      }
+      .btn-home {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 14px;
+        background: rgba(255, 255, 255, 0.07);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        color: var(--text-dim);
+        font-size: 0.8rem;
+        font-weight: 500;
+        text-decoration: none;
+        transition: all 0.15s;
+        margin-left: auto;
+      }
+      .btn-home:hover {
+        color: var(--text);
+        background: rgba(255, 255, 255, 0.12);
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="header-icon">&#x2328;&#xFE0F;</div>
+      <div>
+        <h1>Keystroke Dynamics</h1>
+        <p>Biometric Workshop Suite &mdash; Offline / GitHub Pages</p>
+      </div>
+      <a href="./index.html" class="btn-home">&#x2190; All Modules</a>
+    </header>
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="enroll">Enrol</button>
+      <button class="tab-btn" data-tab="identify">Identify</button>
+      <button class="tab-btn" data-tab="students">Students</button>
+    </div>
+
+    <main>
+      <!-- ================================================================ -->
+      <!-- TAB: ENROL                                                        -->
+      <!-- ================================================================ -->
+      <div id="tab-enroll" class="tab-panel active">
+        <div class="card">
+          <h2>Step 1 &mdash; Enter Your Name</h2>
+          <div class="row">
+            <div class="grow">
+              <label for="enroll-name">Your first name</label>
+              <input type="text" id="enroll-name" placeholder="e.g. Alice" autocomplete="off" />
+            </div>
+            <button class="btn btn-primary" id="btn-start-enroll">Start Typing</button>
+          </div>
+          <p class="tip">
+            You will type the phrase <strong id="enroll-samples-label"></strong> times. Stay relaxed
+            and type naturally!
+          </p>
+        </div>
+
+        <div class="card" id="enroll-typing-card" style="display: none">
+          <h2>Step 2 &mdash; Type the Phrase</h2>
+          <div class="section-title">Your phrase &mdash; type it exactly as shown</div>
+          <div class="phrase-target" id="enroll-phrase-display"></div>
+          <div class="section-title" style="margin-top: 16px">Attempts</div>
+          <div class="attempt-dots" id="attempt-dots"></div>
+          <div id="enroll-status" class="status-msg info">Start typing the phrase above.</div>
+          <input
+            class="typing-input"
+            id="enroll-hidden-input"
+            type="text"
+            autocomplete="off"
+            autocorrect="off"
+            autocapitalize="off"
+            spellcheck="false"
+          />
+        </div>
+
+        <div class="card" id="enroll-done-card" style="display: none">
+          <div id="enroll-success-msg" class="status-msg success"></div>
+          <button class="btn btn-primary" id="btn-enroll-another" style="margin-top: 16px">
+            Enrol Another Student
+          </button>
+        </div>
+      </div>
+
+      <!-- ================================================================ -->
+      <!-- TAB: IDENTIFY                                                     -->
+      <!-- ================================================================ -->
+      <div id="tab-identify" class="tab-panel">
+        <div class="card">
+          <h2>Who is Typing?</h2>
+          <p class="tip" style="margin-bottom: 16px">
+            Type the phrase below and the system will compare your typing rhythm against everyone
+            who has enrolled.
+          </p>
+          <div class="section-title">Type this phrase</div>
+          <div class="phrase-target" id="identify-phrase-display"></div>
+          <div id="identify-status" class="status-msg info">Start typing the phrase above.</div>
+          <input
+            class="typing-input"
+            id="identify-hidden-input"
+            type="text"
+            autocomplete="off"
+            autocorrect="off"
+            autocapitalize="off"
+            spellcheck="false"
+          />
+        </div>
+
+        <div class="card" id="identify-results-card" style="display: none">
+          <h2>Results</h2>
+          <div id="identify-results" class="result-list"></div>
+          <button class="btn btn-ghost" id="btn-identify-again" style="margin-top: 16px">
+            Try Again
+          </button>
+        </div>
+      </div>
+
+      <!-- ================================================================ -->
+      <!-- TAB: STUDENTS                                                     -->
+      <!-- ================================================================ -->
+      <div id="tab-students" class="tab-panel">
+        <div class="card">
+          <h2>Enrolled Students</h2>
+          <div id="student-list"><div class="empty-state">Loading&hellip;</div></div>
+        </div>
+
+        <div class="card">
+          <h2>Settings</h2>
+          <label for="settings-phrase">Typing phrase</label>
+          <input type="text" id="settings-phrase" />
+          <p class="tip">
+            Changing the phrase will clear all existing profiles, since old profiles were recorded
+            for a different phrase.
+          </p>
+          <label for="settings-samples" style="margin-top: 14px">Enrolment attempts required</label>
+          <input type="text" id="settings-samples" style="width: 80px" />
+          <div class="btn-row">
+            <button class="btn btn-primary" id="btn-save-settings">Save Settings</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Admin</h2>
+          <div class="btn-row">
+            <button class="btn btn-success" id="btn-export">Export Profiles</button>
+            <label class="btn btn-ghost" style="cursor: pointer">
+              Import Profiles
+              <input type="file" id="import-file" accept=".json" style="display: none" />
+            </label>
+            <button class="btn btn-danger" id="btn-reset">Reset All</button>
+          </div>
+          <p class="tip" style="margin-top: 12px">
+            <strong>Export</strong> saves all profiles to a JSON file so you can reload them in a
+            future session or on a different browser.<br />
+            <strong>Import</strong> loads a previously exported file.<br />
+            <strong>Reset</strong> deletes all profiles immediately.
+          </p>
+        </div>
+      </div>
+    </main>
+
+    <!-- ===================================================================== -->
+    <!-- PROFILE STATS MODAL                                                    -->
+    <!-- ===================================================================== -->
+    <div
+      id="profile-modal"
+      class="modal-overlay"
+      style="display: none"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div class="modal">
+        <div class="modal-header">
+          <h2 id="modal-student-name"></h2>
+          <button class="btn-icon" id="btn-close-modal" aria-label="Close">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="stat-grid" id="modal-stat-grid"></div>
+          <div class="chart-section">
+            <div class="chart-title">Dwell Time &mdash; how long each key is held</div>
+            <div class="chart-wrap"><canvas id="chart-dwell"></canvas></div>
+          </div>
+          <div class="chart-section">
+            <div class="chart-title">
+              Flight Time &mdash; gap between releasing one key and pressing the next
+            </div>
+            <div class="chart-wrap"><canvas id="chart-flight"></canvas></div>
+          </div>
+          <p class="chart-note">
+            Hover any bar to see the mean &plusmn; standard deviation. A lower std means more
+            consistent timing for that key &mdash; which makes it a stronger feature for
+            identification.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- JAVASCRIPT                                                             -->
+    <!-- ===================================================================== -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <script>
+      "use strict";
+
+      // ── Storage keys ──────────────────────────────────────────────────────────
+      const STORAGE_PROFILES = "kd-profiles";
+      const STORAGE_PHRASE = "kd-phrase";
+      const STORAGE_SAMPLES = "kd-samples";
+
+      // ── Defaults ──────────────────────────────────────────────────────────────
+      const DEFAULT_PHRASE = "the quick brown fox";
+      const DEFAULT_SAMPLES = 5;
+
+      // ── Settings (read from localStorage, fall back to defaults) ──────────────
+      function getPhrase() {
+        return localStorage.getItem(STORAGE_PHRASE) || DEFAULT_PHRASE;
+      }
+      function getSamples() {
+        return parseInt(localStorage.getItem(STORAGE_SAMPLES) || DEFAULT_SAMPLES, 10);
+      }
+
+      // ====================================================================
+      // PROFILE STORAGE
+      // ====================================================================
+
+      function loadProfiles() {
+        try {
+          return JSON.parse(localStorage.getItem(STORAGE_PROFILES) || "{}");
+        } catch {
+          return {};
+        }
+      }
+
+      function saveProfiles(profiles) {
+        localStorage.setItem(STORAGE_PROFILES, JSON.stringify(profiles));
+      }
+
+      // ====================================================================
+      // MATCHING ALGORITHM  (mirrors app.py logic)
+      // ====================================================================
+
+      function computeMeanStd(arrays) {
+        const n = arrays.length;
+        const len = arrays[0].length;
+        const means = [],
+          stds = [];
+        for (let i = 0; i < len; i++) {
+          const mean = arrays.reduce((s, a) => s + a[i], 0) / n;
+          means.push(mean);
+          if (n > 1) {
+            const variance = arrays.reduce((s, a) => s + (a[i] - mean) ** 2, 0) / (n - 1);
+            stds.push(Math.sqrt(variance));
+          } else {
+            stds.push(30.0);
+          }
+        }
+        return { means, stds };
+      }
+
+      function computeDistance(timing, profile) {
+        const DWELL_FLOOR = 15;
+        const FLIGHT_FLOOR = 25;
+        let total = 0,
+          n = 0;
+        timing.dwell.forEach((t, i) => {
+          total += Math.abs(t - profile.meanDwell[i]) / Math.max(profile.stdDwell[i], DWELL_FLOOR);
+          n++;
+        });
+        timing.flight.forEach((t, i) => {
+          total +=
+            Math.abs(t - profile.meanFlight[i]) / Math.max(profile.stdFlight[i], FLIGHT_FLOOR);
+          n++;
+        });
+        return n > 0 ? total / n : Infinity;
+      }
+
+      function enrollStudent(name, samples) {
+        const { means: meanDwell, stds: stdDwell } = computeMeanStd(samples.map((s) => s.dwell));
+        const { means: meanFlight, stds: stdFlight } = computeMeanStd(samples.map((s) => s.flight));
+        const profiles = loadProfiles();
+        profiles[name] = { meanDwell, stdDwell, meanFlight, stdFlight, numSamples: samples.length };
+        saveProfiles(profiles);
+      }
+
+      function identifyTypist(timing) {
+        const profiles = loadProfiles();
+        const names = Object.keys(profiles);
+        if (names.length === 0) return null;
+
+        const results = names
+          .map((name) => ({
+            name,
+            distance: computeDistance(timing, profiles[name]),
+          }))
+          .sort((a, b) => a.distance - b.distance);
+
+        const scale = 2.0;
+        const minDist = results[0].distance;
+        const raw = results.map((r) => Math.exp(-scale * (r.distance - minDist)));
+        const total = raw.reduce((s, x) => s + x, 0);
+        results.forEach((r, i) => {
+          r.confidence = Math.round((raw[i] / total) * 1000) / 10;
+        });
+
+        return { results, bestMatch: results[0].name, topConfidence: results[0].confidence };
+      }
+
+      // ====================================================================
+      // PHRASE DISPLAY RENDERER
+      // ====================================================================
+
+      function renderPhrase(el, phrase, currentPos) {
+        el.innerHTML = "";
+        for (let i = 0; i < phrase.length; i++) {
+          const ch = phrase[i];
+          const span = document.createElement("span");
+          span.textContent = ch === " " ? "\u00a0" : ch;
+          span.className = "char-box" + (ch === " " ? " space" : "");
+          if (i < currentPos) span.classList.add("correct");
+          else if (i === currentPos) span.classList.add("current");
+          else span.classList.add("pending");
+          el.appendChild(span);
+        }
+      }
+
+      function flashError(el, pos) {
+        const spans = el.querySelectorAll(".char-box");
+        if (spans[pos]) {
+          spans[pos].classList.remove("current");
+          spans[pos].classList.add("error-flash");
+        }
+      }
+
+      // ====================================================================
+      // KEYSTROKE CAPTURE ENGINE
+      // ====================================================================
+
+      function createCapture(hiddenInput, displayEl, { onComplete, onError }) {
+        let keyDownTimes = {},
+          lastKeyUpTime = null;
+        let dwellTimes = [],
+          flightTimes = [];
+        let currentPos = 0,
+          active = false;
+
+        function reset() {
+          keyDownTimes = {};
+          lastKeyUpTime = null;
+          dwellTimes = [];
+          flightTimes = [];
+          currentPos = 0;
+          renderPhrase(displayEl, getPhrase(), 0);
+        }
+
+        function start() {
+          reset();
+          active = true;
+          hiddenInput.focus();
+        }
+        function stop() {
+          active = false;
+        }
+
+        hiddenInput.addEventListener("keydown", (e) => {
+          if (!active) return;
+          e.preventDefault();
+          if (currentPos >= getPhrase().length) return;
+          if (keyDownTimes[currentPos] === undefined) keyDownTimes[currentPos] = performance.now();
+        });
+
+        hiddenInput.addEventListener("keyup", (e) => {
+          if (!active) return;
+          e.preventDefault();
+          const phrase = getPhrase();
+          if (currentPos >= phrase.length) return;
+
+          const typedChar = e.key === " " || e.key === "Spacebar" ? " " : e.key;
+          if (typedChar.length !== 1) return;
+
+          const expected = phrase[currentPos];
+          const keyUpTime = performance.now();
+          const pos = currentPos;
+
+          if (typedChar !== expected) {
+            flashError(displayEl, pos);
+            active = false;
+            setTimeout(() => {
+              reset();
+              active = true;
+              hiddenInput.focus();
+              if (onError) onError();
+            }, 600);
+            return;
+          }
+
+          const keyDownTime = keyDownTimes[pos] !== undefined ? keyDownTimes[pos] : keyUpTime;
+          dwellTimes.push(Math.max(0, keyUpTime - keyDownTime));
+
+          if (lastKeyUpTime !== null && keyDownTimes[pos] !== undefined)
+            flightTimes.push(keyDownTimes[pos] - lastKeyUpTime);
+
+          lastKeyUpTime = keyUpTime;
+          currentPos++;
+          renderPhrase(displayEl, phrase, currentPos);
+
+          if (currentPos === phrase.length) {
+            active = false;
+            if (onComplete) onComplete({ dwell: [...dwellTimes], flight: [...flightTimes] });
+          }
+        });
+
+        displayEl.addEventListener("click", () => {
+          if (!active) {
+            reset();
+            active = true;
+          }
+          hiddenInput.focus();
+        });
+
+        return { start, stop, reset };
+      }
+
+      // ====================================================================
+      // TAB NAVIGATION
+      // ====================================================================
+
+      document.querySelectorAll(".tab-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          document.querySelectorAll(".tab-btn").forEach((b) => b.classList.remove("active"));
+          document.querySelectorAll(".tab-panel").forEach((p) => p.classList.remove("active"));
+          btn.classList.add("active");
+          document.getElementById("tab-" + btn.dataset.tab).classList.add("active");
+          if (btn.dataset.tab === "students") {
+            loadStudents();
+            loadSettings();
+          }
+          if (btn.dataset.tab === "identify") resetIdentify();
+        });
+      });
+
+      // ====================================================================
+      // ENROL TAB
+      // ====================================================================
+
+      let enrollSamples = [];
+      let enrollCapture = null;
+
+      const enrollNameInput = document.getElementById("enroll-name");
+      const btnStartEnroll = document.getElementById("btn-start-enroll");
+      const enrollTypingCard = document.getElementById("enroll-typing-card");
+      const enrollDoneCard = document.getElementById("enroll-done-card");
+      const enrollPhraseDisplay = document.getElementById("enroll-phrase-display");
+      const enrollHiddenInput = document.getElementById("enroll-hidden-input");
+      const attemptDots = document.getElementById("attempt-dots");
+      const enrollStatus = document.getElementById("enroll-status");
+      const enrollSamplesLabel = document.getElementById("enroll-samples-label");
+      const btnEnrollAnother = document.getElementById("btn-enroll-another");
+
+      function setEnrollStatus(msg, type) {
+        enrollStatus.textContent = msg;
+        enrollStatus.className = "status-msg " + type;
+      }
+
+      function buildDots(completedCount) {
+        const n = getSamples();
+        attemptDots.innerHTML = "";
+        for (let i = 0; i < n; i++) {
+          const dot = document.createElement("div");
+          dot.className =
+            "dot" + (i < completedCount ? " done" : i === completedCount ? " current" : "");
+          attemptDots.appendChild(dot);
+        }
+      }
+
+      // Initial render
+      enrollSamplesLabel.textContent = getSamples();
+      renderPhrase(enrollPhraseDisplay, getPhrase(), 0);
+
+      btnStartEnroll.addEventListener("click", () => {
+        const name = enrollNameInput.value.trim();
+        if (!name) {
+          enrollNameInput.focus();
+          enrollNameInput.style.borderColor = "var(--error)";
+          setTimeout(() => (enrollNameInput.style.borderColor = ""), 1500);
+          return;
+        }
+        startEnrollSession(name);
+      });
+
+      enrollNameInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") btnStartEnroll.click();
+      });
+
+      function startEnrollSession(name) {
+        enrollSamples = [];
+        enrollTypingCard.style.display = "block";
+        enrollDoneCard.style.display = "none";
+        btnStartEnroll.disabled = true;
+        enrollNameInput.disabled = true;
+
+        buildDots(0);
+        setEnrollStatus(`Attempt 1 of ${getSamples()} — start typing!`, "info");
+        renderPhrase(enrollPhraseDisplay, getPhrase(), 0);
+
+        enrollCapture = createCapture(enrollHiddenInput, enrollPhraseDisplay, {
+          onComplete(timing) {
+            enrollSamples.push(timing);
+            buildDots(enrollSamples.length);
+
+            if (enrollSamples.length < getSamples()) {
+              setEnrollStatus(
+                `Great! ${enrollSamples.length}/${getSamples()} done. Keep going!`,
+                "success"
+              );
+              setTimeout(() => {
+                setEnrollStatus(
+                  `Attempt ${enrollSamples.length + 1} of ${getSamples()} — keep typing!`,
+                  "info"
+                );
+                enrollCapture.start();
+              }, 1000);
+            } else {
+              setEnrollStatus("All attempts complete! Saving your profile…", "info");
+              enrollStudent(name, enrollSamples);
+
+              enrollTypingCard.style.display = "none";
+              enrollDoneCard.style.display = "block";
+              const msg = document.getElementById("enroll-success-msg");
+              msg.className = "status-msg success";
+              msg.textContent = `Profile for "${name}" saved! (${enrollSamples.length} typing samples recorded)`;
+            }
+          },
+          onError() {
+            setEnrollStatus(
+              `Wrong key! Auto-restarted. Attempt ${enrollSamples.length + 1} of ${getSamples()}.`,
+              "warning"
+            );
+          },
+        });
+        enrollCapture.start();
+      }
+
+      btnEnrollAnother.addEventListener("click", () => {
+        enrollSamples = [];
+        enrollTypingCard.style.display = "none";
+        enrollDoneCard.style.display = "none";
+        enrollNameInput.value = "";
+        enrollNameInput.disabled = false;
+        btnStartEnroll.disabled = false;
+        enrollSamplesLabel.textContent = getSamples();
+        enrollNameInput.focus();
+        renderPhrase(enrollPhraseDisplay, getPhrase(), 0);
+      });
+
+      // ====================================================================
+      // IDENTIFY TAB
+      // ====================================================================
+
+      let identifyCapture = null;
+
+      const identifyPhraseDisplay = document.getElementById("identify-phrase-display");
+      const identifyHiddenInput = document.getElementById("identify-hidden-input");
+      const identifyStatus = document.getElementById("identify-status");
+      const identifyResultsCard = document.getElementById("identify-results-card");
+      const identifyResultsEl = document.getElementById("identify-results");
+      const btnIdentifyAgain = document.getElementById("btn-identify-again");
+
+      function setIdentifyStatus(msg, type) {
+        identifyStatus.textContent = msg;
+        identifyStatus.className = "status-msg " + type;
+      }
+
+      function resetIdentify() {
+        identifyResultsCard.style.display = "none";
+        setIdentifyStatus("Start typing the phrase above.", "info");
+        renderPhrase(identifyPhraseDisplay, getPhrase(), 0);
+
+        identifyCapture = createCapture(identifyHiddenInput, identifyPhraseDisplay, {
+          onComplete(timing) {
+            const result = identifyTypist(timing);
+            if (!result) {
+              setIdentifyStatus("No profiles enrolled yet. Ask someone to enrol first!", "error");
+              return;
+            }
+            renderResults(result);
+          },
+          onError() {
+            setIdentifyStatus("Wrong key — auto-restarted. Try again.", "warning");
+          },
+        });
+        identifyCapture.start();
+      }
+
+      resetIdentify();
+
+      function renderResults(data) {
+        identifyResultsCard.style.display = "block";
+        identifyResultsEl.innerHTML = "";
+        setIdentifyStatus(
+          `Best match: ${data.bestMatch} (${data.topConfidence}% confidence)`,
+          "success"
+        );
+
+        data.results.forEach((r, i) => {
+          const isBest = i === 0;
+          const item = document.createElement("div");
+          item.className = "result-item" + (isBest ? " best-match" : "");
+          item.innerHTML = `
+      <div class="result-header">
+        <span class="result-name">${escapeHtml(r.name)}</span>
+        <div style="display:flex;gap:8px;align-items:center">
+          ${isBest ? '<span class="result-badge">Best Match</span>' : ""}
+          <span class="result-pct">${r.confidence}%</span>
+        </div>
+      </div>
+      <div class="bar-track"><div class="bar-fill" style="width:0%"></div></div>`;
+          identifyResultsEl.appendChild(item);
+          requestAnimationFrame(() =>
+            requestAnimationFrame(() => {
+              item.querySelector(".bar-fill").style.width = r.confidence + "%";
+            })
+          );
+        });
+      }
+
+      btnIdentifyAgain.addEventListener("click", resetIdentify);
+
+      // Re-focus the active capture when the window regains focus
+      window.addEventListener("focus", () => {
+        const activeTab = document.querySelector(".tab-btn.active")?.dataset.tab;
+        if (activeTab === "enroll" && enrollTypingCard.style.display !== "none") {
+          enrollHiddenInput.focus();
+        } else if (activeTab === "identify") {
+          identifyHiddenInput.focus();
+        }
+      });
+
+      // ====================================================================
+      // STUDENTS TAB
+      // ====================================================================
+
+      const studentListEl = document.getElementById("student-list");
+      const btnReset = document.getElementById("btn-reset");
+      const btnExport = document.getElementById("btn-export");
+      const importFile = document.getElementById("import-file");
+
+      function loadStudents() {
+        const profiles = loadProfiles();
+        const names = Object.keys(profiles);
+
+        if (names.length === 0) {
+          studentListEl.innerHTML = '<div class="empty-state">No students enrolled yet.</div>';
+          return;
+        }
+
+        studentListEl.innerHTML = "";
+        names.forEach((name) => {
+          const p = profiles[name];
+          const el = document.createElement("div");
+          el.className = "student-item";
+          el.innerHTML = `
+      <div>
+        <div class="student-name">${escapeHtml(name)}</div>
+        <div class="student-meta">${p.numSamples} typing sample${p.numSamples !== 1 ? "s" : ""} recorded</div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-ghost" data-action="stats">View Stats</button>
+        <button class="btn btn-danger" data-action="delete">Delete</button>
+      </div>`;
+          el.querySelector("[data-action='stats']").addEventListener("click", () =>
+            showProfileModal(name)
+          );
+          el.querySelector("[data-action='delete']").addEventListener("click", () => {
+            if (!confirm(`Delete profile for "${name}"?`)) return;
+            const profiles = loadProfiles();
+            delete profiles[name];
+            saveProfiles(profiles);
+            loadStudents();
+          });
+          studentListEl.appendChild(el);
+        });
+      }
+
+      btnReset.addEventListener("click", () => {
+        if (!confirm("Delete ALL profiles? This cannot be undone.")) return;
+        saveProfiles({});
+        loadStudents();
+      });
+
+      // Export
+      btnExport.addEventListener("click", () => {
+        const profiles = loadProfiles();
+        if (Object.keys(profiles).length === 0) {
+          alert("No profiles to export.");
+          return;
+        }
+        const blob = new Blob([JSON.stringify({ phrase: getPhrase(), profiles }, null, 2)], {
+          type: "application/json",
+        });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "keystroke-profiles.json";
+        a.click();
+        URL.revokeObjectURL(a.href);
+      });
+
+      // Import
+      importFile.addEventListener("change", (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          try {
+            const data = JSON.parse(ev.target.result);
+            // Support both raw profiles object and the wrapped export format
+            const profiles = data.profiles || data;
+            if (typeof profiles !== "object") throw new Error("Invalid format");
+            saveProfiles(profiles);
+            if (data.phrase && data.phrase !== getPhrase()) {
+              localStorage.setItem(STORAGE_PHRASE, data.phrase);
+              document.getElementById("settings-phrase").value = data.phrase;
+              renderPhrase(enrollPhraseDisplay, data.phrase, 0);
+              resetIdentify();
+            }
+            loadStudents();
+            alert(`Imported ${Object.keys(profiles).length} profile(s).`);
+          } catch {
+            alert("Could not read file. Make sure it is a valid exported JSON file.");
+          }
+          importFile.value = "";
+        };
+        reader.readAsText(file);
+      });
+
+      // ====================================================================
+      // SETTINGS
+      // ====================================================================
+
+      const settingsPhrase = document.getElementById("settings-phrase");
+      const settingsSamples = document.getElementById("settings-samples");
+      const btnSaveSettings = document.getElementById("btn-save-settings");
+
+      function loadSettings() {
+        settingsPhrase.value = getPhrase();
+        settingsSamples.value = getSamples();
+      }
+
+      btnSaveSettings.addEventListener("click", () => {
+        const newPhrase = settingsPhrase.value.trim();
+        const newSamples = parseInt(settingsSamples.value, 10);
+
+        if (!newPhrase) {
+          alert("Phrase cannot be empty.");
+          return;
+        }
+        if (isNaN(newSamples) || newSamples < 1 || newSamples > 20) {
+          alert("Attempts must be between 1 and 20.");
+          return;
+        }
+
+        const phraseChanged = newPhrase !== getPhrase();
+
+        if (phraseChanged && Object.keys(loadProfiles()).length > 0) {
+          if (!confirm("Changing the phrase will delete all existing profiles. Continue?")) return;
+          saveProfiles({});
+        }
+
+        localStorage.setItem(STORAGE_PHRASE, newPhrase);
+        localStorage.setItem(STORAGE_SAMPLES, newSamples);
+
+        // Refresh displays
+        enrollSamplesLabel.textContent = newSamples;
+        renderPhrase(enrollPhraseDisplay, newPhrase, 0);
+        resetIdentify();
+        if (phraseChanged) loadStudents();
+
+        alert("Settings saved.");
+      });
+
+      // ====================================================================
+      // PROFILE STATS MODAL
+      // ====================================================================
+
+      let _dwellChart = null;
+      let _flightChart = null;
+
+      function phraseCharLabels() {
+        return getPhrase()
+          .split("")
+          .map((c) => (c === " " ? "\u00b7" : c));
+      }
+
+      function phraseFlightLabels() {
+        const phrase = getPhrase();
+        const out = [];
+        for (let i = 0; i < phrase.length - 1; i++) {
+          const a = phrase[i] === " " ? "\u00b7" : phrase[i];
+          const b = phrase[i + 1] === " " ? "\u00b7" : phrase[i + 1];
+          out.push(`${a}\u2192${b}`);
+        }
+        return out;
+      }
+
+      function buildChart(canvasId, labels, means, stds, color) {
+        const ctx = document.getElementById(canvasId).getContext("2d");
+        return new Chart(ctx, {
+          type: "bar",
+          data: {
+            labels,
+            datasets: [
+              {
+                data: means,
+                backgroundColor: color + "88",
+                borderColor: color,
+                borderWidth: 1,
+                borderRadius: 3,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: { duration: 400 },
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                callbacks: {
+                  label: (ctx) =>
+                    `${ctx.parsed.y.toFixed(1)} ms  (\u00b1${stds[ctx.dataIndex].toFixed(1)} ms std)`,
+                },
+              },
+            },
+            scales: {
+              x: {
+                ticks: { color: "#94a3b8", font: { size: 11, family: "monospace" } },
+                grid: { color: "#334155" },
+              },
+              y: {
+                beginAtZero: true,
+                ticks: { color: "#94a3b8" },
+                grid: { color: "#334155" },
+                title: { display: true, text: "ms", color: "#94a3b8" },
+              },
+            },
+          },
+        });
+      }
+
+      function showProfileModal(name) {
+        const modal = document.getElementById("profile-modal");
+        document.getElementById("modal-student-name").textContent = name;
+        modal.style.display = "flex";
+        document.body.style.overflow = "hidden";
+
+        if (_dwellChart) {
+          _dwellChart.destroy();
+          _dwellChart = null;
+        }
+        if (_flightChart) {
+          _flightChart.destroy();
+          _flightChart = null;
+        }
+
+        const profiles = loadProfiles();
+        const p = profiles[name];
+        if (!p) {
+          document.getElementById("modal-stat-grid").innerHTML =
+            '<p style="color:var(--error)">Profile not found.</p>';
+          return;
+        }
+
+        const avgDwell = (p.meanDwell.reduce((s, v) => s + v, 0) / p.meanDwell.length).toFixed(1);
+        const avgFlight = (p.meanFlight.reduce((s, v) => s + v, 0) / p.meanFlight.length).toFixed(
+          1
+        );
+        const avgStd = (p.stdDwell.reduce((s, v) => s + v, 0) / p.stdDwell.length).toFixed(1);
+
+        document.getElementById("modal-stat-grid").innerHTML = `
+          <div class="stat-card"><div class="stat-value">${p.numSamples}</div><div class="stat-label">Samples</div></div>
+          <div class="stat-card"><div class="stat-value">${avgDwell}</div><div class="stat-label">Avg Dwell (ms)</div></div>
+          <div class="stat-card"><div class="stat-value">${avgFlight}</div><div class="stat-label">Avg Flight (ms)</div></div>
+          <div class="stat-card"><div class="stat-value">${avgStd}</div><div class="stat-label">Avg Dwell Std (ms)</div></div>
+        `;
+
+        _dwellChart = buildChart(
+          "chart-dwell",
+          phraseCharLabels(),
+          p.meanDwell,
+          p.stdDwell,
+          "#6366f1"
+        );
+        _flightChart = buildChart(
+          "chart-flight",
+          phraseFlightLabels(),
+          p.meanFlight,
+          p.stdFlight,
+          "#22c55e"
+        );
+      }
+
+      function closeProfileModal() {
+        document.getElementById("profile-modal").style.display = "none";
+        document.body.style.overflow = "";
+        if (_dwellChart) {
+          _dwellChart.destroy();
+          _dwellChart = null;
+        }
+        if (_flightChart) {
+          _flightChart.destroy();
+          _flightChart = null;
+        }
+      }
+
+      document.getElementById("btn-close-modal").addEventListener("click", closeProfileModal);
+      document.getElementById("profile-modal").addEventListener("click", (e) => {
+        if (e.target === e.currentTarget) closeProfileModal();
+      });
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") closeProfileModal();
+      });
+
+      // ====================================================================
+      // UTILS
+      // ====================================================================
+
+      function escapeHtml(str) {
+        return str
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;");
+      }
+
+      // Initial student load if tab visible on page load
+      loadSettings();
+    </script>
+  </body>
+</html>

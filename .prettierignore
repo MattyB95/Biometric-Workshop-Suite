@@ -1,5 +1,5 @@
-# Jinja2 templates — Prettier can't handle {{ }} inside <script> blocks
-templates/
+# keystroke.html has Jinja2 {{ }} inside <script> blocks that break the JS parser
+templates/keystroke.html
 
 # Dependencies and generated files
 .venv/
