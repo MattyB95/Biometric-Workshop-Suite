@@ -11,6 +11,7 @@ export default [
       ecmaVersion: 2022,
       globals: {
         ...globals.browser,
+        Chart: "readonly", // loaded from Chart.js CDN
       },
     },
     rules: {

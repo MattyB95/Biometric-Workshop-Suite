@@ -7,7 +7,16 @@ requires-python = ">=3.14"
 dependencies = ["flask", "gunicorn"]
 
 [dependency-groups]
-dev = ["ruff", "black", "mypy", "ty", "pre-commit"]
+dev = [
+    "ruff",
+    "black",
+    "mypy",
+    "ty",
+    "pre-commit",
+    "pytest",
+    "pytest-playwright",
+    "pytest-cov>=7.1.0",
+]
 
 [tool.ruff]
 line-length = 88
@@ -24,3 +33,16 @@ target-version = ["py314"]
 python_version = "3.14"
 strict = true
 ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "--cov=app --cov-report=term-missing --cov-report=html:htmlcov"
+
+[tool.coverage.run]
+source = ["app"]
+omit = ["tests/*"]
+
+[tool.coverage.report]
+show_missing = true
+fail_under = 80

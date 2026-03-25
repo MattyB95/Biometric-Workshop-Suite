@@ -290,6 +290,58 @@
       animation: spin 0.7s linear infinite;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Profile stats modal ──────────────────────────────────────────── */
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.75);
+      z-index: 100;
+      display: flex; align-items: center; justify-content: center;
+      padding: 20px;
+    }
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      max-width: 780px; width: 100%;
+      max-height: 90vh; overflow-y: auto;
+    }
+    .modal-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 24px;
+      border-bottom: 1px solid var(--border);
+      position: sticky; top: 0;
+      background: var(--surface); z-index: 1;
+    }
+    .modal-header h2 { font-size: 1rem; font-weight: 700; }
+    .btn-icon {
+      background: none; border: none;
+      color: var(--text-dim); font-size: 1.5rem;
+      cursor: pointer; line-height: 1; padding: 2px 8px; border-radius: 4px;
+    }
+    .btn-icon:hover { color: var(--text); background: var(--surface2); }
+    .modal-body { padding: 24px; }
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 10px; margin-bottom: 24px;
+    }
+    .stat-card {
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: 8px; padding: 12px; text-align: center;
+    }
+    .stat-value { font-size: 1.4rem; font-weight: 700; color: var(--accent-h); }
+    .stat-label {
+      font-size: 0.7rem; text-transform: uppercase;
+      letter-spacing: 0.05em; color: var(--text-dim); margin-top: 4px;
+    }
+    .chart-section { margin-bottom: 28px; }
+    .chart-title {
+      font-size: 0.75rem; text-transform: uppercase;
+      letter-spacing: 0.05em; color: var(--text-dim); margin-bottom: 10px;
+    }
+    .chart-wrap { position: relative; height: 200px; }
+    .chart-note { font-size: 0.75rem; color: var(--text-dim); line-height: 1.6; }
   </style>
 </head>
 <body>
@@ -336,7 +388,7 @@
       <div class="section-title" style="margin-top:16px">Attempts</div>
       <div class="attempt-dots" id="attempt-dots"></div>
 
-      <div id="enroll-status" class="status-msg info">Click the phrase above, then start typing.</div>
+      <div id="enroll-status" class="status-msg info">Start typing the phrase above.</div>
 
       <input class="typing-input" id="enroll-hidden-input" type="text"
              autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
@@ -362,7 +414,7 @@
       <div class="section-title">Type this phrase</div>
       <div class="phrase-target" id="identify-phrase-display"></div>
 
-      <div id="identify-status" class="status-msg info">Click the phrase above, then start typing.</div>
+      <div id="identify-status" class="status-msg info">Start typing the phrase above.</div>
 
       <input class="typing-input" id="identify-hidden-input" type="text"
              autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
@@ -400,8 +452,33 @@
 </main>
 
 <!-- ===================================================================== -->
+<!-- PROFILE STATS MODAL                                                    -->
+<!-- ===================================================================== -->
+<div id="profile-modal" class="modal-overlay" style="display:none" role="dialog" aria-modal="true">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="modal-student-name"></h2>
+      <button class="btn-icon" id="btn-close-modal" aria-label="Close">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="stat-grid" id="modal-stat-grid"></div>
+      <div class="chart-section">
+        <div class="chart-title">Dwell Time &mdash; how long each key is held</div>
+        <div class="chart-wrap"><canvas id="chart-dwell"></canvas></div>
+      </div>
+      <div class="chart-section">
+        <div class="chart-title">Flight Time &mdash; gap between releasing one key and pressing the next</div>
+        <div class="chart-wrap"><canvas id="chart-flight"></canvas></div>
+      </div>
+      <p class="chart-note">Hover any bar to see the mean &plusmn; standard deviation. A lower std means more consistent timing for that key &mdash; which makes it a stronger feature for identification.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ===================================================================== -->
 <!-- JAVASCRIPT                                                             -->
 <!-- ===================================================================== -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 <script>
   "use strict";
 
@@ -620,7 +697,7 @@
     enrollNameInput.disabled        = true;
 
     buildDots(0);
-    setEnrollStatus(`Attempt 1 of ${ENROLL_SAMPLES} — click the phrase to start typing`, "info");
+    setEnrollStatus(`Attempt 1 of ${ENROLL_SAMPLES} — start typing!`, "info");
     renderPhrase(enrollPhraseDisplay, PHRASE, 0, false);
 
     enrollCapture = createCapture(enrollHiddenInput, enrollPhraseDisplay, {
@@ -630,14 +707,13 @@
 
         if (enrollSamples.length < ENROLL_SAMPLES) {
           setEnrollStatus(
-            `Great! ${enrollSamples.length}/${ENROLL_SAMPLES} done. Click the phrase to type it again.`,
+            `Great! ${enrollSamples.length}/${ENROLL_SAMPLES} done. Keep going!`,
             "success"
           );
           // Brief pause then re-enable capture
           setTimeout(() => {
-            setEnrollStatus(`Attempt ${enrollSamples.length + 1} of ${ENROLL_SAMPLES} — click the phrase to start`, "info");
-            renderPhrase(enrollPhraseDisplay, PHRASE, 0, false);
-            enrollCapture.reset();
+            setEnrollStatus(`Attempt ${enrollSamples.length + 1} of ${ENROLL_SAMPLES} — keep typing!`, "info");
+            enrollCapture.start();
           }, 1000);
         } else {
           // All samples collected — submit
@@ -655,6 +731,7 @@
         // Optional: update status as they type
       }
     });
+    enrollCapture.start();
   }
 
   async function submitEnrollment(name) {
@@ -716,7 +793,7 @@
 
   function resetIdentify() {
     identifyResultsCard.style.display = "none";
-    setIdentifyStatus("Click the phrase above, then start typing.", "info");
+    setIdentifyStatus("Start typing the phrase above.", "info");
     renderPhrase(identifyPhraseDisplay, PHRASE, 0, false);
 
     identifyCapture = createCapture(identifyHiddenInput, identifyPhraseDisplay, {
@@ -728,6 +805,7 @@
         setIdentifyStatus("Wrong key — auto-restarted. Try again.", "warning");
       }
     });
+    identifyCapture.start();
   }
 
   // Initialise on first load
@@ -820,8 +898,12 @@
             <div class="student-name">${escapeHtml(s.name)}</div>
             <div class="student-meta">${s.num_samples} typing sample${s.num_samples !== 1 ? "s" : ""} recorded</div>
           </div>
-          <button class="btn btn-danger btn-sm" data-name="${escapeHtml(s.name)}">Delete</button>`;
-        el.querySelector("button").addEventListener("click", () => deleteStudent(s.name));
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-ghost" data-action="stats">View Stats</button>
+            <button class="btn btn-danger" data-action="delete">Delete</button>
+          </div>`;
+        el.querySelector("[data-action='stats']").addEventListener("click", () => showProfileModal(s.name));
+        el.querySelector("[data-action='delete']").addEventListener("click", () => deleteStudent(s.name));
         studentListEl.appendChild(el);
       });
     } catch {
@@ -841,6 +923,128 @@
     loadStudents();
   });
 
+
+  // ====================================================================
+  // PROFILE STATS MODAL
+  // ====================================================================
+
+  let _dwellChart  = null;
+  let _flightChart = null;
+
+  function phraseCharLabels() {
+    return PHRASE.split("").map(c => c === " " ? "\u00b7" : c);
+  }
+
+  function phraseFlightLabels() {
+    const out = [];
+    for (let i = 0; i < PHRASE.length - 1; i++) {
+      const a = PHRASE[i]     === " " ? "\u00b7" : PHRASE[i];
+      const b = PHRASE[i + 1] === " " ? "\u00b7" : PHRASE[i + 1];
+      out.push(`${a}\u2192${b}`);
+    }
+    return out;
+  }
+
+  function buildChart(canvasId, labels, means, stds, color) {
+    const ctx = document.getElementById(canvasId).getContext("2d");
+    return new Chart(ctx, {
+      type: "bar",
+      data: {
+        labels,
+        datasets: [{
+          data: means,
+          backgroundColor: color + "88",
+          borderColor: color,
+          borderWidth: 1,
+          borderRadius: 3,
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: { duration: 400 },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: ctx => `${ctx.parsed.y.toFixed(1)} ms  (\u00b1${stds[ctx.dataIndex].toFixed(1)} ms std)`,
+            },
+          },
+        },
+        scales: {
+          x: {
+            ticks: { color: "#94a3b8", font: { size: 11, family: "monospace" } },
+            grid: { color: "#334155" },
+          },
+          y: {
+            beginAtZero: true,
+            ticks: { color: "#94a3b8" },
+            grid: { color: "#334155" },
+            title: { display: true, text: "ms", color: "#94a3b8" },
+          },
+        },
+      },
+    });
+  }
+
+  async function showProfileModal(name) {
+    const modal = document.getElementById("profile-modal");
+    document.getElementById("modal-student-name").textContent = name;
+    document.getElementById("modal-stat-grid").innerHTML =
+      '<div style="color:var(--text-dim);font-size:0.85rem">Loading\u2026</div>';
+    modal.style.display = "flex";
+    document.body.style.overflow = "hidden";
+
+    if (_dwellChart)  { _dwellChart.destroy();  _dwellChart  = null; }
+    if (_flightChart) { _flightChart.destroy(); _flightChart = null; }
+
+    try {
+      const res = await fetch(`/api/profiles/${encodeURIComponent(name)}`);
+      const p   = await res.json();
+
+      const avgDwell  = (p.mean_dwell.reduce((s, v)  => s + v, 0) / p.mean_dwell.length).toFixed(1);
+      const avgFlight = (p.mean_flight.reduce((s, v) => s + v, 0) / p.mean_flight.length).toFixed(1);
+      const avgStd    = (p.std_dwell.reduce((s, v)   => s + v, 0) / p.std_dwell.length).toFixed(1);
+
+      document.getElementById("modal-stat-grid").innerHTML = `
+        <div class="stat-card"><div class="stat-value">${p.num_samples}</div><div class="stat-label">Samples</div></div>
+        <div class="stat-card"><div class="stat-value">${avgDwell}</div><div class="stat-label">Avg Dwell (ms)</div></div>
+        <div class="stat-card"><div class="stat-value">${avgFlight}</div><div class="stat-label">Avg Flight (ms)</div></div>
+        <div class="stat-card"><div class="stat-value">${avgStd}</div><div class="stat-label">Avg Dwell Std (ms)</div></div>
+      `;
+
+      _dwellChart  = buildChart("chart-dwell",  phraseCharLabels(),   p.mean_dwell,  p.std_dwell,  "#6366f1");
+      _flightChart = buildChart("chart-flight", phraseFlightLabels(), p.mean_flight, p.std_flight, "#22c55e");
+    } catch {
+      document.getElementById("modal-stat-grid").innerHTML =
+        '<p style="color:var(--error)">Failed to load profile data.</p>';
+    }
+  }
+
+  function closeProfileModal() {
+    document.getElementById("profile-modal").style.display = "none";
+    document.body.style.overflow = "";
+    if (_dwellChart)  { _dwellChart.destroy();  _dwellChart  = null; }
+    if (_flightChart) { _flightChart.destroy(); _flightChart = null; }
+  }
+
+  document.getElementById("btn-close-modal").addEventListener("click", closeProfileModal);
+  document.getElementById("profile-modal").addEventListener("click", e => {
+    if (e.target === e.currentTarget) closeProfileModal();
+  });
+  document.addEventListener("keydown", e => {
+    if (e.key === "Escape") closeProfileModal();
+  });
+
+  // Re-focus the active capture when the window regains focus
+  window.addEventListener("focus", () => {
+    const activeTab = document.querySelector(".tab-btn.active")?.dataset.tab;
+    if (activeTab === "enroll" && enrollTypingCard.style.display !== "none") {
+      enrollHiddenInput.focus();
+    } else if (activeTab === "identify") {
+      identifyHiddenInput.focus();
+    }
+  });
 
   // ====================================================================
   // UTILS

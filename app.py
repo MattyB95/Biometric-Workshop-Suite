@@ -7,7 +7,7 @@ from flask import Flask, Response, jsonify, render_template, request
 
 app = Flask(__name__)
 
-PROFILES_FILE = "profiles.json"
+PROFILES_FILE: str = "profiles.json"
 PHRASE = "the quick brown fox"
 ENROLL_SAMPLES_REQUIRED = 5
 
@@ -166,6 +166,14 @@ def get_profiles() -> Response:
         {"name": k, "num_samples": v["num_samples"]} for k, v in profiles.items()
     ]
     return jsonify({"enrolled": enrolled, "phrase": PHRASE})
+
+
+@app.route("/api/profiles/<name>", methods=["GET"])
+def get_profile(name: str) -> Response | tuple[Response, int]:
+    profiles = load_profiles()
+    if name not in profiles:
+        return jsonify({"error": "Profile not found"}), 404
+    return jsonify(profiles[name])
 
 
 @app.route("/api/profiles/<name>", methods=["DELETE"])

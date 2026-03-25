@@ -92,6 +92,32 @@ check-html:
     npx htmlhint docs/index.html templates/index.html
     npx eslint docs/index.html
 
+# ── Tests ────────────────────────────────────────────────────────────────────
+
+# Install Playwright browsers (run once after first uv sync --group dev)
+playwright-install:
+    uv run playwright install chromium
+
+# Run all tests (unit + API + UI)
+test:
+    uv run pytest
+
+# Run only Python tests (unit + API, no browser)
+test-py:
+    uv run pytest tests/test_algorithm.py tests/test_api.py -v
+
+# Run only Playwright browser tests
+test-ui:
+    uv run pytest tests/test_ui.py -v
+
+# Run tests and show coverage report (terminal + htmlcov/)
+coverage:
+    uv run pytest --cov=app --cov-report=term-missing --cov-report=html:htmlcov
+
+# Check coverage meets the minimum threshold without opening the report
+coverage-check:
+    uv run pytest --cov=app --cov-report=term-missing --cov-fail-under=80
+
 # ── Pre-commit ───────────────────────────────────────────────────────────────
 
 # Run all pre-commit hooks against every file
