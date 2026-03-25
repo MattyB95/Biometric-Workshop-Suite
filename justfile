@@ -73,11 +73,11 @@ check:
 
 # Format all HTML files (docs/ + templates/ except keystroke.html)
 fmt-html:
-    npx prettier --write "docs/*.html" templates/home.html templates/face.html
+    npx prettier --write "docs/*.html" templates/home.html templates/face.html templates/voice.html templates/signature.html
 
 # Check HTML formatting without modifying
 fmt-html-check:
-    npx prettier --check "docs/*.html" templates/home.html templates/face.html
+    npx prettier --check "docs/*.html" templates/home.html templates/face.html templates/voice.html templates/signature.html
 
 # Lint HTML structure across all files
 lint-html:
@@ -85,13 +85,13 @@ lint-html:
 
 # Lint inline JavaScript across all eligible HTML files
 lint-js:
-    npx eslint "docs/*.html" templates/face.html
+    npx eslint "docs/*.html" templates/face.html templates/voice.html templates/signature.html
 
 # Run all HTML/CSS/JS checks
 check-html:
-    npx prettier --check "docs/*.html" templates/home.html templates/face.html
+    npx prettier --check "docs/*.html" templates/home.html templates/face.html templates/voice.html templates/signature.html
     npx htmlhint "docs/*.html" "templates/*.html"
-    npx eslint "docs/*.html" templates/face.html
+    npx eslint "docs/*.html" templates/face.html templates/voice.html templates/signature.html
 
 # ── Tests ────────────────────────────────────────────────────────────────────
 
@@ -137,12 +137,16 @@ sync-docs:
     #!/usr/bin/env python
     import shutil, subprocess
     shutil.copy('templates/face.html', 'docs/face.html')
+    shutil.copy('templates/voice.html', 'docs/voice.html')
+    shutil.copy('templates/signature.html', 'docs/signature.html')
     content = open('templates/home.html', encoding='utf-8').read()
-    content = content.replace('href="/keystroke"', 'href="./keystroke.html"')
-    content = content.replace('href="/face"',      'href="./face.html"')
+    content = content.replace('href="/keystroke"',  'href="./keystroke.html"')
+    content = content.replace('href="/face"',       'href="./face.html"')
+    content = content.replace('href="/voice"',      'href="./voice.html"')
+    content = content.replace('href="/signature"',  'href="./signature.html"')
     open('docs/index.html', 'w', encoding='utf-8').write(content)
-    subprocess.run('npx prettier --write docs/face.html docs/index.html', shell=True, check=True)
-    print('Synced and formatted: docs/index.html (home) and docs/face.html')
+    subprocess.run('npx prettier --write docs/face.html docs/voice.html docs/signature.html docs/index.html', shell=True, check=True)
+    print('Synced and formatted: docs/index.html, docs/face.html, docs/voice.html, docs/signature.html')
     print('Note: docs/keystroke.html is maintained separately.')
 
 # ── App management ───────────────────────────────────────────────────────────

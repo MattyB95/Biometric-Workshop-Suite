@@ -5,7 +5,13 @@ export default [
   {
     // Lint all docs/ HTML and templates that contain pure JS (no Jinja2).
     // templates/keystroke.html is excluded — Jinja2 {{ }} inside <script> breaks the parser.
-    files: ["docs/**/*.html", "templates/face.html", "templates/home.html"],
+    files: [
+      "docs/**/*.html",
+      "templates/face.html",
+      "templates/home.html",
+      "templates/voice.html",
+      "templates/signature.html",
+    ],
     plugins: { html },
     languageOptions: {
       ecmaVersion: 2022,
@@ -17,7 +23,7 @@ export default [
     rules: {
       eqeqeq: ["error", "always"],
       "no-var": "error",
-      "no-unused-vars": ["warn", { argsIgnorePattern: "^_" }],
+      "no-unused-vars": ["warn", { argsIgnorePattern: "^_", caughtErrorsIgnorePattern: "^_" }],
       "no-undef": "error",
       "prefer-const": "warn",
       "no-console": "warn",

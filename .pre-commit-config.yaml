@@ -70,4 +70,4 @@ repos:
         name: eslint
         entry: npx eslint
         language: system
-        files: ^(docs/.*|templates/(face|home))\.html$
+        files: ^(docs/.*|templates/(face|home|voice|signature))\.html$

@@ -107,6 +107,16 @@ def face() -> str:
     return render_template("face.html")
 
 
+@app.route("/voice")
+def voice() -> str:
+    return render_template("voice.html")
+
+
+@app.route("/signature")
+def signature() -> str:
+    return render_template("signature.html")
+
+
 @app.route("/api/enroll", methods=["POST"])
 def enroll() -> Response | tuple[Response, int]:
     data = request.json

@@ -470,6 +470,90 @@
         flex-shrink: 0;
       }
 
+      /* ── Named profile management ── */
+      .name-row {
+        display: flex;
+        gap: 8px;
+      }
+      .name-input {
+        flex: 1;
+        padding: 8px 10px;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        color: var(--text);
+        font-size: 0.85rem;
+        outline: none;
+        min-width: 0;
+      }
+      .name-input:focus {
+        border-color: var(--accent);
+      }
+      .name-input::placeholder {
+        color: var(--text-dim);
+      }
+      .profile-list {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        margin-top: 2px;
+      }
+      .profile-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 8px;
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 5px;
+        font-size: 0.8rem;
+      }
+      .profile-item-name {
+        flex: 1;
+      }
+      .btn-del {
+        padding: 2px 7px;
+        background: none;
+        border: 1px solid rgba(239, 68, 68, 0.4);
+        border-radius: 4px;
+        color: #ef4444;
+        font-size: 0.72rem;
+        cursor: pointer;
+      }
+      .btn-del:hover {
+        background: rgba(239, 68, 68, 0.12);
+      }
+      .result-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .result-row {
+        font-size: 0.8rem;
+      }
+      .result-name-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 3px;
+      }
+      .result-best {
+        color: var(--success);
+        font-weight: 700;
+      }
+      .section-label-sm {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--text-dim);
+        margin-bottom: 6px;
+      }
+      .empty-msg {
+        font-size: 0.78rem;
+        color: var(--text-dim);
+        text-align: center;
+        padding: 8px 0;
+      }
+
       /* Status msg */
       .status-bar {
         padding: 8px 12px;
@@ -698,6 +782,36 @@
             </p>
           </div>
         </div>
+
+        <!-- Face recognition -->
+        <div class="card">
+          <div class="card-header">Face Recognition</div>
+          <div class="card-body" style="display: flex; flex-direction: column; gap: 10px">
+            <div class="name-row">
+              <input
+                class="name-input"
+                id="nameInput"
+                type="text"
+                placeholder="Student name"
+                maxlength="40"
+              />
+              <button class="btn btn-primary" id="btnCapture" disabled>&#x1F4F8; Capture</button>
+            </div>
+            <button class="btn btn-success" id="btnIdentify" disabled style="width: 100%">
+              &#x1F50D; Identify Face
+            </button>
+            <div>
+              <div class="section-label-sm">Enrolled profiles</div>
+              <div class="profile-list" id="profileList">
+                <div class="empty-msg">No profiles enrolled yet</div>
+              </div>
+            </div>
+            <div id="identifyResult" style="display: none">
+              <div class="section-label-sm">Results</div>
+              <div class="result-list" id="resultList"></div>
+            </div>
+          </div>
+        </div>
       </div>
       <!-- /data-panel -->
     </div>
@@ -793,8 +907,18 @@
       const confBar = document.getElementById("confBar");
       const featureList = document.getElementById("featureList");
       const descriptorGrid = document.getElementById("descriptorGrid");
+      const nameInput = document.getElementById("nameInput");
+      const btnCapture = document.getElementById("btnCapture");
+      const btnIdentify = document.getElementById("btnIdentify");
+      const profileList = document.getElementById("profileList");
+      const identifyResult = document.getElementById("identifyResult");
+      const resultList = document.getElementById("resultList");
 
       // ─── State ────────────────────────────────────────────────────────────────
+      const FACE_STORAGE_KEY = "bws_face_profiles";
+      let faceProfiles = {}; // name → array of 16 normalised feature values
+      let currentFeatureValues = null; // updated each detection frame
+
       let running = false;
       let showOverlay = true;
       let frameCount = 0;
@@ -998,6 +1122,108 @@
         });
       }
 
+      // ─── Profile storage ──────────────────────────────────────────────────────
+      function cosineSim(a, b) {
+        let dot = 0,
+          na = 0,
+          nb = 0;
+        for (let i = 0; i < a.length; i++) {
+          dot += a[i] * b[i];
+          na += a[i] * a[i];
+          nb += b[i] * b[i];
+        }
+        return na > 0 && nb > 0 ? dot / (Math.sqrt(na) * Math.sqrt(nb)) : 0;
+      }
+
+      function loadFaceProfiles() {
+        try {
+          faceProfiles = JSON.parse(localStorage.getItem(FACE_STORAGE_KEY) || "{}");
+        } catch (_e) {
+          faceProfiles = {};
+        }
+      }
+
+      function saveFaceProfiles() {
+        localStorage.setItem(FACE_STORAGE_KEY, JSON.stringify(faceProfiles));
+      }
+
+      function renderFaceProfileList() {
+        const names = Object.keys(faceProfiles);
+        if (names.length === 0) {
+          profileList.innerHTML = '<div class="empty-msg">No profiles enrolled yet</div>';
+          btnIdentify.disabled = true;
+          return;
+        }
+        profileList.innerHTML = names
+          .map(
+            (n) => `
+          <div class="profile-item">
+            <span>&#x1F4CC;</span>
+            <span class="profile-item-name">${n}</span>
+            <button class="btn-del" data-name="${n}">&#x2715;</button>
+          </div>`
+          )
+          .join("");
+        profileList.querySelectorAll(".btn-del").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            delete faceProfiles[btn.dataset.name];
+            saveFaceProfiles();
+            renderFaceProfileList();
+            identifyResult.style.display = "none";
+          });
+        });
+        btnIdentify.disabled = currentFeatureValues === null;
+      }
+
+      btnCapture.addEventListener("click", () => {
+        const name = nameInput.value.trim();
+        if (!name) {
+          setStatus("Enter a student name before capturing.", "loading");
+          return;
+        }
+        if (!currentFeatureValues) {
+          setStatus("No face detected — position yourself in frame first.", "error");
+          return;
+        }
+        faceProfiles[name] = currentFeatureValues.slice();
+        saveFaceProfiles();
+        renderFaceProfileList();
+        setStatus(`Enrolled &ldquo;${name}&rdquo;. Press Identify Face to compare.`, "running");
+        nameInput.value = "";
+      });
+
+      btnIdentify.addEventListener("click", () => {
+        if (!currentFeatureValues || Object.keys(faceProfiles).length === 0) return;
+        const results = Object.entries(faceProfiles)
+          .map(([name, vec]) => ({
+            name,
+            sim: Math.round(Math.max(cosineSim(vec, currentFeatureValues), 0) * 100),
+          }))
+          .sort((a, b) => b.sim - a.sim);
+
+        identifyResult.style.display = "block";
+        resultList.innerHTML = results
+          .map(
+            (r, i) => `
+          <div class="result-row">
+            <div class="result-name-row">
+              <span${i === 0 ? ' class="result-best"' : ""}>${i === 0 ? "&#x2B50; " : ""}${r.name}</span>
+              <span>${r.sim}%</span>
+            </div>
+            <div class="bar-track">
+              <div class="bar-fill${i === 0 && r.sim >= 70 ? " match" : ""}" style="width:${r.sim}%"></div>
+            </div>
+          </div>`
+          )
+          .join("");
+
+        const best = results[0];
+        setStatus(
+          `Best match: ${best.name} (${best.sim}%) &mdash; ${best.sim >= 70 ? "Match" : "No confident match"}`,
+          best.sim >= 70 ? "running" : ""
+        );
+      });
+
       // ─── Draw landmark overlay ────────────────────────────────────────────────
       function drawLandmarks(landmarks, box, score, scaleX, scaleY) {
         const pts = landmarks.positions;
@@ -1088,6 +1314,9 @@
           const features = extractFeatures(landmarks.positions);
           renderFeatures(features);
           updateDescriptorGrid(features);
+          currentFeatureValues = features.map((f) => f.value);
+          btnCapture.disabled = false;
+          btnIdentify.disabled = Object.keys(faceProfiles).length === 0;
         } else {
           statStatus.textContent = "No face";
           statStatus.className = "stat-value dim";
@@ -1097,6 +1326,9 @@
           confBar.style.width = "0%";
           detectBadge.textContent = "No face";
           detectBadge.style.color = "#94a3b8";
+          currentFeatureValues = null;
+          btnCapture.disabled = true;
+          btnIdentify.disabled = true;
         }
 
         // FPS counter
@@ -1150,6 +1382,9 @@
         btnStop.disabled = true;
         statStatus.textContent = "Idle";
         statStatus.className = "stat-value dim";
+        currentFeatureValues = null;
+        btnCapture.disabled = true;
+        btnIdentify.disabled = true;
         setStatus("Camera stopped. Press Start Camera to resume.", "");
       }
 
@@ -1170,6 +1405,8 @@
       // ─── Load models ──────────────────────────────────────────────────────────
       (async function loadModels() {
         initDescriptorGrid();
+        loadFaceProfiles();
+        renderFaceProfileList();
         overlayText.textContent = "Loading face detection models\u2026";
         overlaySub.textContent = "This may take a moment on first load.";
 

@@ -1,0 +1,1095 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Signature Dynamics &mdash; Biometric Workshop</title>
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      :root {
+        --bg: #0f172a;
+        --surface: #1e293b;
+        --surface2: #273548;
+        --border: #334155;
+        --accent: #ec4899;
+        --accent-h: #f472b6;
+        --success: #22c55e;
+        --warning: #f59e0b;
+        --error: #ef4444;
+        --text: #f1f5f9;
+        --text-dim: #94a3b8;
+        --radius: 10px;
+      }
+
+      body {
+        font-family: "Segoe UI", system-ui, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      /* ── Header ── */
+      header {
+        background: linear-gradient(135deg, #1a0c14 0%, #1e293b 100%);
+        border-bottom: 1px solid var(--border);
+        padding: 16px 24px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+      .header-icon {
+        font-size: 2rem;
+        filter: drop-shadow(0 0 8px #ec489988);
+      }
+      header h1 {
+        font-size: 1.3rem;
+        font-weight: 700;
+      }
+      header p {
+        font-size: 0.8rem;
+        color: var(--text-dim);
+        margin-top: 2px;
+      }
+      .btn-home {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 14px;
+        background: rgba(255, 255, 255, 0.07);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        color: var(--text-dim);
+        font-size: 0.8rem;
+        font-weight: 500;
+        text-decoration: none;
+        transition: all 0.15s;
+        margin-left: auto;
+      }
+      .btn-home:hover {
+        color: var(--text);
+        background: rgba(255, 255, 255, 0.12);
+      }
+
+      /* ── Layout ── */
+      .workspace {
+        display: grid;
+        grid-template-columns: 1fr 320px;
+        gap: 20px;
+        padding: 20px 24px;
+        flex: 1;
+        max-width: 1100px;
+        margin: 0 auto;
+        width: 100%;
+      }
+      @media (max-width: 820px) {
+        .workspace {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      /* ── Drawing panel ── */
+      .draw-panel {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+
+      .canvas-wrap {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        overflow: hidden;
+      }
+      .canvas-label {
+        padding: 8px 14px;
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--text-dim);
+        border-bottom: 1px solid var(--border);
+        font-weight: 600;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .canvas-sublabel {
+        font-size: 0.65rem;
+        color: var(--text-dim);
+        font-weight: 400;
+        text-transform: none;
+        letter-spacing: 0;
+      }
+
+      #sigCanvas {
+        display: block;
+        width: 100%;
+        height: 220px;
+        cursor: crosshair;
+        touch-action: none;
+      }
+
+      /* Velocity chart canvas */
+      #velCanvas {
+        display: block;
+        width: 100%;
+        height: 90px;
+      }
+
+      /* ── Controls ── */
+      .controls {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 9px 20px;
+        border: none;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+      .btn-primary {
+        background: var(--accent);
+        color: #fff;
+      }
+      .btn-primary:hover:not(:disabled) {
+        background: var(--accent-h);
+      }
+      .btn-ghost {
+        background: var(--surface2);
+        color: var(--text-dim);
+      }
+      .btn-ghost:hover:not(:disabled) {
+        color: var(--text);
+      }
+      .btn-success {
+        background: #15803d;
+        color: #bbf7d0;
+      }
+      .btn-success:hover:not(:disabled) {
+        background: #166534;
+      }
+      .btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+
+      .phase-badge {
+        padding: 4px 12px;
+        border-radius: 99px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        background: rgba(236, 72, 153, 0.15);
+        border: 1px solid rgba(236, 72, 153, 0.4);
+        color: var(--accent-h);
+      }
+
+      /* Status */
+      .status-bar {
+        padding: 8px 12px;
+        border-radius: 6px;
+        font-size: 0.82rem;
+        background: var(--surface2);
+        color: var(--text-dim);
+        border: 1px solid var(--border);
+      }
+      .status-bar.success {
+        background: #0c2a1a;
+        border-color: var(--success);
+        color: #86efac;
+      }
+      .status-bar.info {
+        background: #1a0c14;
+        border-color: var(--accent);
+        color: #f9a8d4;
+      }
+
+      /* Legend */
+      .vel-legend {
+        display: flex;
+        gap: 14px;
+        font-size: 0.72rem;
+        color: var(--text-dim);
+      }
+      .legend-swatch {
+        display: inline-block;
+        width: 28px;
+        height: 8px;
+        border-radius: 4px;
+        vertical-align: middle;
+        margin-right: 5px;
+      }
+
+      /* ── Data panel ── */
+      .data-panel {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        overflow: hidden;
+      }
+      .card-header {
+        padding: 10px 14px;
+        border-bottom: 1px solid var(--border);
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--text-dim);
+        font-weight: 600;
+      }
+      .card-body {
+        padding: 12px 14px;
+      }
+
+      .stat-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 5px 0;
+        font-size: 0.82rem;
+        border-bottom: 1px solid var(--border);
+      }
+      .stat-row:last-child {
+        border-bottom: none;
+      }
+      .stat-label {
+        color: var(--text-dim);
+      }
+      .stat-value {
+        font-weight: 600;
+        font-family: monospace;
+      }
+      .stat-value.accent {
+        color: var(--accent-h);
+      }
+      .stat-value.dim {
+        color: var(--text-dim);
+      }
+
+      /* Feature vector cells */
+      .feature-grid {
+        display: grid;
+        grid-template-columns: repeat(8, 1fr);
+        gap: 3px;
+        margin-bottom: 8px;
+      }
+      .feat-cell {
+        aspect-ratio: 1;
+        border-radius: 3px;
+        transition: background 0.2s;
+      }
+
+      /* Similarity */
+      .conf-wrap {
+        margin-top: 8px;
+      }
+      .conf-label {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.75rem;
+        color: var(--text-dim);
+        margin-bottom: 5px;
+      }
+      .bar-track {
+        height: 6px;
+        background: var(--border);
+        border-radius: 3px;
+        overflow: hidden;
+      }
+      .bar-fill {
+        height: 100%;
+        border-radius: 3px;
+        background: linear-gradient(90deg, var(--accent), var(--accent-h));
+        transition: width 0.4s;
+      }
+      .bar-fill.match {
+        background: linear-gradient(90deg, var(--success), #4ade80);
+      }
+
+      .profile-box {
+        padding: 10px;
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        font-size: 0.78rem;
+        color: var(--text-dim);
+        text-align: center;
+      }
+      .profile-box.enrolled {
+        border-color: var(--success);
+        color: #86efac;
+        background: #0c2a1a;
+      }
+
+      /* ── Pipeline ── */
+      .explainer {
+        max-width: 1100px;
+        margin: 0 auto 24px;
+        padding: 0 24px;
+        width: 100%;
+      }
+      .pipeline {
+        display: flex;
+        align-items: center;
+        overflow-x: auto;
+        padding-bottom: 4px;
+      }
+      .pipeline-step {
+        flex: 1;
+        min-width: 100px;
+        text-align: center;
+        padding: 14px 8px;
+      }
+      .pipeline-step .step-icon {
+        font-size: 1.4rem;
+        margin-bottom: 6px;
+      }
+      .pipeline-step .step-title {
+        font-size: 0.78rem;
+        font-weight: 700;
+        margin-bottom: 3px;
+      }
+      .pipeline-step .step-desc {
+        font-size: 0.68rem;
+        color: var(--text-dim);
+        line-height: 1.4;
+      }
+      .pipeline-arrow {
+        font-size: 1.2rem;
+        color: var(--border);
+        flex-shrink: 0;
+      }
+
+      /* ── Named profile management ── */
+      .name-row {
+        display: flex;
+        gap: 8px;
+      }
+      .name-input {
+        flex: 1;
+        padding: 8px 10px;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        color: var(--text);
+        font-size: 0.85rem;
+        outline: none;
+        min-width: 0;
+      }
+      .name-input:focus {
+        border-color: var(--accent);
+      }
+      .name-input::placeholder {
+        color: var(--text-dim);
+      }
+      .profile-list {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        margin-top: 2px;
+      }
+      .profile-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 8px;
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 5px;
+        font-size: 0.8rem;
+      }
+      .profile-item-name {
+        flex: 1;
+      }
+      .btn-del {
+        padding: 2px 7px;
+        background: none;
+        border: 1px solid rgba(239, 68, 68, 0.4);
+        border-radius: 4px;
+        color: #ef4444;
+        font-size: 0.72rem;
+        cursor: pointer;
+      }
+      .btn-del:hover {
+        background: rgba(239, 68, 68, 0.12);
+      }
+      .result-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .result-row {
+        font-size: 0.8rem;
+      }
+      .result-name-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 3px;
+      }
+      .result-best {
+        color: var(--success);
+        font-weight: 700;
+      }
+      .section-label-sm {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--text-dim);
+        margin-bottom: 6px;
+      }
+      .empty-msg {
+        font-size: 0.78rem;
+        color: var(--text-dim);
+        text-align: center;
+        padding: 8px 0;
+      }
+
+      footer {
+        text-align: center;
+        padding: 16px;
+        font-size: 0.75rem;
+        color: var(--text-dim);
+        border-top: 1px solid var(--border);
+        margin-top: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="header-icon">&#x270D;&#xFE0F;</div>
+      <div>
+        <h1>Signature Dynamics</h1>
+        <p>Biometric Workshop Suite &mdash; Feature Visualisation</p>
+      </div>
+      <a href="/" class="btn-home">&#x2190; All Modules</a>
+    </header>
+
+    <div class="workspace">
+      <!-- LEFT: Drawing canvas + velocity chart -->
+      <div class="draw-panel">
+        <div class="canvas-wrap">
+          <div class="canvas-label">
+            Draw your signature
+            <span class="canvas-sublabel"
+              >Stroke colour = velocity (red = slow / thick, green = fast / thin)</span
+            >
+          </div>
+          <canvas id="sigCanvas"></canvas>
+        </div>
+
+        <div class="canvas-wrap">
+          <div class="canvas-label">Velocity over time (pen speed)</div>
+          <canvas id="velCanvas"></canvas>
+        </div>
+
+        <div class="controls">
+          <button class="btn btn-ghost" id="btnClear">&#x239A; Clear</button>
+        </div>
+
+        <div class="vel-legend">
+          <span
+            ><span
+              class="legend-swatch"
+              style="background: linear-gradient(90deg, #ef4444, #22c55e)"
+            ></span
+            >Slow &rarr; Fast (pen speed)</span
+          >
+          <span>Line width &prop; pressure (slower = thicker)</span>
+        </div>
+
+        <div id="statusBar" class="status-bar">Draw your signature in the box above.</div>
+      </div>
+
+      <!-- RIGHT: Data panels -->
+      <div class="data-panel">
+        <!-- Live stats -->
+        <div class="card">
+          <div class="card-header">Dynamics Stats</div>
+          <div class="card-body">
+            <div class="stat-row">
+              <span class="stat-label">Duration</span>
+              <span class="stat-value dim" id="statDur">&mdash;</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">Path length</span>
+              <span class="stat-value dim" id="statLen">&mdash;</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">Avg velocity</span>
+              <span class="stat-value dim" id="statAvgVel">&mdash;</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">Peak velocity</span>
+              <span class="stat-value dim" id="statMaxVel">&mdash;</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">Strokes</span>
+              <span class="stat-value dim" id="statStrokes">&mdash;</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">Direction changes</span>
+              <span class="stat-value dim" id="statDir">&mdash;</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Feature vector heatmap -->
+        <div class="card">
+          <div class="card-header">Feature Vector (8 features)</div>
+          <div class="card-body">
+            <div class="feature-grid" id="featGrid"></div>
+            <p style="font-size: 0.7rem; color: var(--text-dim); line-height: 1.5">
+              Each cell is one normalised feature. Darker = smaller. A consistent signer produces
+              similar patterns each time.
+            </p>
+          </div>
+        </div>
+
+        <!-- Enrol / identify -->
+        <div class="card">
+          <div class="card-header">Signature Verification</div>
+          <div class="card-body" style="display: flex; flex-direction: column; gap: 10px">
+            <div class="name-row">
+              <input
+                class="name-input"
+                id="nameInput"
+                type="text"
+                placeholder="Student name"
+                maxlength="40"
+              />
+              <button class="btn btn-primary" id="btnEnrol" disabled>&#x1F4BE; Enrol</button>
+            </div>
+            <button class="btn btn-success" id="btnVerify" disabled style="width: 100%">
+              &#x1F50D; Identify Signer
+            </button>
+            <div>
+              <div class="section-label-sm">Enrolled profiles</div>
+              <div class="profile-list" id="profileList">
+                <div class="empty-msg">No profiles enrolled yet</div>
+              </div>
+            </div>
+            <div id="verifyResult" style="display: none">
+              <div class="section-label-sm">Results</div>
+              <div class="result-list" id="resultList"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pipeline explainer -->
+    <div class="explainer">
+      <div class="card">
+        <div class="card-header">How signature dynamics works</div>
+        <div class="card-body">
+          <div class="pipeline">
+            <div class="pipeline-step">
+              <div class="step-icon">&#x270D;&#xFE0F;</div>
+              <div class="step-title">1. Capture</div>
+              <div class="step-desc">Each point records x, y and a timestamp</div>
+            </div>
+            <div class="pipeline-arrow">&#x2192;</div>
+            <div class="pipeline-step">
+              <div class="step-icon">&#x26A1;</div>
+              <div class="step-title">2. Velocity</div>
+              <div class="step-desc">Speed and direction computed between consecutive points</div>
+            </div>
+            <div class="pipeline-arrow">&#x2192;</div>
+            <div class="pipeline-step">
+              <div class="step-icon">&#x1F4CF;</div>
+              <div class="step-title">3. Features</div>
+              <div class="step-desc">
+                Compact vector: path length, duration, speed stats, stroke count, aspect ratio
+              </div>
+            </div>
+            <div class="pipeline-arrow">&#x2192;</div>
+            <div class="pipeline-step">
+              <div class="step-icon">&#x1F50D;</div>
+              <div class="step-title">4. Match</div>
+              <div class="step-desc">
+                Normalised feature vectors compared with relative error similarity
+              </div>
+            </div>
+          </div>
+          <p
+            style="
+              font-size: 0.78rem;
+              color: var(--text-dim);
+              padding: 0 12px 8px;
+              line-height: 1.6;
+            "
+          >
+            <strong style="color: var(--accent-h)">Why shape alone isn&rsquo;t enough:</strong>
+            A static image of your signature can be copied. The dynamics &mdash; how fast you move,
+            where you accelerate, how long each stroke takes &mdash; are unique and very difficult
+            to forge consciously.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      Biometric Workshop Suite &mdash; Signature Dynamics Module &mdash; All processing is local; no
+      data leaves your device.
+    </footer>
+
+    <script>
+      // ─── DOM ──────────────────────────────────────────────────────────────────
+      const sigCanvas = document.getElementById("sigCanvas");
+      const velCanvas = document.getElementById("velCanvas");
+      const sigCtx = sigCanvas.getContext("2d");
+      const velCtx = velCanvas.getContext("2d");
+      const btnClear = document.getElementById("btnClear");
+      const btnEnrol = document.getElementById("btnEnrol");
+      const btnVerify = document.getElementById("btnVerify");
+      const statusBar = document.getElementById("statusBar");
+      const nameInput = document.getElementById("nameInput");
+      const profileList = document.getElementById("profileList");
+      const verifyResult = document.getElementById("verifyResult");
+      const resultList = document.getElementById("resultList");
+      const featGrid = document.getElementById("featGrid");
+      const statDur = document.getElementById("statDur");
+      const statLen = document.getElementById("statLen");
+      const statAvgVel = document.getElementById("statAvgVel");
+      const statMaxVel = document.getElementById("statMaxVel");
+      const statStrokes = document.getElementById("statStrokes");
+      const statDir = document.getElementById("statDir");
+
+      // ─── State ────────────────────────────────────────────────────────────────
+      const STORAGE_KEY = "bws_signature_profiles";
+      let profiles = {}; // name → feature object
+      let isDrawing = false;
+      let strokes = []; // array of stroke arrays
+      let currentStroke = []; // [{x,y,t}] normalised 0–1
+      let velocities = []; // flat velocity series for chart
+
+      // ─── Canvas sizing ────────────────────────────────────────────────────────
+      function sizeCanvases() {
+        const sw = sigCanvas.parentElement.clientWidth;
+        const vw = velCanvas.parentElement.clientWidth;
+        sigCanvas.width = sw;
+        sigCanvas.height = 220;
+        velCanvas.width = vw;
+        velCanvas.height = 90;
+        redraw();
+      }
+
+      // ─── Point helpers ────────────────────────────────────────────────────────
+      function getPoint(e) {
+        const rect = sigCanvas.getBoundingClientRect();
+        const src = e.touches ? e.touches[0] : e;
+        return {
+          x: (src.clientX - rect.left) / rect.width,
+          y: (src.clientY - rect.top) / rect.height,
+          t: performance.now(),
+        };
+      }
+
+      // ─── Drawing ──────────────────────────────────────────────────────────────
+      function velColor(v, maxV) {
+        const t = Math.min(v / Math.max(maxV, 0.01), 1);
+        const r = Math.round(239 * (1 - t) + 34 * t);
+        const g = Math.round(68 * (1 - t) + 197 * t);
+        return `rgb(${r},${g},50)`;
+      }
+
+      function drawStroke(stroke) {
+        if (stroke.length < 2) return;
+        const vels = stroke.slice(1).map((p, i) => {
+          const dx = p.x - stroke[i].x,
+            dy = p.y - stroke[i].y;
+          const dt = Math.max(p.t - stroke[i].t, 1);
+          return (Math.hypot(dx, dy) / dt) * 1000;
+        });
+        const maxV = Math.max(...vels, 0.001);
+        const w = sigCanvas.width,
+          h = sigCanvas.height;
+
+        for (let i = 1; i < stroke.length; i++) {
+          const v = vels[i - 1];
+          const t = Math.min(v / maxV, 1);
+          sigCtx.strokeStyle = velColor(v, maxV);
+          sigCtx.lineWidth = Math.max(1.5, 7 * (1 - t * 0.8));
+          sigCtx.lineCap = "round";
+          sigCtx.lineJoin = "round";
+          sigCtx.beginPath();
+          sigCtx.moveTo(stroke[i - 1].x * w, stroke[i - 1].y * h);
+          sigCtx.lineTo(stroke[i].x * w, stroke[i].y * h);
+          sigCtx.stroke();
+        }
+      }
+
+      function redraw() {
+        const w = sigCanvas.width,
+          h = sigCanvas.height;
+        sigCtx.fillStyle = "#080f1d";
+        sigCtx.fillRect(0, 0, w, h);
+        // Guide line
+        sigCtx.strokeStyle = "#1e293b";
+        sigCtx.lineWidth = 1;
+        sigCtx.beginPath();
+        sigCtx.moveTo(20, h * 0.68);
+        sigCtx.lineTo(w - 20, h * 0.68);
+        sigCtx.stroke();
+        strokes.forEach(drawStroke);
+        if (currentStroke.length > 1) drawStroke(currentStroke);
+      }
+
+      // ─── Velocity chart ───────────────────────────────────────────────────────
+      function drawVelChart(vels) {
+        const w = velCanvas.width,
+          h = velCanvas.height;
+        velCtx.fillStyle = "#080f1d";
+        velCtx.fillRect(0, 0, w, h);
+        if (vels.length < 2) return;
+
+        const maxV = Math.max(...vels, 0.001);
+        const step = w / (vels.length - 1);
+
+        // Fill under curve
+        velCtx.beginPath();
+        velCtx.moveTo(0, h);
+        vels.forEach((v, i) => {
+          const x = i * step;
+          const y = h - (v / maxV) * (h - 8);
+          velCtx.lineTo(x, y);
+        });
+        velCtx.lineTo(w, h);
+        velCtx.closePath();
+        velCtx.fillStyle = "rgba(236,72,153,0.15)";
+        velCtx.fill();
+
+        // Line
+        velCtx.beginPath();
+        vels.forEach((v, i) => {
+          const x = i * step;
+          const y = h - (v / maxV) * (h - 8);
+          i === 0 ? velCtx.moveTo(x, y) : velCtx.lineTo(x, y);
+        });
+        velCtx.strokeStyle = "#ec4899";
+        velCtx.lineWidth = 1.5;
+        velCtx.stroke();
+      }
+
+      // ─── Feature extraction ───────────────────────────────────────────────────
+      function extractFeatures(allStrokes) {
+        const pts = allStrokes.flat();
+        if (pts.length < 3) return null;
+
+        let pathLen = 0;
+        const vels = [];
+        allStrokes.forEach((stroke) => {
+          for (let i = 1; i < stroke.length; i++) {
+            const dx = stroke[i].x - stroke[i - 1].x;
+            const dy = stroke[i].y - stroke[i - 1].y;
+            const dt = Math.max(stroke[i].t - stroke[i - 1].t, 1);
+            pathLen += Math.hypot(dx, dy);
+            vels.push((Math.hypot(dx, dy) / dt) * 1000);
+          }
+        });
+
+        const dur = (pts[pts.length - 1].t - pts[0].t) / 1000;
+        const avgVel = vels.reduce((s, v) => s + v, 0) / (vels.length || 1);
+        const maxVel = Math.max(...vels, 0);
+        const velVar = vels.reduce((s, v) => s + (v - avgVel) ** 2, 0) / (vels.length || 1);
+
+        const xs = pts.map((p) => p.x),
+          ys = pts.map((p) => p.y);
+        const bw = Math.max(...xs) - Math.min(...xs);
+        const bh = Math.max(...ys) - Math.min(...ys);
+        const aspect = bh > 0.001 ? bw / bh : 1;
+
+        let dirChanges = 0;
+        for (let i = 2; i < pts.length; i++) {
+          const cross =
+            (pts[i - 1].x - pts[i - 2].x) * (pts[i].y - pts[i - 1].y) -
+            (pts[i - 1].y - pts[i - 2].y) * (pts[i].x - pts[i - 1].x);
+          if (Math.abs(cross) > 5e-6) dirChanges++;
+        }
+
+        return {
+          pathLen,
+          dur,
+          avgVel,
+          maxVel,
+          velVar,
+          numStrokes: allStrokes.length,
+          aspect,
+          dirRate: dirChanges / Math.max(pts.length, 1),
+        };
+      }
+
+      // ─── Feature vector heatmap ───────────────────────────────────────────────
+      function initFeatGrid() {
+        featGrid.innerHTML = "";
+        for (let i = 0; i < 8; i++) {
+          const cell = document.createElement("div");
+          cell.className = "feat-cell";
+          cell.id = `fc${i}`;
+          cell.style.background = "#1e293b";
+          featGrid.appendChild(cell);
+        }
+      }
+
+      const FEAT_RANGES = [
+        [0, 3], // pathLen  (normalised to canvas)
+        [0, 5], // dur (s)
+        [0, 2], // avgVel
+        [0, 10], // maxVel
+        [0, 1], // velVar
+        [1, 5], // numStrokes
+        [0.3, 3], // aspect
+        [0, 0.3], // dirRate
+      ];
+
+      function updateFeatGrid(f) {
+        const vals = [
+          f.pathLen,
+          f.dur,
+          f.avgVel,
+          f.maxVel,
+          f.velVar,
+          f.numStrokes,
+          f.aspect,
+          f.dirRate,
+        ];
+        vals.forEach((v, i) => {
+          const [lo, hi] = FEAT_RANGES[i];
+          const norm = Math.max(0, Math.min(1, (v - lo) / (hi - lo)));
+          const hue = Math.round(300 - norm * 120);
+          const cell = document.getElementById(`fc${i}`);
+          if (cell) {
+            cell.style.background = `hsl(${hue},60%,${15 + norm * 35}%)`;
+            cell.title = `${["Path length", "Duration", "Avg velocity", "Peak velocity", "Vel variance", "Strokes", "Aspect ratio", "Direction rate"][i]}: ${v.toFixed(3)}`;
+          }
+        });
+      }
+
+      // ─── Similarity ───────────────────────────────────────────────────────────
+      function featureSimilarity(a, b) {
+        const keys = ["pathLen", "dur", "avgVel", "maxVel", "numStrokes", "aspect", "dirRate"];
+        const diffs = keys.map((k) => {
+          const avg = (Math.abs(a[k]) + Math.abs(b[k])) / 2;
+          return avg > 1e-6 ? Math.abs(a[k] - b[k]) / avg : 0;
+        });
+        const mean = diffs.reduce((s, d) => s + d, 0) / diffs.length;
+        return Math.max(0, 1 - mean);
+      }
+
+      // ─── Stats display ────────────────────────────────────────────────────────
+      function updateStats(f) {
+        if (!f) return;
+        statDur.textContent = `${f.dur.toFixed(2)} s`;
+        statLen.textContent = f.pathLen.toFixed(3);
+        statAvgVel.textContent = f.avgVel.toFixed(3);
+        statMaxVel.textContent = f.maxVel.toFixed(3);
+        statStrokes.textContent = f.numStrokes;
+        statDir.textContent = (f.dirRate * 100).toFixed(1) + "%";
+        [statDur, statLen, statAvgVel, statMaxVel, statStrokes, statDir].forEach(
+          (el) => (el.className = "stat-value accent")
+        );
+        updateFeatGrid(f);
+        btnEnrol.disabled = false;
+        btnVerify.disabled = Object.keys(profiles).length === 0;
+      }
+
+      function setStatus(msg, type) {
+        statusBar.innerHTML = msg;
+        statusBar.className = `status-bar ${type}`;
+      }
+
+      // ─── Pen events ───────────────────────────────────────────────────────────
+      function onPointerDown(e) {
+        e.preventDefault();
+        isDrawing = true;
+        currentStroke = [getPoint(e)];
+      }
+
+      function onPointerMove(e) {
+        e.preventDefault();
+        if (!isDrawing) return;
+        currentStroke.push(getPoint(e));
+        redraw();
+      }
+
+      function onPointerUp(e) {
+        e.preventDefault();
+        if (!isDrawing) return;
+        isDrawing = false;
+        if (currentStroke.length > 1) {
+          strokes.push([...currentStroke]);
+        }
+        currentStroke = [];
+        redraw();
+
+        // Recompute all velocities for the chart
+        velocities = strokes.flatMap((stroke) =>
+          stroke.slice(1).map((p, i) => {
+            const dx = p.x - stroke[i].x,
+              dy = p.y - stroke[i].y;
+            const dt = Math.max(p.t - stroke[i].t, 1);
+            return (Math.hypot(dx, dy) / dt) * 1000;
+          })
+        );
+        drawVelChart(velocities);
+
+        const f = extractFeatures(strokes);
+        if (f) updateStats(f);
+        setStatus(`${strokes.length} stroke(s) drawn. Press Enrol or Verify.`, "info");
+      }
+
+      // Mouse
+      sigCanvas.addEventListener("mousedown", onPointerDown);
+      sigCanvas.addEventListener("mousemove", onPointerMove);
+      sigCanvas.addEventListener("mouseup", onPointerUp);
+      sigCanvas.addEventListener("mouseleave", onPointerUp);
+      // Touch
+      sigCanvas.addEventListener("touchstart", onPointerDown, { passive: false });
+      sigCanvas.addEventListener("touchmove", onPointerMove, { passive: false });
+      sigCanvas.addEventListener("touchend", onPointerUp, { passive: false });
+
+      // ─── Profile storage ──────────────────────────────────────────────────────
+      function loadProfiles() {
+        try {
+          profiles = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+        } catch (_e) {
+          profiles = {};
+        }
+      }
+
+      function saveProfiles() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(profiles));
+      }
+
+      function renderProfileList() {
+        const names = Object.keys(profiles);
+        if (names.length === 0) {
+          profileList.innerHTML = '<div class="empty-msg">No profiles enrolled yet</div>';
+          btnVerify.disabled = true;
+          return;
+        }
+        profileList.innerHTML = names
+          .map(
+            (n) => `
+    <div class="profile-item">
+      <span>&#x1F4CC;</span>
+      <span class="profile-item-name">${n}</span>
+      <button class="btn-del" data-name="${n}">&#x2715;</button>
+    </div>`
+          )
+          .join("");
+        profileList.querySelectorAll(".btn-del").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            delete profiles[btn.dataset.name];
+            saveProfiles();
+            renderProfileList();
+            verifyResult.style.display = "none";
+          });
+        });
+        // Only enable identify if a signature has been drawn
+        btnVerify.disabled = strokes.length === 0;
+      }
+
+      // ─── Button handlers ──────────────────────────────────────────────────────
+      btnClear.addEventListener("click", () => {
+        strokes = [];
+        currentStroke = [];
+        velocities = [];
+        isDrawing = false;
+        redraw();
+        drawVelChart([]);
+        btnEnrol.disabled = true;
+        btnVerify.disabled = true;
+        [statDur, statLen, statAvgVel, statMaxVel, statStrokes, statDir].forEach((el) => {
+          el.textContent = "\u2014";
+          el.className = "stat-value dim";
+        });
+        initFeatGrid();
+        setStatus("Canvas cleared. Draw your signature above.", "");
+      });
+
+      btnEnrol.addEventListener("click", () => {
+        const name = nameInput.value.trim();
+        if (!name) {
+          setStatus("Enter a student name before enrolling.", "info");
+          return;
+        }
+        const f = extractFeatures(strokes);
+        if (!f) return;
+        profiles[name] = f;
+        saveProfiles();
+        renderProfileList();
+        setStatus(
+          `Enrolled &ldquo;${name}&rdquo;. Clear the canvas, draw again, then identify.`,
+          "success"
+        );
+        verifyResult.style.display = "none";
+        nameInput.value = "";
+        btnEnrol.disabled = true;
+      });
+
+      btnVerify.addEventListener("click", () => {
+        if (Object.keys(profiles).length === 0) return;
+        const f = extractFeatures(strokes);
+        if (!f) {
+          setStatus("Draw a signature first.", "");
+          return;
+        }
+
+        const results = Object.entries(profiles)
+          .map(([name, pf]) => ({ name, sim: Math.round(featureSimilarity(pf, f) * 100) }))
+          .sort((a, b) => b.sim - a.sim);
+
+        verifyResult.style.display = "block";
+        resultList.innerHTML = results
+          .map(
+            (r, i) => `
+    <div class="result-row">
+      <div class="result-name-row">
+        <span${i === 0 ? ' class="result-best"' : ""}>${i === 0 ? "&#x2B50; " : ""}${r.name}</span>
+        <span>${r.sim}%</span>
+      </div>
+      <div class="bar-track">
+        <div class="bar-fill${i === 0 && r.sim >= 60 ? " match" : ""}" style="width:${r.sim}%"></div>
+      </div>
+    </div>`
+          )
+          .join("");
+
+        const best = results[0];
+        setStatus(
+          `Best match: ${best.name} (${best.sim}%) \u2014 ${best.sim >= 60 ? "Match" : "No confident match"}`,
+          best.sim >= 60 ? "success" : ""
+        );
+      });
+
+      // ─── Init ─────────────────────────────────────────────────────────────────
+      initFeatGrid();
+      sizeCanvases();
+      loadProfiles();
+      renderProfileList();
+      window.addEventListener("resize", sizeCanvases);
+      setStatus("Draw your signature in the box above. Use a mouse, trackpad, or touchscreen.", "");
+    </script>
+  </body>
+</html>
