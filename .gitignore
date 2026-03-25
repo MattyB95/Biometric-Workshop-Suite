@@ -1,2 +1,10 @@
 # JetBrains IDEs
 .idea/
+
+# Python
+.venv/
+__pycache__/
+profiles.json
+
+# Node
+node_modules/

@@ -1,8 +1,9 @@
 import json
 import math
 import os
+from typing import Any
 
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, Response, jsonify, render_template, request
 
 app = Flask(__name__)
 
@@ -15,14 +16,15 @@ ENROLL_SAMPLES_REQUIRED = 5
 # Profile persistence
 # ---------------------------------------------------------------------------
 
-def load_profiles():
+
+def load_profiles() -> dict[str, Any]:
     if os.path.exists(PROFILES_FILE):
         with open(PROFILES_FILE) as f:
-            return json.load(f)
+            return json.load(f)  # type: ignore[no-any-return]
     return {}
 
 
-def save_profiles(profiles):
+def save_profiles(profiles: dict[str, Any]) -> None:
     with open(PROFILES_FILE, "w") as f:
         json.dump(profiles, f, indent=2)
 
@@ -31,7 +33,10 @@ def save_profiles(profiles):
 # Maths helpers
 # ---------------------------------------------------------------------------
 
-def mean_and_std(values_by_sample):
+
+def mean_and_std(
+    values_by_sample: list[list[float]],
+) -> tuple[list[float], list[float]]:
     """
     values_by_sample: list of lists, one per enrollment attempt.
     Returns (means, stds) each as a list of floats.
@@ -50,7 +55,7 @@ def mean_and_std(values_by_sample):
     return means, stds
 
 
-def compute_distance(timing, profile):
+def compute_distance(timing: dict[str, Any], profile: dict[str, Any]) -> float:
     """
     Normalised Manhattan distance between a timing sample and a stored profile.
     Each feature is divided by max(std, floor) so high-variance features count less.
@@ -59,7 +64,7 @@ def compute_distance(timing, profile):
     total = 0.0
     n = 0
 
-    dwell_floor = 15.0   # ms – minimum std for dwell
+    dwell_floor = 15.0  # ms – minimum std for dwell
     flight_floor = 25.0  # ms – minimum std for flight
 
     for t, m, s in zip(timing["dwell"], profile["mean_dwell"], profile["std_dwell"]):
@@ -77,14 +82,16 @@ def compute_distance(timing, profile):
 # Routes
 # ---------------------------------------------------------------------------
 
+
 @app.route("/")
-def index():
-    return render_template("index.html", phrase=PHRASE,
-                           enroll_samples=ENROLL_SAMPLES_REQUIRED)
+def index() -> str:
+    return render_template(
+        "index.html", phrase=PHRASE, enroll_samples=ENROLL_SAMPLES_REQUIRED
+    )
 
 
 @app.route("/api/enroll", methods=["POST"])
-def enroll():
+def enroll() -> Response | tuple[Response, int]:
     data = request.json
     name = (data.get("name") or "").strip()
     samples = data.get("samples", [])
@@ -92,7 +99,8 @@ def enroll():
     if not name:
         return jsonify({"error": "Name is required"}), 400
     if len(samples) < ENROLL_SAMPLES_REQUIRED:
-        return jsonify({"error": f"Need {ENROLL_SAMPLES_REQUIRED} samples, got {len(samples)}"}), 400
+        msg = f"Need {ENROLL_SAMPLES_REQUIRED} samples, got {len(samples)}"
+        return jsonify({"error": msg}), 400
 
     dwell_samples = [s["dwell"] for s in samples]
     flight_samples = [s["flight"] for s in samples]
@@ -110,20 +118,22 @@ def enroll():
     }
     save_profiles(profiles)
 
-    return jsonify({"success": True, "name": name,
-                    "enrolled": list(profiles.keys())})
+    return jsonify({"success": True, "name": name, "enrolled": list(profiles.keys())})
 
 
 @app.route("/api/identify", methods=["POST"])
-def identify():
+def identify() -> Response | tuple[Response, int]:
     data = request.json
     timing = data.get("timing")
 
     profiles = load_profiles()
     if not profiles:
-        return jsonify({"error": "No profiles enrolled yet. Ask someone to enrol first!"}), 400
+        return (
+            jsonify({"error": "No profiles enrolled yet. Ask someone to enrol first!"}),
+            400,
+        )
 
-    results = []
+    results: list[dict[str, Any]] = []
     for name, profile in profiles.items():
         dist = compute_distance(timing, profile)
         results.append({"name": name, "distance": round(dist, 4)})
@@ -140,25 +150,26 @@ def identify():
     for i, r in enumerate(results):
         r["confidence"] = round(raw_scores[i] / total * 100, 1)
 
-    return jsonify({
-        "results": results,
-        "best_match": results[0]["name"],
-        "top_confidence": results[0]["confidence"],
-    })
+    return jsonify(
+        {
+            "results": results,
+            "best_match": results[0]["name"],
+            "top_confidence": results[0]["confidence"],
+        }
+    )
 
 
 @app.route("/api/profiles", methods=["GET"])
-def get_profiles():
+def get_profiles() -> Response:
     profiles = load_profiles()
     enrolled = [
-        {"name": k, "num_samples": v["num_samples"]}
-        for k, v in profiles.items()
+        {"name": k, "num_samples": v["num_samples"]} for k, v in profiles.items()
     ]
     return jsonify({"enrolled": enrolled, "phrase": PHRASE})
 
 
 @app.route("/api/profiles/<name>", methods=["DELETE"])
-def delete_profile(name):
+def delete_profile(name: str) -> Response:
     profiles = load_profiles()
     profiles.pop(name, None)
     save_profiles(profiles)
@@ -166,7 +177,7 @@ def delete_profile(name):
 
 
 @app.route("/api/reset", methods=["POST"])
-def reset():
+def reset() -> Response:
     save_profiles({})
     return jsonify({"success": True})
 

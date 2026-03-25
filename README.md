@@ -100,6 +100,7 @@ http://localhost:5000
 ### Enrolment
 
 For each of the 5 typing attempts, the app records:
+
 - One **dwell time** per character (key-down → key-up, in milliseconds)
 - One **flight time** per adjacent character pair (key-up[i] → key-down[i+1])
 
@@ -121,10 +122,10 @@ Features where a student is very consistent (low std) are weighted more heavily.
 
 Open `app.py` and edit the constants near the top:
 
-| Variable | Default | Description |
-|---|---|---|
-| `PHRASE` | `"the quick brown fox"` | The phrase everyone types |
-| `ENROLL_SAMPLES_REQUIRED` | `5` | Number of enrolment attempts required |
+| Variable                  | Default                 | Description                           |
+| ------------------------- | ----------------------- | ------------------------------------- |
+| `PHRASE`                  | `"the quick brown fox"` | The phrase everyone types             |
+| `ENROLL_SAMPLES_REQUIRED` | `5`                     | Number of enrolment attempts required |
 
 > Keep the phrase the same for everyone in a session. If you change it mid-session, delete `profiles.json` and re-enrol all students.
 
@@ -159,6 +160,7 @@ The Flask version supports multiple devices simultaneously — ideal if students
 > **Note:** Render's free tier spins down after 15 minutes of inactivity. The first request after a sleep may take ~30 seconds. Profiles are stored in `profiles.json` on the server's disk and will be reset when the service redeploys.
 
 To run in production mode locally (mirrors Render):
+
 ```bash
 just serve
 ```
@@ -195,9 +197,9 @@ Then share your machine's local IP (e.g. `http://192.168.1.42:5000`) with studen
 
 ## Troubleshooting
 
-| Problem | Solution |
-|---|---|
-| Wrong key resets the attempt | Type carefully — the system requires the exact phrase |
-| Results always show the same person | Make sure at least 3–4 students have enrolled |
-| Identification seems random | Try enrolling with more consistent typing speed |
+| Problem                                 | Solution                                                  |
+| --------------------------------------- | --------------------------------------------------------- |
+| Wrong key resets the attempt            | Type carefully — the system requires the exact phrase     |
+| Results always show the same person     | Make sure at least 3–4 students have enrolled             |
+| Identification seems random             | Try enrolling with more consistent typing speed           |
 | Server not reachable from other devices | Run with `app.run(host="0.0.0.0", port=5000)` in `app.py` |

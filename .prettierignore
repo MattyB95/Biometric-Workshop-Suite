@@ -1,0 +1,6 @@
+# Jinja2 templates — Prettier can't handle {{ }} inside <script> blocks
+templates/
+
+# Dependencies and generated files
+.venv/
+node_modules/

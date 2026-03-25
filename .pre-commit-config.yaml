@@ -1,0 +1,73 @@
+repos:
+  # ── General file hygiene ───────────────────────────────────────────────────
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-toml
+      - id: check-json
+      - id: check-merge-conflict
+      - id: debug-statements
+
+  # ── Ruff — linting + formatting ───────────────────────────────────────────
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.7
+    hooks:
+      - id: ruff
+        args: [--fix]
+      - id: ruff-format
+
+  # ── Black — formatting ────────────────────────────────────────────────────
+  - repo: https://github.com/psf/black
+    rev: 26.3.1
+    hooks:
+      - id: black
+
+  # ── mypy — static type checking ───────────────────────────────────────────
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.19.1
+    hooks:
+      - id: mypy
+        additional_dependencies: [flask]
+        args: [app.py]
+        pass_filenames: false
+
+  # ── ty — static type checking (Astral) ───────────────────────────────────
+  # ty has no pre-commit mirror yet; run via uv so it uses the project venv
+  - repo: local
+    hooks:
+      - id: ty
+        name: ty
+        entry: uv run ty check
+        language: system
+        types: [python]
+
+  # ── Prettier — HTML/CSS/JS formatting ─────────────────────────────────────
+  # Excludes templates/ — Jinja2 {{ }} inside <script> blocks breaks JS parsing
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v4.0.0-alpha.8
+    hooks:
+      - id: prettier
+        additional_dependencies:
+          - prettier@3.5.3
+
+  # ── HTMLHint — HTML linting ───────────────────────────────────────────────
+  - repo: local
+    hooks:
+      - id: htmlhint
+        name: htmlhint
+        entry: npx htmlhint
+        language: system
+        files: \.html$
+
+  # ── ESLint — JavaScript linting ───────────────────────────────────────────
+  # docs/ only — templates/index.html has Jinja2 in <script> blocks
+  - repo: local
+    hooks:
+      - id: eslint
+        name: eslint
+        entry: npx eslint
+        language: system
+        files: ^docs/.*\.html$
