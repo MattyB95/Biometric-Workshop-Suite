@@ -5,22 +5,22 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Keystroke Dynamics &mdash; Biometric Workshop</title>
   <style>
-    /* ── Reset & base ─────────────────────────────────────────────────── */
+    /* ── Reset & base ── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg:        #0f172a;
-      --surface:   #1e293b;
-      --surface2:  #273548;
-      --border:    #334155;
-      --accent:    #6366f1;
-      --accent-h:  #818cf8;
-      --success:   #22c55e;
-      --warning:   #f59e0b;
-      --error:     #ef4444;
-      --text:      #f1f5f9;
-      --text-dim:  #94a3b8;
-      --radius:    10px;
+      --bg:       #0f172a;
+      --surface:  #1e293b;
+      --surface2: #273548;
+      --border:   #334155;
+      --accent:   #6366f1;
+      --accent-h: #818cf8;
+      --success:  #22c55e;
+      --warning:  #f59e0b;
+      --error:    #ef4444;
+      --text:     #f1f5f9;
+      --text-dim: #94a3b8;
+      --radius:   10px;
     }
 
     body {
@@ -28,137 +28,78 @@
       background: var(--bg);
       color: var(--text);
       min-height: 100vh;
+      display: flex;
+      flex-direction: column;
     }
 
-    /* ── Header ───────────────────────────────────────────────────────── */
+    /* ── Header ── */
     header {
       background: linear-gradient(135deg, #1e1b4b 0%, #1e293b 100%);
       border-bottom: 1px solid var(--border);
-      padding: 18px 24px;
+      padding: 16px 24px;
       display: flex;
       align-items: center;
       gap: 14px;
     }
+    .header-icon { font-size: 2rem; filter: drop-shadow(0 0 8px #6366f188); }
+    header h1 { font-size: 1.3rem; font-weight: 700; }
+    header p  { font-size: 0.8rem; color: var(--text-dim); margin-top: 2px; }
     .btn-home {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
+      display: inline-flex; align-items: center; gap: 6px;
       padding: 6px 14px;
-      background: rgba(255,255,255,0.07);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      color: var(--text-dim);
-      font-size: 0.8rem;
-      font-weight: 500;
-      text-decoration: none;
-      transition: all 0.15s;
-      margin-left: auto;
-      white-space: nowrap;
+      background: rgba(255,255,255,0.07); border: 1px solid var(--border);
+      border-radius: 6px; color: var(--text-dim); font-size: 0.8rem;
+      font-weight: 500; text-decoration: none; transition: all 0.15s; margin-left: auto;
     }
     .btn-home:hover { color: var(--text); background: rgba(255,255,255,0.12); }
-    .header-icon {
-      font-size: 2rem;
-      filter: drop-shadow(0 0 8px #6366f188);
-    }
-    header h1 { font-size: 1.4rem; font-weight: 700; letter-spacing: -0.3px; }
-    header p  { font-size: 0.8rem; color: var(--text-dim); margin-top: 2px; }
 
-    /* ── Tabs ─────────────────────────────────────────────────────────── */
-    .tabs {
-      display: flex;
-      gap: 4px;
-      padding: 16px 24px 0;
-      border-bottom: 1px solid var(--border);
-      background: var(--surface);
+    /* ── Layout ── */
+    .workspace {
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: 20px;
+      padding: 20px 24px;
+      flex: 1;
+      max-width: 1100px;
+      margin: 0 auto;
+      width: 100%;
     }
-    .tab-btn {
-      padding: 10px 22px;
-      background: transparent;
-      border: none;
-      border-radius: var(--radius) var(--radius) 0 0;
-      color: var(--text-dim);
-      font-size: 0.95rem;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.2s;
-      position: relative;
-      bottom: -1px;
-    }
-    .tab-btn:hover { color: var(--text); background: var(--surface2); }
-    .tab-btn.active {
-      color: var(--accent-h);
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-bottom-color: var(--bg);
+    @media (max-width: 820px) {
+      .workspace { grid-template-columns: 1fr; }
     }
 
-    /* ── Main content ─────────────────────────────────────────────────── */
-    main { padding: 32px 24px; max-width: 760px; margin: 0 auto; }
-    .tab-panel { display: none; }
-    .tab-panel.active { display: block; }
+    /* ── Typing panel (left) ── */
+    .typing-panel { display: flex; flex-direction: column; gap: 14px; }
 
-    /* ── Card ─────────────────────────────────────────────────────────── */
-    .card {
+    .canvas-card {
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 24px;
-      margin-bottom: 20px;
+      overflow: hidden;
     }
-    .card h2 { font-size: 1.1rem; margin-bottom: 16px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em; font-size: 0.75rem; }
-
-    /* ── Form controls ────────────────────────────────────────────────── */
-    label { display: block; font-size: 0.85rem; color: var(--text-dim); margin-bottom: 6px; }
-    input[type="text"] {
-      width: 100%;
-      padding: 10px 14px;
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      color: var(--text);
-      font-size: 1rem;
-      outline: none;
-      transition: border-color 0.2s;
-    }
-    input[type="text"]:focus { border-color: var(--accent); }
-
-    /* ── Buttons ─────────────────────────────────────────────────────── */
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 10px 22px;
-      border: none;
-      border-radius: 6px;
-      font-size: 0.95rem;
+    .canvas-label {
+      padding: 8px 14px;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-dim);
+      border-bottom: 1px solid var(--border);
       font-weight: 600;
-      cursor: pointer;
-      transition: all 0.15s;
     }
-    .btn-primary { background: var(--accent); color: #fff; }
-    .btn-primary:hover:not(:disabled) { background: var(--accent-h); }
-    .btn-danger  { background: #7f1d1d; color: #fca5a5; }
-    .btn-danger:hover:not(:disabled)  { background: #991b1b; }
-    .btn-ghost   { background: var(--surface2); color: var(--text-dim); }
-    .btn-ghost:hover:not(:disabled)   { color: var(--text); }
-    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
-    /* ── Phrase display ───────────────────────────────────────────────── */
+    /* ── Phrase display ── */
     .phrase-target {
       font-family: 'Courier New', monospace;
       font-size: 1.5rem;
       font-weight: bold;
       letter-spacing: 3px;
       padding: 20px;
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 8px;
       display: flex;
       flex-wrap: wrap;
       gap: 2px;
-      margin: 16px 0;
       min-height: 72px;
       align-items: center;
+      cursor: text;
     }
     .char-box {
       display: inline-block;
@@ -169,146 +110,159 @@
       transition: all 0.1s;
       color: var(--text-dim);
     }
-    .char-box.space { width: 14px; }
+    .char-box.space    { width: 14px; }
     .char-box.pending  { color: var(--text-dim); }
-    .char-box.current  { color: var(--text); background: var(--accent); border-radius: 3px;
-                         box-shadow: 0 0 8px var(--accent); animation: pulse 1s infinite; }
-    .char-box.correct  { color: var(--success); }
-    .char-box.error-flash { color: var(--error); animation: shake 0.3s; }
+    .char-box.current  {
+      color: var(--text); background: var(--accent);
+      box-shadow: 0 0 8px var(--accent); animation: pulse 1s infinite;
+    }
+    .char-box.correct      { color: var(--success); }
+    .char-box.error-flash  { color: var(--error); animation: shake 0.3s; }
     @keyframes pulse { 0%,100% { opacity:1 } 50% { opacity:0.6 } }
-    @keyframes shake { 0%,100% { transform: translateX(0) } 25% { transform: translateX(-4px) } 75% { transform: translateX(4px) } }
-
-    /* ── Typing input (invisible, captures keypresses) ─────────────────── */
-    .typing-input {
-      position: absolute;
-      opacity: 0;
-      pointer-events: none;
-      width: 1px;
-      height: 1px;
+    @keyframes shake {
+      0%,100% { transform: translateX(0) }
+      25%     { transform: translateX(-4px) }
+      75%     { transform: translateX(4px) }
     }
 
-    /* ── Attempt progress ─────────────────────────────────────────────── */
-    .attempt-dots {
-      display: flex;
-      gap: 8px;
-      margin: 12px 0;
-    }
+    /* ── Attempt dots ── */
+    .dots-wrap    { padding: 10px 20px; border-top: 1px solid var(--border); }
+    .attempt-dots { display: flex; gap: 8px; }
     .dot {
-      width: 16px; height: 16px;
-      border-radius: 50%;
-      background: var(--border);
-      border: 2px solid var(--border);
+      width: 16px; height: 16px; border-radius: 50%;
+      background: var(--border); border: 2px solid var(--border);
       transition: all 0.3s;
     }
     .dot.done    { background: var(--success); border-color: var(--success); }
-    .dot.current { background: var(--accent);  border-color: var(--accent);
-                   box-shadow: 0 0 6px var(--accent); animation: pulse 1.2s infinite; }
+    .dot.current {
+      background: var(--accent); border-color: var(--accent);
+      box-shadow: 0 0 6px var(--accent); animation: pulse 1.2s infinite;
+    }
 
-    /* ── Status / feedback messages ───────────────────────────────────── */
-    .status-msg {
-      padding: 12px 16px;
+    /* ── Status bar ── */
+    .status-bar {
+      padding: 8px 12px;
       border-radius: 6px;
-      font-size: 0.9rem;
-      margin-top: 14px;
-      display: none;
-    }
-    .status-msg.info    { background: #1e3a5f; border: 1px solid #3b82f6; color: #93c5fd; display: block; }
-    .status-msg.success { background: #14532d; border: 1px solid var(--success); color: #86efac; display: block; }
-    .status-msg.error   { background: #450a0a; border: 1px solid var(--error);   color: #fca5a5; display: block; }
-    .status-msg.warning { background: #431407; border: 1px solid var(--warning); color: #fcd34d; display: block; }
-
-    /* ── Identify results ─────────────────────────────────────────────── */
-    .result-list { display: flex; flex-direction: column; gap: 10px; }
-
-    .result-item {
-      background: var(--bg);
+      font-size: 0.82rem;
+      background: var(--surface2);
+      color: var(--text-dim);
       border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 12px 16px;
-      transition: border-color 0.3s;
     }
-    .result-item.best-match {
-      border-color: var(--accent);
-      box-shadow: 0 0 12px #6366f133;
-    }
-    .result-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 8px;
-    }
-    .result-name { font-weight: 700; font-size: 1.05rem; }
-    .result-badge {
-      font-size: 0.75rem;
-      padding: 2px 8px;
-      border-radius: 99px;
-      background: var(--accent);
-      color: #fff;
-    }
-    .result-pct { font-size: 0.85rem; color: var(--text-dim); }
+    .status-bar.info    { background: #1e3a5f; border-color: #3b82f6; color: #93c5fd; }
+    .status-bar.success { background: #0c2a1a; border-color: var(--success); color: #86efac; }
+    .status-bar.error   { background: #450a0a; border-color: var(--error); color: #fca5a5; }
+    .status-bar.warning { background: #431407; border-color: var(--warning); color: #fcd34d; }
 
-    .bar-track {
-      height: 8px;
-      background: var(--border);
-      border-radius: 4px;
+    /* ── Hidden typing inputs ── */
+    .typing-input {
+      position: absolute; opacity: 0; pointer-events: none; width: 1px; height: 1px;
+    }
+
+    /* ── Data panel (right) ── */
+    .data-panel { display: flex; flex-direction: column; gap: 14px; }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
       overflow: hidden;
     }
-    .bar-fill {
-      height: 100%;
-      border-radius: 4px;
-      background: linear-gradient(90deg, var(--accent), var(--accent-h));
-      transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    .result-item.best-match .bar-fill {
-      background: linear-gradient(90deg, var(--success), #4ade80);
-    }
-
-    /* ── Student list ─────────────────────────────────────────────────── */
-    .student-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 12px 16px;
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      margin-bottom: 8px;
-    }
-    .student-name { font-weight: 600; }
-    .student-meta { font-size: 0.8rem; color: var(--text-dim); margin-top: 2px; }
-
-    /* ── Misc helpers ─────────────────────────────────────────────────── */
-    .row { display: flex; gap: 12px; align-items: flex-end; }
-    .row .grow { flex: 1; }
-    .section-title {
-      font-size: 0.75rem;
+    .card-header {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.7rem;
       text-transform: uppercase;
       letter-spacing: 0.1em;
       color: var(--text-dim);
-      margin-bottom: 12px;
+      font-weight: 600;
     }
-    .tip {
-      font-size: 0.8rem;
-      color: var(--text-dim);
-      margin-top: 8px;
-      line-height: 1.5;
-    }
-    .empty-state {
-      text-align: center;
-      padding: 40px;
-      color: var(--text-dim);
-    }
-    .spinner {
-      display: inline-block;
-      width: 14px; height: 14px;
-      border: 2px solid rgba(255,255,255,0.2);
-      border-top-color: #fff;
-      border-radius: 50%;
-      animation: spin 0.7s linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
+    .card-body { padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
 
-    /* ── Profile stats modal ──────────────────────────────────────────── */
+    /* ── Buttons ── */
+    .btn {
+      display: inline-flex; align-items: center; gap: 7px;
+      padding: 9px 20px;
+      border: none; border-radius: 6px;
+      font-size: 0.9rem; font-weight: 600;
+      cursor: pointer; transition: all 0.15s;
+    }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover:not(:disabled) { background: var(--accent-h); }
+    .btn-ghost   { background: var(--surface2); color: var(--text-dim); }
+    .btn-ghost:hover:not(:disabled)   { color: var(--text); }
+    .btn-danger  { background: #7f1d1d; color: #fca5a5; }
+    .btn-danger:hover:not(:disabled)  { background: #991b1b; }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* ── Form controls ── */
+    .name-row { display: flex; gap: 8px; }
+    .name-input {
+      flex: 1; padding: 8px 10px;
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 6px; color: var(--text); font-size: 0.85rem;
+      outline: none; min-width: 0;
+    }
+    .name-input:focus { border-color: var(--accent); }
+    .name-input::placeholder { color: var(--text-dim); }
+    .tip { font-size: 0.8rem; color: var(--text-dim); line-height: 1.5; }
+
+    /* ── Section label ── */
+    .section-label-sm {
+      font-size: 0.7rem; text-transform: uppercase;
+      letter-spacing: 0.1em; color: var(--text-dim); margin-bottom: 6px;
+    }
+
+    /* ── Student list ── */
+    .student-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 8px 10px;
+      background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+    }
+    .student-name { font-weight: 600; font-size: 0.85rem; cursor: pointer; }
+    .student-name:hover { color: var(--accent-h); text-decoration: underline; }
+    .student-meta { font-size: 0.75rem; color: var(--text-dim); margin-top: 1px; }
+    .empty-msg {
+      font-size: 0.78rem; color: var(--text-dim); text-align: center; padding: 8px 0;
+    }
+
+    /* ── Identify results ── */
+    .result-list { display: flex; flex-direction: column; gap: 8px; }
+    .result-row  { font-size: 0.8rem; }
+    .result-name-row {
+      display: flex; justify-content: space-between; margin-bottom: 3px;
+    }
+    .result-best { color: var(--success); font-weight: 700; }
+    .bar-track { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+    .bar-fill  {
+      height: 100%; border-radius: 3px;
+      background: linear-gradient(90deg, var(--accent), var(--accent-h));
+      transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .bar-fill.match { background: linear-gradient(90deg, var(--success), #4ade80); }
+
+    /* ── Pipeline explainer ── */
+    .explainer {
+      max-width: 1100px; margin: 0 auto 24px; padding: 0 24px; width: 100%;
+    }
+    .pipeline {
+      display: flex; align-items: center; overflow-x: auto; padding-bottom: 4px;
+    }
+    .pipeline-step {
+      flex: 1; min-width: 100px; text-align: center; padding: 14px 8px;
+    }
+    .pipeline-step .step-icon  { font-size: 1.4rem; margin-bottom: 6px; }
+    .pipeline-step .step-title { font-size: 0.78rem; font-weight: 700; margin-bottom: 3px; }
+    .pipeline-step .step-desc  { font-size: 0.68rem; color: var(--text-dim); line-height: 1.4; }
+    .pipeline-arrow { font-size: 1.2rem; color: var(--border); flex-shrink: 0; }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center; padding: 16px;
+      font-size: 0.75rem; color: var(--text-dim);
+      border-top: 1px solid var(--border); margin-top: auto;
+    }
+
+    /* ── Profile stats modal ── */
     .modal-overlay {
       position: fixed; inset: 0;
       background: rgba(0,0,0,0.75);
@@ -317,30 +271,25 @@
       padding: 20px;
     }
     .modal {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      max-width: 780px; width: 100%;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); max-width: 780px; width: 100%;
       max-height: 90vh; overflow-y: auto;
     }
     .modal-header {
       display: flex; align-items: center; justify-content: space-between;
-      padding: 18px 24px;
-      border-bottom: 1px solid var(--border);
-      position: sticky; top: 0;
-      background: var(--surface); z-index: 1;
+      padding: 18px 24px; border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; background: var(--surface); z-index: 1;
     }
     .modal-header h2 { font-size: 1rem; font-weight: 700; }
     .btn-icon {
-      background: none; border: none;
-      color: var(--text-dim); font-size: 1.5rem;
-      cursor: pointer; line-height: 1; padding: 2px 8px; border-radius: 4px;
+      background: none; border: none; color: var(--text-dim);
+      font-size: 1.5rem; cursor: pointer; line-height: 1;
+      padding: 2px 8px; border-radius: 4px;
     }
     .btn-icon:hover { color: var(--text); background: var(--surface2); }
     .modal-body { padding: 24px; }
     .stat-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
       gap: 10px; margin-bottom: 24px;
     }
     .stat-card {
@@ -367,111 +316,125 @@
   <div class="header-icon">&#x2328;&#xFE0F;</div>
   <div>
     <h1>Keystroke Dynamics</h1>
-    <p>Biometric Workshop Suite</p>
+    <p>Biometric Workshop Suite &mdash; Timing Fingerprint</p>
   </div>
   <a href="/" class="btn-home">&#x2190; All Modules</a>
 </header>
 
-<div class="tabs">
-  <button class="tab-btn active" data-tab="enroll">Enrol</button>
-  <button class="tab-btn"        data-tab="identify">Identify</button>
-  <button class="tab-btn"        data-tab="students">Students</button>
+<div class="workspace">
+
+  <!-- LEFT: typing area -->
+  <div class="typing-panel">
+    <div class="canvas-card">
+      <div class="canvas-label">Type the phrase exactly as shown</div>
+      <div class="phrase-target" id="phrase-display"></div>
+      <div class="dots-wrap" id="dots-wrap" style="display:none">
+        <div class="attempt-dots" id="attempt-dots"></div>
+      </div>
+    </div>
+
+    <div id="status-bar" class="status-bar">Ready &mdash; choose Enrol or Identify to begin.</div>
+
+    <input class="typing-input" id="enroll-hidden-input" type="text"
+           autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+    <input class="typing-input" id="identify-hidden-input" type="text"
+           autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+  </div>
+
+  <!-- RIGHT: controls -->
+  <div class="data-panel">
+
+    <!-- Enrol card -->
+    <div class="card">
+      <div class="card-header">Enrol Student</div>
+      <div class="card-body">
+        <div class="name-row">
+          <input class="name-input" id="enroll-name" type="text"
+                 placeholder="Student name" autocomplete="off" maxlength="40" />
+          <button class="btn btn-primary" id="btn-start-enroll">&#x25B6; Start</button>
+        </div>
+        <p class="tip">Type the phrase <strong>{{ enroll_samples }} times</strong> naturally. Each dot marks a completed attempt.</p>
+        <div id="enrol-done-msg" style="display:none">
+          <div class="status-bar success" id="enrol-success-text"></div>
+          <button class="btn btn-ghost" id="btn-enroll-another"
+                  style="margin-top:8px;width:100%">Enrol Another Student</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Identify card -->
+    <div class="card">
+      <div class="card-header">Identify Typist</div>
+      <div class="card-body">
+        <p class="tip">Type the phrase and the system matches your rhythm against enrolled students.</p>
+        <button class="btn btn-primary" id="btn-identify-start" style="width:100%">&#x1F50D; Start Identifying</button>
+        <div id="identify-results-wrap" style="display:none">
+          <div class="section-label-sm">Results</div>
+          <div id="identify-results" class="result-list"></div>
+          <button class="btn btn-ghost" id="btn-identify-again"
+                  style="margin-top:8px;width:100%">Try Again</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Enrolled students -->
+    <div class="card">
+      <div class="card-header">Enrolled Students</div>
+      <div class="card-body">
+        <div id="student-list"><div class="empty-msg">Loading&hellip;</div></div>
+        <button class="btn btn-danger" id="btn-reset"
+                style="width:100%;margin-top:4px">&#x1F5D1; Reset All Profiles</button>
+      </div>
+    </div>
+
+  </div>
 </div>
 
-<main>
-
-  <!-- ================================================================ -->
-  <!-- TAB: ENROL                                                        -->
-  <!-- ================================================================ -->
-  <div id="tab-enroll" class="tab-panel active">
-
-    <div class="card">
-      <h2>Step 1 &mdash; Enter Your Name</h2>
-      <div class="row">
-        <div class="grow">
-          <label for="enroll-name">Your first name</label>
-          <input type="text" id="enroll-name" placeholder="e.g. Alice" autocomplete="off" />
+<!-- Pipeline explainer -->
+<div class="explainer">
+  <div class="card">
+    <div class="card-header">How keystroke dynamics works</div>
+    <div class="card-body" style="padding:0">
+      <div class="pipeline">
+        <div class="pipeline-step">
+          <div class="step-icon">&#x2328;&#xFE0F;</div>
+          <div class="step-title">1. Capture</div>
+          <div class="step-desc">keydown &amp; keyup events timed with performance.now()</div>
         </div>
-        <button class="btn btn-primary" id="btn-start-enroll">Start Typing</button>
-      </div>
-      <p class="tip">You will type the phrase <strong>{{ enroll_samples }} times</strong>. Each time you type it correctly, one dot fills in. Stay relaxed and type naturally!</p>
-    </div>
-
-    <div class="card" id="enroll-typing-card" style="display:none">
-      <h2>Step 2 &mdash; Type the Phrase</h2>
-
-      <div class="section-title">Your phrase &mdash; type it exactly as shown</div>
-      <div class="phrase-target" id="enroll-phrase-display"></div>
-
-      <div class="section-title" style="margin-top:16px">Attempts</div>
-      <div class="attempt-dots" id="attempt-dots"></div>
-
-      <div id="enroll-status" class="status-msg info">Start typing the phrase above.</div>
-
-      <input class="typing-input" id="enroll-hidden-input" type="text"
-             autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
-    </div>
-
-    <div class="card" id="enroll-done-card" style="display:none">
-      <div id="enroll-success-msg" class="status-msg success">Profile saved successfully!</div>
-      <button class="btn btn-primary" id="btn-enroll-another" style="margin-top:16px">Enrol Another Student</button>
-    </div>
-
-  </div><!-- /tab-enroll -->
-
-
-  <!-- ================================================================ -->
-  <!-- TAB: IDENTIFY                                                     -->
-  <!-- ================================================================ -->
-  <div id="tab-identify" class="tab-panel">
-
-    <div class="card">
-      <h2>Who is Typing?</h2>
-      <p class="tip" style="margin-bottom:16px">Type the phrase below and the system will compare your typing rhythm against everyone who has enrolled.</p>
-
-      <div class="section-title">Type this phrase</div>
-      <div class="phrase-target" id="identify-phrase-display"></div>
-
-      <div id="identify-status" class="status-msg info">Start typing the phrase above.</div>
-
-      <input class="typing-input" id="identify-hidden-input" type="text"
-             autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
-    </div>
-
-    <div class="card" id="identify-results-card" style="display:none">
-      <h2>Results</h2>
-      <div id="identify-results" class="result-list"></div>
-      <button class="btn btn-ghost" id="btn-identify-again" style="margin-top:16px">Try Again</button>
-    </div>
-
-  </div><!-- /tab-identify -->
-
-
-  <!-- ================================================================ -->
-  <!-- TAB: STUDENTS                                                     -->
-  <!-- ================================================================ -->
-  <div id="tab-students" class="tab-panel">
-
-    <div class="card">
-      <h2>Enrolled Students</h2>
-      <div id="student-list">
-        <div class="empty-state">Loading&hellip;</div>
+        <div class="pipeline-arrow">&#x2192;</div>
+        <div class="pipeline-step">
+          <div class="step-icon">&#x23F1;&#xFE0F;</div>
+          <div class="step-title">2. Features</div>
+          <div class="step-desc">Dwell time (key held) and flight time (gap between keys)</div>
+        </div>
+        <div class="pipeline-arrow">&#x2192;</div>
+        <div class="pipeline-step">
+          <div class="step-icon">&#x1F9EE;</div>
+          <div class="step-title">3. Profile</div>
+          <div class="step-desc">Mean &plusmn; std of each timing across multiple samples</div>
+        </div>
+        <div class="pipeline-arrow">&#x2192;</div>
+        <div class="pipeline-step">
+          <div class="step-icon">&#x1F4CF;</div>
+          <div class="step-title">4. Score</div>
+          <div class="step-desc">Z-score distance compares new typing to each stored profile</div>
+        </div>
+        <div class="pipeline-arrow">&#x2192;</div>
+        <div class="pipeline-step">
+          <div class="step-icon">&#x1F50D;</div>
+          <div class="step-title">5. Match</div>
+          <div class="step-desc">Lowest score = best match; shown as a confidence percentage</div>
+        </div>
       </div>
     </div>
+  </div>
+</div>
 
-    <div class="card">
-      <h2>Admin</h2>
-      <p class="tip" style="margin-bottom:14px">Reset deletes ALL profiles and starts fresh. Use this at the beginning of each workshop session.</p>
-      <button class="btn btn-danger" id="btn-reset">Reset All Profiles</button>
-    </div>
+<footer>
+  Biometric Workshop Suite &mdash; Keystroke Dynamics Module &mdash; All timing data is processed locally.
+</footer>
 
-  </div><!-- /tab-students -->
-
-</main>
-
-<!-- ===================================================================== -->
-<!-- PROFILE STATS MODAL                                                    -->
-<!-- ===================================================================== -->
+<!-- Profile stats modal -->
 <div id="profile-modal" class="modal-overlay" style="display:none" role="dialog" aria-modal="true">
   <div class="modal">
     <div class="modal-header">
@@ -493,27 +456,52 @@
   </div>
 </div>
 
-<!-- ===================================================================== -->
-<!-- JAVASCRIPT                                                             -->
-<!-- ===================================================================== -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 <script>
   "use strict";
 
   // ── Config (injected from Flask) ──────────────────────────────────────
-  const PHRASE          = {{ phrase | tojson }};
-  const ENROLL_SAMPLES  = {{ enroll_samples }};
+  const PHRASE         = {{ phrase | tojson }};
+  const ENROLL_SAMPLES = {{ enroll_samples }};
 
-  // ── Tab navigation ────────────────────────────────────────────────────
-  document.querySelectorAll(".tab-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
-      document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
-      document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
-      btn.classList.add("active");
-      document.getElementById("tab-" + btn.dataset.tab).classList.add("active");
-      if (btn.dataset.tab === "students") loadStudents();
-      if (btn.dataset.tab === "identify") resetIdentify();
-    });
+  // ── State ─────────────────────────────────────────────────────────────
+  let currentMode   = "idle";   // "idle" | "enroll" | "identify"
+  let enrollSamples = [];
+  let enrollCapture   = null;
+  let identifyCapture = null;
+
+  // ── DOM refs ──────────────────────────────────────────────────────────
+  const phraseDisplay       = document.getElementById("phrase-display");
+  const dotsWrap            = document.getElementById("dots-wrap");
+  const attemptDots         = document.getElementById("attempt-dots");
+  const statusBar           = document.getElementById("status-bar");
+  const enrollHiddenInput   = document.getElementById("enroll-hidden-input");
+  const identifyHiddenInput = document.getElementById("identify-hidden-input");
+
+  const enrollNameInput   = document.getElementById("enroll-name");
+  const btnStartEnroll    = document.getElementById("btn-start-enroll");
+  const enrolDoneMsg      = document.getElementById("enrol-done-msg");
+  const enrolSuccessText  = document.getElementById("enrol-success-text");
+  const btnEnrollAnother  = document.getElementById("btn-enroll-another");
+
+  const btnIdentifyStart      = document.getElementById("btn-identify-start");
+  const identifyResultsWrap   = document.getElementById("identify-results-wrap");
+  const identifyResultsEl     = document.getElementById("identify-results");
+  const btnIdentifyAgain      = document.getElementById("btn-identify-again");
+
+  const studentListEl = document.getElementById("student-list");
+  const btnReset      = document.getElementById("btn-reset");
+
+  // ── Unified status ────────────────────────────────────────────────────
+  function setStatus(msg, type) {
+    statusBar.textContent = msg;
+    statusBar.className = "status-bar" + (type ? " " + type : "");
+  }
+
+  // ── Click on phrase re-focuses the active hidden input ────────────────
+  phraseDisplay.addEventListener("click", () => {
+    if (currentMode === "enroll")   enrollHiddenInput.focus();
+    else if (currentMode === "identify") identifyHiddenInput.focus();
   });
 
   // ====================================================================
@@ -521,14 +509,13 @@
   // ====================================================================
 
   /**
-   * Attaches a keystroke capture session to a (hidden) input element.
+   * Attaches a keystroke capture session to a hidden input element.
    * Calls onComplete({dwell, flight}) when the full phrase is typed correctly.
    * Calls onError() on a wrong key (auto-resets).
    * Calls onProgress(charsTyped) on each correct keypress.
    */
   function createCapture(hiddenInput, displayEl, { onComplete, onError, onProgress }) {
-
-    let keyDownTimes = {};   // charIndex -> DOMHighResTimeStamp
+    let keyDownTimes  = {};
     let lastKeyUpTime = null;
     let dwellTimes    = [];
     let flightTimes   = [];
@@ -548,18 +535,14 @@
       reset();
       active = true;
       hiddenInput.focus();
-      renderPhrase(displayEl, PHRASE, 0, false);
     }
 
     function stop() { active = false; }
 
     hiddenInput.addEventListener("keydown", e => {
       if (!active) return;
-      e.preventDefault();          // prevent the hidden input from accumulating text
-
+      e.preventDefault();
       if (currentPos >= PHRASE.length) return;
-
-      // Only record the first keydown for this position (ignore key-repeat events)
       if (keyDownTimes[currentPos] === undefined) {
         keyDownTimes[currentPos] = performance.now();
       }
@@ -568,21 +551,16 @@
     hiddenInput.addEventListener("keyup", e => {
       if (!active) return;
       e.preventDefault();
-
       if (currentPos >= PHRASE.length) return;
 
-      // Map spacebar key name to a plain space character
       const typedChar = (e.key === " " || e.key === "Spacebar") ? " " : e.key;
-
-      // Ignore non-printable keys (Shift, Ctrl, Alt, Backspace…)
       if (typedChar.length !== 1) return;
 
-      const expected   = PHRASE[currentPos];
-      const keyUpTime  = performance.now();
-      const pos        = currentPos;
+      const expected  = PHRASE[currentPos];
+      const keyUpTime = performance.now();
+      const pos       = currentPos;
 
       if (typedChar !== expected) {
-        // Wrong key → flash error, reset this attempt
         flashError(displayEl, pos);
         active = false;
         setTimeout(() => {
@@ -594,36 +572,25 @@
         return;
       }
 
-      // Correct key — compute timings
       const keyDownTime = keyDownTimes[pos] !== undefined ? keyDownTimes[pos] : keyUpTime;
       const dwell       = Math.max(0, keyUpTime - keyDownTime);
       dwellTimes.push(dwell);
 
       if (lastKeyUpTime !== null && keyDownTimes[pos] !== undefined) {
-        const flight = keyDownTimes[pos] - lastKeyUpTime;
-        flightTimes.push(flight);
+        flightTimes.push(keyDownTimes[pos] - lastKeyUpTime);
       }
 
       lastKeyUpTime = keyUpTime;
       currentPos++;
-
       renderPhrase(displayEl, PHRASE, currentPos, false);
       if (onProgress) onProgress(currentPos);
 
       if (currentPos === PHRASE.length) {
         active = false;
-        const result = { dwell: [...dwellTimes], flight: [...flightTimes] };
-        if (onComplete) onComplete(result);
+        if (onComplete) onComplete({ dwell: [...dwellTimes], flight: [...flightTimes] });
       }
     });
 
-    // Click on phrase display → focus hidden input & start
-    displayEl.addEventListener("click", () => {
-      if (!active) { reset(); active = true; }
-      hiddenInput.focus();
-    });
-
-    // Expose
     return { start, stop, reset };
   }
 
@@ -631,18 +598,16 @@
   // PHRASE DISPLAY RENDERER
   // ====================================================================
 
-  function renderPhrase(el, phrase, currentPos, hasError) {
+  function renderPhrase(el, phrase, pos) {
     el.innerHTML = "";
     for (let i = 0; i < phrase.length; i++) {
       const ch   = phrase[i];
       const span = document.createElement("span");
-      span.textContent = ch === " " ? "\u00a0" : ch;   // non-breaking space for spaces
+      span.textContent = ch === " " ? "\u00a0" : ch;
       span.className = "char-box" + (ch === " " ? " space" : "");
-
-      if      (i <  currentPos) span.classList.add("correct");
-      else if (i === currentPos) span.classList.add("current");
-      else                       span.classList.add("pending");
-
+      if      (i <  pos) span.classList.add("correct");
+      else if (i === pos) span.classList.add("current");
+      else                span.classList.add("pending");
       el.appendChild(span);
     }
   }
@@ -655,27 +620,13 @@
     }
   }
 
+  // Initial render
+  renderPhrase(phraseDisplay, PHRASE, 0);
+
   // ====================================================================
-  // ENROL TAB
+  // ENROL
   // ====================================================================
 
-  let enrollSamples   = [];
-  let enrollCapture   = null;
-
-  const enrollNameInput    = document.getElementById("enroll-name");
-  const btnStartEnroll     = document.getElementById("btn-start-enroll");
-  const enrollTypingCard   = document.getElementById("enroll-typing-card");
-  const enrollDoneCard     = document.getElementById("enroll-done-card");
-  const enrollPhraseDisplay= document.getElementById("enroll-phrase-display");
-  const enrollHiddenInput  = document.getElementById("enroll-hidden-input");
-  const attemptDots        = document.getElementById("attempt-dots");
-  const enrollStatus       = document.getElementById("enroll-status");
-  const btnEnrollAnother   = document.getElementById("btn-enroll-another");
-
-  // Initialise phrase display
-  renderPhrase(enrollPhraseDisplay, PHRASE, 0, false);
-
-  // Build attempt dots
   function buildDots(completedCount) {
     attemptDots.innerHTML = "";
     for (let i = 0; i < ENROLL_SAMPLES; i++) {
@@ -687,17 +638,12 @@
     }
   }
 
-  function setEnrollStatus(msg, type) {
-    enrollStatus.textContent = msg;
-    enrollStatus.className = "status-msg " + type;
-  }
-
   btnStartEnroll.addEventListener("click", () => {
     const name = enrollNameInput.value.trim();
     if (!name) {
       enrollNameInput.focus();
       enrollNameInput.style.borderColor = "var(--error)";
-      setTimeout(() => enrollNameInput.style.borderColor = "", 1500);
+      setTimeout(() => { enrollNameInput.style.borderColor = ""; }, 1500);
       return;
     }
     startEnrollSession(name);
@@ -708,45 +654,38 @@
   });
 
   function startEnrollSession(name) {
+    currentMode   = "enroll";
     enrollSamples = [];
-    enrollTypingCard.style.display  = "block";
-    enrollDoneCard.style.display    = "none";
-    btnStartEnroll.disabled         = true;
-    enrollNameInput.disabled        = true;
+    enrolDoneMsg.style.display        = "none";
+    btnStartEnroll.disabled           = true;
+    enrollNameInput.disabled          = true;
+    dotsWrap.style.display            = "block";
+    identifyResultsWrap.style.display = "none";
 
     buildDots(0);
-    setEnrollStatus(`Attempt 1 of ${ENROLL_SAMPLES} — start typing!`, "info");
-    renderPhrase(enrollPhraseDisplay, PHRASE, 0, false);
+    setStatus(`Attempt 1 of ${ENROLL_SAMPLES} \u2014 start typing!`, "info");
 
-    enrollCapture = createCapture(enrollHiddenInput, enrollPhraseDisplay, {
+    enrollCapture = createCapture(enrollHiddenInput, phraseDisplay, {
       onComplete(timing) {
         enrollSamples.push(timing);
         buildDots(enrollSamples.length);
 
         if (enrollSamples.length < ENROLL_SAMPLES) {
-          setEnrollStatus(
-            `Great! ${enrollSamples.length}/${ENROLL_SAMPLES} done. Keep going!`,
-            "success"
-          );
-          // Brief pause then re-enable capture
+          setStatus(`Great! ${enrollSamples.length}/${ENROLL_SAMPLES} done. Keep going!`, "success");
           setTimeout(() => {
-            setEnrollStatus(`Attempt ${enrollSamples.length + 1} of ${ENROLL_SAMPLES} — keep typing!`, "info");
+            setStatus(`Attempt ${enrollSamples.length + 1} of ${ENROLL_SAMPLES} \u2014 keep typing!`, "info");
             enrollCapture.start();
           }, 1000);
         } else {
-          // All samples collected — submit
-          setEnrollStatus("All attempts complete! Saving your profile…", "info");
+          setStatus("All attempts complete! Saving profile\u2026", "info");
           submitEnrollment(name);
         }
       },
       onError() {
-        setEnrollStatus(
-          `Wrong key! Auto-restarted. Attempt ${enrollSamples.length + 1} of ${ENROLL_SAMPLES}.`,
+        setStatus(
+          `Wrong key \u2014 auto-restarted. Attempt ${enrollSamples.length + 1} of ${ENROLL_SAMPLES}.`,
           "warning"
         );
-      },
-      onProgress(n) {
-        // Optional: update status as they type
       }
     });
     enrollCapture.start();
@@ -754,7 +693,7 @@
 
   async function submitEnrollment(name) {
     try {
-      const res = await fetch("/api/enroll", {
+      const res  = await fetch("/api/enroll", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
         body:    JSON.stringify({ name, samples: enrollSamples })
@@ -762,76 +701,62 @@
       const data = await res.json();
 
       if (data.error) {
-        setEnrollStatus("Error: " + data.error, "error");
+        setStatus("Error: " + data.error, "error");
         return;
       }
 
-      enrollTypingCard.style.display = "none";
-      enrollDoneCard.style.display   = "block";
-
-      const successMsg = document.getElementById("enroll-success-msg");
-      successMsg.className = "status-msg success";
-      successMsg.textContent =
-        `Profile for "${name}" saved! (${enrollSamples.length} typing samples recorded)`;
-
-    } catch (err) {
-      setEnrollStatus("Network error — is the server running?", "error");
+      currentMode             = "idle";
+      dotsWrap.style.display  = "none";
+      enrolDoneMsg.style.display = "block";
+      enrolSuccessText.textContent =
+        `\u201c${name}\u201d saved \u2014 ${enrollSamples.length} samples recorded.`;
+      setStatus(`Profile saved for \u201c${name}\u201d.`, "success");
+      loadStudents();
+    } catch {
+      setStatus("Network error \u2014 is the server running?", "error");
     }
   }
 
   btnEnrollAnother.addEventListener("click", () => {
-    enrollSamples                    = [];
-    enrollTypingCard.style.display   = "none";
-    enrollDoneCard.style.display     = "none";
-    enrollNameInput.value            = "";
-    enrollNameInput.disabled         = false;
-    btnStartEnroll.disabled          = false;
-    enrollNameInput.focus();
-    renderPhrase(enrollPhraseDisplay, PHRASE, 0, false);
+    currentMode              = "idle";
+    enrollSamples            = [];
+    enrollNameInput.value    = "";
+    enrollNameInput.disabled = false;
+    btnStartEnroll.disabled  = false;
+    enrolDoneMsg.style.display = "none";
+    dotsWrap.style.display     = "none";
+    renderPhrase(phraseDisplay, PHRASE, 0);
+    setStatus("Ready \u2014 enter a student name to enrol.", "");
   });
 
-
   // ====================================================================
-  // IDENTIFY TAB
+  // IDENTIFY
   // ====================================================================
 
-  let identifyCapture = null;
+  function startIdentify() {
+    currentMode                       = "identify";
+    dotsWrap.style.display            = "none";
+    identifyResultsWrap.style.display = "none";
+    setStatus("Start typing the phrase above.", "info");
 
-  const identifyPhraseDisplay = document.getElementById("identify-phrase-display");
-  const identifyHiddenInput   = document.getElementById("identify-hidden-input");
-  const identifyStatus        = document.getElementById("identify-status");
-  const identifyResultsCard   = document.getElementById("identify-results-card");
-  const identifyResultsEl     = document.getElementById("identify-results");
-  const btnIdentifyAgain      = document.getElementById("btn-identify-again");
-
-  function setIdentifyStatus(msg, type) {
-    identifyStatus.textContent = msg;
-    identifyStatus.className = "status-msg " + type;
-  }
-
-  function resetIdentify() {
-    identifyResultsCard.style.display = "none";
-    setIdentifyStatus("Start typing the phrase above.", "info");
-    renderPhrase(identifyPhraseDisplay, PHRASE, 0, false);
-
-    identifyCapture = createCapture(identifyHiddenInput, identifyPhraseDisplay, {
+    identifyCapture = createCapture(identifyHiddenInput, phraseDisplay, {
       onComplete(timing) {
-        setIdentifyStatus("Analysing your typing…", "info");
+        setStatus("Analysing your typing\u2026", "info");
         submitIdentify(timing);
       },
       onError() {
-        setIdentifyStatus("Wrong key — auto-restarted. Try again.", "warning");
+        setStatus("Wrong key \u2014 auto-restarted. Try again.", "warning");
       }
     });
     identifyCapture.start();
   }
 
-  // Initialise on first load
-  resetIdentify();
+  btnIdentifyStart.addEventListener("click", startIdentify);
+  btnIdentifyAgain.addEventListener("click", startIdentify);
 
   async function submitIdentify(timing) {
     try {
-      const res = await fetch("/api/identify", {
+      const res  = await fetch("/api/identify", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
         body:    JSON.stringify({ timing })
@@ -839,71 +764,56 @@
       const data = await res.json();
 
       if (data.error) {
-        setIdentifyStatus(data.error, "error");
+        setStatus(data.error, "error");
         return;
       }
 
       renderResults(data);
-    } catch (err) {
-      setIdentifyStatus("Network error — is the server running?", "error");
+    } catch {
+      setStatus("Network error \u2014 is the server running?", "error");
     }
   }
 
   function renderResults(data) {
-    identifyResultsCard.style.display = "block";
+    identifyResultsWrap.style.display = "block";
     identifyResultsEl.innerHTML = "";
 
-    setIdentifyStatus(
+    setStatus(
       `Best match: ${data.best_match} (${data.top_confidence}% confidence)`,
       "success"
     );
 
     data.results.forEach((r, i) => {
       const isBest = i === 0;
-      const item   = document.createElement("div");
-      item.className = "result-item" + (isBest ? " best-match" : "");
-
-      item.innerHTML = `
-        <div class="result-header">
-          <span class="result-name">${escapeHtml(r.name)}</span>
-          <div style="display:flex;gap:8px;align-items:center">
-            ${isBest ? '<span class="result-badge">Best Match</span>' : ""}
-            <span class="result-pct">${r.confidence}%</span>
-          </div>
+      const row    = document.createElement("div");
+      row.className = "result-row";
+      row.innerHTML = `
+        <div class="result-name-row">
+          <span class="${isBest ? "result-best" : ""}">${escapeHtml(r.name)}</span>
+          <span style="color:var(--text-dim)">${r.confidence}%</span>
         </div>
         <div class="bar-track">
-          <div class="bar-fill" style="width: 0%"></div>
+          <div class="bar-fill${isBest ? " match" : ""}" style="width:0%"></div>
         </div>`;
-
-      identifyResultsEl.appendChild(item);
-
-      // Animate bar after DOM insertion
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          item.querySelector(".bar-fill").style.width = r.confidence + "%";
-        });
-      });
+      identifyResultsEl.appendChild(row);
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        row.querySelector(".bar-fill").style.width = r.confidence + "%";
+      }));
     });
   }
 
-  btnIdentifyAgain.addEventListener("click", resetIdentify);
-
-
   // ====================================================================
-  // STUDENTS TAB
+  // ENROLLED STUDENTS
   // ====================================================================
-
-  const studentListEl = document.getElementById("student-list");
-  const btnReset      = document.getElementById("btn-reset");
 
   async function loadStudents() {
-    studentListEl.innerHTML = '<div class="empty-state">Loading&hellip;</div>';
+    studentListEl.innerHTML = '<div class="empty-msg">Loading\u2026</div>';
     try {
       const res  = await fetch("/api/profiles");
       const data = await res.json();
 
       if (!data.enrolled || data.enrolled.length === 0) {
-        studentListEl.innerHTML = '<div class="empty-state">No students enrolled yet.</div>';
+        studentListEl.innerHTML = '<div class="empty-msg">No students enrolled yet.</div>';
         return;
       }
 
@@ -914,18 +824,21 @@
         el.innerHTML = `
           <div>
             <div class="student-name">${escapeHtml(s.name)}</div>
-            <div class="student-meta">${s.num_samples} typing sample${s.num_samples !== 1 ? "s" : ""} recorded</div>
+            <div class="student-meta">${s.num_samples} sample${s.num_samples !== 1 ? "s" : ""}</div>
           </div>
-          <div style="display:flex;gap:8px">
-            <button class="btn btn-ghost" data-action="stats">View Stats</button>
-            <button class="btn btn-danger" data-action="delete">Delete</button>
+          <div style="display:flex;gap:6px">
+            <button class="btn btn-ghost"
+                    style="padding:5px 10px;font-size:0.8rem" data-action="stats">Stats</button>
+            <button class="btn btn-danger"
+                    style="padding:5px 10px;font-size:0.8rem" data-action="delete">&#x1F5D1;</button>
           </div>`;
+        el.querySelector(".student-name").addEventListener("click", () => showProfileModal(s.name));
         el.querySelector("[data-action='stats']").addEventListener("click", () => showProfileModal(s.name));
         el.querySelector("[data-action='delete']").addEventListener("click", () => deleteStudent(s.name));
         studentListEl.appendChild(el);
       });
     } catch {
-      studentListEl.innerHTML = '<div class="empty-state" style="color:var(--error)">Failed to load.</div>';
+      studentListEl.innerHTML = '<div class="empty-msg" style="color:var(--error)">Failed to load.</div>';
     }
   }
 
@@ -941,6 +854,8 @@
     loadStudents();
   });
 
+  // Load on page start
+  loadStudents();
 
   // ====================================================================
   // PROFILE STATS MODAL
@@ -975,7 +890,7 @@
           borderColor: color,
           borderWidth: 1,
           borderRadius: 3,
-        }],
+        }]
       },
       options: {
         responsive: true,
@@ -985,23 +900,24 @@
           legend: { display: false },
           tooltip: {
             callbacks: {
-              label: ctx => `${ctx.parsed.y.toFixed(1)} ms  (\u00b1${stds[ctx.dataIndex].toFixed(1)} ms std)`,
-            },
-          },
+              label: ctx =>
+                `${ctx.parsed.y.toFixed(1)} ms  (\u00b1${stds[ctx.dataIndex].toFixed(1)} ms std)`
+            }
+          }
         },
         scales: {
           x: {
             ticks: { color: "#94a3b8", font: { size: 11, family: "monospace" } },
-            grid: { color: "#334155" },
+            grid:  { color: "#334155" }
           },
           y: {
             beginAtZero: true,
             ticks: { color: "#94a3b8" },
-            grid: { color: "#334155" },
-            title: { display: true, text: "ms", color: "#94a3b8" },
-          },
-        },
-      },
+            grid:  { color: "#334155" },
+            title: { display: true, text: "ms", color: "#94a3b8" }
+          }
+        }
+      }
     });
   }
 
@@ -1020,16 +936,27 @@
       const res = await fetch(`/api/profiles/${encodeURIComponent(name)}`);
       const p   = await res.json();
 
-      const avgDwell  = (p.mean_dwell.reduce((s, v)  => s + v, 0) / p.mean_dwell.length).toFixed(1);
+      const avgDwell  = (p.mean_dwell.reduce( (s, v) => s + v, 0) / p.mean_dwell.length ).toFixed(1);
       const avgFlight = (p.mean_flight.reduce((s, v) => s + v, 0) / p.mean_flight.length).toFixed(1);
-      const avgStd    = (p.std_dwell.reduce((s, v)   => s + v, 0) / p.std_dwell.length).toFixed(1);
+      const avgStd    = (p.std_dwell.reduce(  (s, v) => s + v, 0) / p.std_dwell.length  ).toFixed(1);
 
       document.getElementById("modal-stat-grid").innerHTML = `
-        <div class="stat-card"><div class="stat-value">${p.num_samples}</div><div class="stat-label">Samples</div></div>
-        <div class="stat-card"><div class="stat-value">${avgDwell}</div><div class="stat-label">Avg Dwell (ms)</div></div>
-        <div class="stat-card"><div class="stat-value">${avgFlight}</div><div class="stat-label">Avg Flight (ms)</div></div>
-        <div class="stat-card"><div class="stat-value">${avgStd}</div><div class="stat-label">Avg Dwell Std (ms)</div></div>
-      `;
+        <div class="stat-card">
+          <div class="stat-value">${p.num_samples}</div>
+          <div class="stat-label">Samples</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">${avgDwell}</div>
+          <div class="stat-label">Avg Dwell (ms)</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">${avgFlight}</div>
+          <div class="stat-label">Avg Flight (ms)</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">${avgStd}</div>
+          <div class="stat-label">Avg Dwell Std (ms)</div>
+        </div>`;
 
       _dwellChart  = buildChart("chart-dwell",  phraseCharLabels(),   p.mean_dwell,  p.std_dwell,  "#6366f1");
       _flightChart = buildChart("chart-flight", phraseFlightLabels(), p.mean_flight, p.std_flight, "#22c55e");
@@ -1056,12 +983,8 @@
 
   // Re-focus the active capture when the window regains focus
   window.addEventListener("focus", () => {
-    const activeTab = document.querySelector(".tab-btn.active")?.dataset.tab;
-    if (activeTab === "enroll" && enrollTypingCard.style.display !== "none") {
-      enrollHiddenInput.focus();
-    } else if (activeTab === "identify") {
-      identifyHiddenInput.focus();
-    }
+    if (currentMode === "enroll")        enrollHiddenInput.focus();
+    else if (currentMode === "identify") identifyHiddenInput.focus();
   });
 
   // ====================================================================
@@ -1069,7 +992,11 @@
   // ====================================================================
 
   function escapeHtml(str) {
-    return str.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+    return str
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
   }
 
 </script>

@@ -395,8 +395,17 @@
         border-radius: 5px;
         font-size: 0.8rem;
       }
+      .profile-item.selected {
+        border-color: var(--accent);
+        background: rgba(245, 158, 11, 0.08);
+      }
       .profile-item-name {
         flex: 1;
+        cursor: pointer;
+      }
+      .profile-item-name:hover {
+        color: var(--accent-h);
+        text-decoration: underline;
       }
       .btn-del {
         padding: 2px 7px;
@@ -960,11 +969,26 @@
             (n) => `
     <div class="profile-item">
       <span>&#x1F4CC;</span>
-      <span class="profile-item-name">${n}</span>
+      <span class="profile-item-name" data-name="${n}">${n}</span>
       <button class="btn-del" data-name="${n}">&#x2715;</button>
     </div>`
           )
           .join("");
+        profileList.querySelectorAll(".profile-item-name").forEach((nameEl) => {
+          nameEl.addEventListener("click", () => {
+            const n = nameEl.dataset.name;
+            nameInput.value = n;
+            profileList
+              .querySelectorAll(".profile-item")
+              .forEach((el) => el.classList.remove("selected"));
+            nameEl.closest(".profile-item").classList.add("selected");
+            updateMfccBars(profiles[n]);
+            setStatus(
+              `Loaded profile for &ldquo;${n}&rdquo; &mdash; record a sample to compare.`,
+              "info"
+            );
+          });
+        });
         profileList.querySelectorAll(".btn-del").forEach((btn) => {
           btn.addEventListener("click", () => {
             delete profiles[btn.dataset.name];

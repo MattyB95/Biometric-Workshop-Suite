@@ -129,6 +129,7 @@
       }
       .video-wrapper canvas {
         pointer-events: none;
+        z-index: 1; /* must be above the composited video layer */
       }
 
       .camera-overlay-msg {
@@ -508,8 +509,17 @@
         border-radius: 5px;
         font-size: 0.8rem;
       }
+      .profile-item.selected {
+        border-color: var(--accent);
+        background: rgba(6, 182, 212, 0.08);
+      }
       .profile-item-name {
         flex: 1;
+        cursor: pointer;
+      }
+      .profile-item-name:hover {
+        color: var(--accent-h);
+        text-decoration: underline;
       }
       .btn-del {
         padding: 2px 7px;
@@ -916,6 +926,24 @@
 
       // ─── State ────────────────────────────────────────────────────────────────
       const FACE_STORAGE_KEY = "bws_face_profiles";
+      const FACE_FEATURE_LABELS = [
+        "Inter-ocular dist",
+        "Eye aspect ratio (R)",
+        "Eye aspect ratio (L)",
+        "Nose width",
+        "Mouth width",
+        "Mouth aspect ratio",
+        "Philtrum length",
+        "Face width/height",
+        "Nose-to-eye dist",
+        "Chin-to-nose dist",
+        "Jaw symmetry",
+        "Brow height",
+        "Eye-to-nose ratio",
+        "L/R eye balance",
+        "Nose bridge length",
+        "Mouth-to-chin dist",
+      ];
       let faceProfiles = {}; // name → array of 16 normalised feature values
       let currentFeatureValues = null; // updated each detection frame
 
@@ -1159,11 +1187,36 @@
             (n) => `
           <div class="profile-item">
             <span>&#x1F4CC;</span>
-            <span class="profile-item-name">${n}</span>
+            <span class="profile-item-name" data-name="${n}">${n}</span>
             <button class="btn-del" data-name="${n}">&#x2715;</button>
           </div>`
           )
           .join("");
+        profileList.querySelectorAll(".profile-item-name").forEach((nameEl) => {
+          nameEl.addEventListener("click", () => {
+            const n = nameEl.dataset.name;
+            nameInput.value = n;
+            profileList
+              .querySelectorAll(".profile-item")
+              .forEach((el) => el.classList.remove("selected"));
+            nameEl.closest(".profile-item").classList.add("selected");
+            const stored = faceProfiles[n];
+            if (stored) {
+              const fakeFeatures = stored.map((v, i) => ({
+                value: v,
+                label: FACE_FEATURE_LABELS[i] || `Feature ${i + 1}`,
+                raw: v.toFixed(3),
+                unit: "",
+              }));
+              renderFeatures(fakeFeatures);
+              updateDescriptorGrid(fakeFeatures);
+            }
+            setStatus(
+              `Loaded profile for &ldquo;${n}&rdquo; &mdash; press Identify Face to compare.`,
+              "running"
+            );
+          });
+        });
         profileList.querySelectorAll(".btn-del").forEach((btn) => {
           btn.addEventListener("click", () => {
             delete faceProfiles[btn.dataset.name];
@@ -1225,19 +1278,22 @@
       });
 
       // ─── Draw landmark overlay ────────────────────────────────────────────────
-      function drawLandmarks(landmarks, box, score, scaleX, scaleY) {
+      function drawLandmarks(landmarks, box, score, scale, ox, oy) {
         const pts = landmarks.positions;
+        // cx/cy: map a video-space point to canvas-space
+        const cx = (x) => x * scale + ox;
+        const cy = (y) => y * scale + oy;
 
         if (showOverlay) {
           // Bounding box
           ctx.strokeStyle = "#06b6d4";
           ctx.lineWidth = 2;
-          ctx.strokeRect(box.x * scaleX, box.y * scaleY, box.width * scaleX, box.height * scaleY);
+          ctx.strokeRect(cx(box.x), cy(box.y), box.width * scale, box.height * scale);
 
           // Score label
           ctx.fillStyle = "#06b6d4";
           ctx.font = "13px monospace";
-          ctx.fillText(`${(score * 100).toFixed(0)}%`, box.x * scaleX + 4, box.y * scaleY - 6);
+          ctx.fillText(`${(score * 100).toFixed(0)}%`, cx(box.x) + 4, cy(box.y) - 6);
 
           // Landmarks by region
           Object.values(REGIONS).forEach((region) => {
@@ -1245,7 +1301,7 @@
             for (let i = lo; i <= hi; i++) {
               const p = pts[i];
               ctx.beginPath();
-              ctx.arc(p.x * scaleX, p.y * scaleY, 2.5, 0, Math.PI * 2);
+              ctx.arc(cx(p.x), cy(p.y), 2.5, 0, Math.PI * 2);
               ctx.fillStyle = region.color;
               ctx.fill();
             }
@@ -1256,9 +1312,7 @@
             ctx.beginPath();
             indices.forEach((idx, n) => {
               const p = pts[idx];
-              n === 0
-                ? ctx.moveTo(p.x * scaleX, p.y * scaleY)
-                : ctx.lineTo(p.x * scaleX, p.y * scaleY);
+              n === 0 ? ctx.moveTo(cx(p.x), cy(p.y)) : ctx.lineTo(cx(p.x), cy(p.y));
             });
             if (close) ctx.closePath();
             ctx.stroke();
@@ -1280,25 +1334,40 @@
       async function detect() {
         if (!running) return;
 
-        // Match canvas to actual displayed video size
-        const rect = video.getBoundingClientRect();
-        overlay.width = rect.width;
-        overlay.height = rect.height;
-        ctx.clearRect(0, 0, overlay.width, overlay.height);
+        // Wait until the video has actual frame dimensions
+        if (!video.videoWidth || !video.videoHeight) {
+          rafId = requestAnimationFrame(detect);
+          return;
+        }
 
-        const scaleX = rect.width / video.videoWidth;
-        const scaleY = rect.height / video.videoHeight;
+        // Capture layout before the async detection so scale stays consistent
+        // with the canvas dimensions we set afterwards.
+        const rect = video.getBoundingClientRect();
+
+        // Compute the object-fit:cover transform so landmarks align with
+        // what is actually visible — cover uses the larger of the two scale
+        // factors and crops the other axis, so we need the matching offset.
+        const scale = Math.max(rect.width / video.videoWidth, rect.height / video.videoHeight);
+        const ox = (rect.width - video.videoWidth * scale) / 2;
+        const oy = (rect.height - video.videoHeight * scale) / 2;
 
         const result = await faceapi
           .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
           .withFaceLandmarks(true); // use tiny model
+
+        // Clear and draw synchronously AFTER detection so the landmarks stay
+        // on screen for the full ~100 ms detection interval rather than being
+        // wiped by the next RAF before the eye can see them.
+        overlay.width = rect.width;
+        overlay.height = rect.height;
+        // (setting .width resets the canvas — no need for an extra clearRect)
 
         if (result) {
           const { detection, landmarks } = result;
           const box = detection.box;
           const score = detection.score;
 
-          drawLandmarks(landmarks, box, score, scaleX, scaleY);
+          drawLandmarks(landmarks, box, score, scale, ox, oy);
 
           // Update detection stats
           statStatus.textContent = "Detected";

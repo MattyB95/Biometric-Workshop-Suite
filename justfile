@@ -1,7 +1,8 @@
 # Biometric Workshop Suite — task runner
 # Install just: https://github.com/casey/just
 
-set shell := ["pwsh", "-c"]
+set shell := ["sh", "-c"]
+set windows-shell := ["pwsh", "-c"]
 
 # List available commands
 default:
