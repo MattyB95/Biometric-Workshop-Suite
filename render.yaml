@@ -3,7 +3,7 @@ services:
     name: biometric-workshop
     runtime: python
     plan: free
-    buildCommand: pip install flask gunicorn
+    buildCommand: pip install uv && uv sync --no-dev
     startCommand: gunicorn --bind 0.0.0.0:$PORT src.app:app
     envVars:
       - key: PYTHON_VERSION

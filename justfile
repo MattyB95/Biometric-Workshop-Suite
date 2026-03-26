@@ -145,6 +145,7 @@ sync-docs:
     content = content.replace('href="/face"',       'href="./face.html"')
     content = content.replace('href="/voice"',      'href="./voice.html"')
     content = content.replace('href="/signature"',  'href="./signature.html"')
+    content = content.replace('href="/mouse"',      'href="./mouse.html"')
     open('docs/index.html', 'w', encoding='utf-8').write(content)
     subprocess.run('npx prettier --write docs/face.html docs/voice.html docs/signature.html docs/index.html', shell=True, check=True)
     print('Synced and formatted: docs/index.html, docs/face.html, docs/voice.html, docs/signature.html')
