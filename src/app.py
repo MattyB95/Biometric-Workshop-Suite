@@ -18,6 +18,9 @@ PROFILES_FILE: str = os.path.join(_ROOT, "profiles.json")
 PHRASE = "the quick brown fox"
 ENROLL_SAMPLES_REQUIRED = 5
 
+MOUSE_PROFILES_FILE: str = os.path.join(_ROOT, "mouse_profiles.json")
+MOUSE_ENROLL_SAMPLES_REQUIRED = 5
+
 
 # ---------------------------------------------------------------------------
 # Profile persistence
@@ -33,6 +36,18 @@ def load_profiles() -> dict[str, Any]:
 
 def save_profiles(profiles: dict[str, Any]) -> None:
     with open(PROFILES_FILE, "w") as f:
+        json.dump(profiles, f, indent=2)
+
+
+def load_mouse_profiles() -> dict[str, Any]:
+    if os.path.exists(MOUSE_PROFILES_FILE):
+        with open(MOUSE_PROFILES_FILE) as f:
+            return json.load(f)  # type: ignore[no-any-return]
+    return {}
+
+
+def save_mouse_profiles(profiles: dict[str, Any]) -> None:
+    with open(MOUSE_PROFILES_FILE, "w") as f:
         json.dump(profiles, f, indent=2)
 
 
@@ -85,6 +100,45 @@ def compute_distance(timing: dict[str, Any], profile: dict[str, Any]) -> float:
     return total / n if n > 0 else float("inf")
 
 
+def compute_mouse_distance(sample: dict[str, Any], profile: dict[str, Any]) -> float:
+    """
+    Normalised Manhattan distance for mouse dynamics.
+    Features: movement_times (7), click_dwells (8), curvatures (7).
+    """
+    total = 0.0
+    n = 0
+
+    time_floor = 30.0  # ms
+    dwell_floor = 15.0  # ms
+    curve_floor = 0.03  # curvature units
+
+    for t, m, s in zip(
+        sample["movement_times"],
+        profile["mean_movement_times"],
+        profile["std_movement_times"],
+    ):
+        total += abs(t - m) / max(s, time_floor)
+        n += 1
+
+    for t, m, s in zip(
+        sample["click_dwells"],
+        profile["mean_click_dwells"],
+        profile["std_click_dwells"],
+    ):
+        total += abs(t - m) / max(s, dwell_floor)
+        n += 1
+
+    for t, m, s in zip(
+        sample["curvatures"],
+        profile["mean_curvatures"],
+        profile["std_curvatures"],
+    ):
+        total += abs(t - m) / max(s, curve_floor)
+        n += 1
+
+    return total / n if n > 0 else float("inf")
+
+
 # ---------------------------------------------------------------------------
 # Routes
 # ---------------------------------------------------------------------------
@@ -115,6 +169,11 @@ def voice() -> str:
 @app.route("/signature")
 def signature() -> str:
     return render_template("signature.html")
+
+
+@app.route("/mouse")
+def mouse() -> str:
+    return render_template("mouse.html", enroll_samples=MOUSE_ENROLL_SAMPLES_REQUIRED)
 
 
 @app.route("/api/enroll", methods=["POST"])
@@ -214,6 +273,107 @@ def delete_profile(name: str) -> Response:
 @app.route("/api/reset", methods=["POST"])
 def reset() -> Response:
     save_profiles({})
+    return jsonify({"success": True})
+
+
+# ---------------------------------------------------------------------------
+# Mouse dynamics API
+# ---------------------------------------------------------------------------
+
+
+@app.route("/api/mouse/enroll", methods=["POST"])
+def mouse_enroll() -> Response | tuple[Response, int]:
+    data = request.json
+    name = (data.get("name") or "").strip()
+    samples = data.get("samples", [])
+
+    if not name:
+        return jsonify({"error": "Name is required"}), 400
+    if len(samples) < MOUSE_ENROLL_SAMPLES_REQUIRED:
+        msg = f"Need {MOUSE_ENROLL_SAMPLES_REQUIRED} samples, got {len(samples)}"
+        return jsonify({"error": msg}), 400
+
+    mean_cd, std_cd = mean_and_std([s["click_dwells"] for s in samples])
+    mean_mt, std_mt = mean_and_std([s["movement_times"] for s in samples])
+    mean_cv, std_cv = mean_and_std([s["curvatures"] for s in samples])
+
+    profiles = load_mouse_profiles()
+    profiles[name] = {
+        "mean_click_dwells": mean_cd,
+        "std_click_dwells": std_cd,
+        "mean_movement_times": mean_mt,
+        "std_movement_times": std_mt,
+        "mean_curvatures": mean_cv,
+        "std_curvatures": std_cv,
+        "num_samples": len(samples),
+    }
+    save_mouse_profiles(profiles)
+    return jsonify({"success": True, "name": name, "enrolled": list(profiles.keys())})
+
+
+@app.route("/api/mouse/identify", methods=["POST"])
+def mouse_identify() -> Response | tuple[Response, int]:
+    data = request.json
+    sample = data.get("sample")
+
+    profiles = load_mouse_profiles()
+    if not profiles:
+        return (
+            jsonify({"error": "No profiles enrolled yet. Ask someone to enrol first!"}),
+            400,
+        )
+
+    results: list[dict[str, Any]] = []
+    for name, profile in profiles.items():
+        dist = compute_mouse_distance(sample, profile)
+        results.append({"name": name, "distance": round(dist, 4)})
+
+    results.sort(key=lambda r: r["distance"])
+
+    scale = 2.0
+    min_dist = results[0]["distance"]
+    raw_scores = [math.exp(-scale * (r["distance"] - min_dist)) for r in results]
+    total = sum(raw_scores)
+    for i, r in enumerate(results):
+        r["confidence"] = round(raw_scores[i] / total * 100, 1)
+
+    return jsonify(
+        {
+            "results": results,
+            "best_match": results[0]["name"],
+            "top_confidence": results[0]["confidence"],
+        }
+    )
+
+
+@app.route("/api/mouse/profiles", methods=["GET"])
+def get_mouse_profiles() -> Response:
+    profiles = load_mouse_profiles()
+    enrolled = [
+        {"name": k, "num_samples": v["num_samples"]} for k, v in profiles.items()
+    ]
+    return jsonify({"enrolled": enrolled})
+
+
+@app.route("/api/mouse/profiles/<name>", methods=["GET"])
+def get_mouse_profile(name: str) -> Response | tuple[Response, int]:
+    profiles = load_mouse_profiles()
+    if name not in profiles:
+        return jsonify({"error": "Profile not found"}), 404
+    return jsonify(profiles[name])
+
+
+@app.route("/api/mouse/profiles/<name>", methods=["DELETE"])
+def delete_mouse_profile(name: str) -> Response:
+    profiles = load_mouse_profiles()
+    profiles.pop(name, None)
+    save_mouse_profiles(profiles)
+    return jsonify({"success": True, "enrolled": list(profiles.keys())})
+
+
+@app.route("/api/mouse/reset", methods=["POST"])
+def mouse_reset() -> Response:
+    save_mouse_profiles({})
     return jsonify({"success": True})
 
 

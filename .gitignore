@@ -4,7 +4,10 @@
 # Python
 .venv/
 __pycache__/
-profiles.json
 
 # Node
 node_modules/
+
+# Project
+profiles.json
+mouse_profiles.json

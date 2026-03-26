@@ -74,11 +74,11 @@ check:
 
 # Format all HTML files (docs/ + templates/ except keystroke.html)
 fmt-html:
-    npx prettier --write "docs/*.html" templates/home.html templates/face.html templates/voice.html templates/signature.html
+    npx prettier --write "docs/*.html" templates/home.html templates/face.html templates/voice.html templates/signature.html templates/mouse.html
 
 # Check HTML formatting without modifying
 fmt-html-check:
-    npx prettier --check "docs/*.html" templates/home.html templates/face.html templates/voice.html templates/signature.html
+    npx prettier --check "docs/*.html" templates/home.html templates/face.html templates/voice.html templates/signature.html templates/mouse.html
 
 # Lint HTML structure across all files
 lint-html:
@@ -86,13 +86,13 @@ lint-html:
 
 # Lint inline JavaScript across all eligible HTML files
 lint-js:
-    npx eslint "docs/*.html" templates/face.html templates/voice.html templates/signature.html
+    npx eslint "docs/*.html" templates/face.html templates/voice.html templates/signature.html templates/mouse.html
 
 # Run all HTML/CSS/JS checks
 check-html:
-    npx prettier --check "docs/*.html" templates/home.html templates/face.html templates/voice.html templates/signature.html
+    npx prettier --check "docs/*.html" templates/home.html templates/face.html templates/voice.html templates/signature.html templates/mouse.html
     npx htmlhint "docs/*.html" "templates/*.html"
-    npx eslint "docs/*.html" templates/face.html templates/voice.html templates/signature.html
+    npx eslint "docs/*.html" templates/face.html templates/voice.html templates/signature.html templates/mouse.html
 
 # ── Tests ────────────────────────────────────────────────────────────────────
 
@@ -132,8 +132,8 @@ pre-commit-install:
 
 # ── GitHub Pages static site (docs/) ────────────────────────────────────────
 
-# Sync auto-generated docs pages from templates (home + face).
-# docs/keystroke.html is maintained separately (localStorage, no Flask backend).
+# Sync auto-generated docs pages from templates (home + face/voice/signature).
+# docs/keystroke.html and docs/mouse.html are maintained separately (localStorage, no Flask backend).
 sync-docs:
     #!/usr/bin/env python
     import shutil, subprocess
@@ -148,7 +148,7 @@ sync-docs:
     open('docs/index.html', 'w', encoding='utf-8').write(content)
     subprocess.run('npx prettier --write docs/face.html docs/voice.html docs/signature.html docs/index.html', shell=True, check=True)
     print('Synced and formatted: docs/index.html, docs/face.html, docs/voice.html, docs/signature.html')
-    print('Note: docs/keystroke.html is maintained separately.')
+    print('Note: docs/keystroke.html and docs/mouse.html are maintained separately (localStorage-only, no Jinja2).')
 
 # ── App management ───────────────────────────────────────────────────────────
 
