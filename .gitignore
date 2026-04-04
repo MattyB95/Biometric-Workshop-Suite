@@ -4,10 +4,26 @@
 # Python
 .venv/
 __pycache__/
+*.pyc
+*.pyo
+.mypy_cache/
+.ruff_cache/
 
 # Node
 node_modules/
 
-# Project
+# Test & coverage artefacts
+htmlcov/
+.coverage
+.pytest_cache/
+
+# Claude Code
+.claude/
+
+# Project — runtime data files (auto-created, not for version control)
 profiles.json
 mouse_profiles.json
+face_profiles.json
+voice_profiles.json
+signature_profiles.json
+admin_config.json

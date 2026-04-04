@@ -7,17 +7,8 @@ name = "biometric-workshop"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
-    { name = "charset-normalizer" },
-    { name = "click" },
     { name = "flask" },
     { name = "gunicorn" },
-    { name = "mypy" },
-    { name = "pygments" },
-    { name = "python-discovery" },
-    { name = "requests" },
-    { name = "ruff" },
-    { name = "ty" },
-    { name = "werkzeug" },
 ]
 
 [package.dev-dependencies]
@@ -34,29 +25,20 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "charset-normalizer", specifier = "==3.4.7" },
-    { name = "click", specifier = "==8.3.2" },
-    { name = "flask" },
-    { name = "gunicorn", specifier = "==25.3.0" },
-    { name = "mypy", specifier = "==1.20.0" },
-    { name = "pygments", specifier = "==2.20.0" },
-    { name = "python-discovery", specifier = "==1.2.1" },
-    { name = "requests", specifier = "==2.33.1" },
-    { name = "ruff", specifier = "==0.15.9" },
-    { name = "ty", specifier = "==0.0.28" },
-    { name = "werkzeug", specifier = "==3.1.8" },
+    { name = "flask", specifier = ">=3.1.0" },
+    { name = "gunicorn", specifier = ">=25.3.0" },
 ]
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "black" },
-    { name = "mypy" },
-    { name = "pre-commit" },
-    { name = "pytest" },
+    { name = "black", specifier = ">=26.3.0" },
+    { name = "mypy", specifier = ">=1.20.0" },
+    { name = "pre-commit", specifier = ">=4.5.0" },
+    { name = "pytest", specifier = ">=9.0.0" },
     { name = "pytest-cov", specifier = ">=7.1.0" },
-    { name = "pytest-playwright" },
-    { name = "ruff" },
-    { name = "ty" },
+    { name = "pytest-playwright", specifier = ">=0.7.0" },
+    { name = "ruff", specifier = ">=0.15.0" },
+    { name = "ty", specifier = ">=0.0.28" },
 ]
 
 [[package]]

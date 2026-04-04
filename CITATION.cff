@@ -1,0 +1,14 @@
+cff-version: 1.2.0
+message: "If you use this project in teaching or academic work, please cite it as below."
+type: software
+title: "Biometric Workshop Suite"
+abstract: >
+  An interactive, multi-modality biometric demonstration suite for classroom
+  and workshop use. Covers keystroke dynamics, mouse dynamics, face recognition,
+  voice biometrics, and signature dynamics — each with live feature visualisation
+  and a matching algorithm explainer. For educational use only.
+authors:
+  - family-names: Boakes
+    given-names: Matthew
+license: MIT
+url: "https://github.com/matthewboakes/Biometric-Workshop-Suite"

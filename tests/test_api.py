@@ -4,6 +4,8 @@ import json
 
 import pytest
 
+from src.app import DEFAULT_ADMIN_PIN
+
 PHRASE = "the quick brown fox"
 N = len(PHRASE)  # 19 characters → 18 flight intervals
 
@@ -199,3 +201,510 @@ class TestReset:
     def test_reset_returns_success(self, client):
         resp = client.post("/api/reset", content_type="application/json")
         assert resp.get_json()["success"] is True
+
+
+# ---------------------------------------------------------------------------
+# Page routes
+# ---------------------------------------------------------------------------
+
+
+class TestPageRoutes:
+    def test_home_returns_200(self, client):
+        assert client.get("/").status_code == 200
+
+    def test_keystroke_returns_200(self, client):
+        assert client.get("/keystroke").status_code == 200
+
+    def test_face_returns_200(self, client):
+        assert client.get("/face").status_code == 200
+
+    def test_voice_returns_200(self, client):
+        assert client.get("/voice").status_code == 200
+
+    def test_signature_returns_200(self, client):
+        assert client.get("/signature").status_code == 200
+
+    def test_mouse_returns_200(self, client):
+        assert client.get("/mouse").status_code == 200
+
+    def test_admin_returns_200(self, client):
+        assert client.get("/admin").status_code == 200
+
+
+# ---------------------------------------------------------------------------
+# Mouse dynamics API helpers
+# ---------------------------------------------------------------------------
+
+N_SEG = 7
+N_TGT = 8
+
+
+def _mouse_sample(base_time: float = 300.0, base_dwell: float = 80.0, base_curve: float = 0.1) -> dict:
+    return {
+        "movement_times": [base_time + i * 5 for i in range(N_SEG)],
+        "click_dwells": [base_dwell + i * 2 for i in range(N_TGT)],
+        "curvatures": [base_curve + i * 0.005 for i in range(N_SEG)],
+    }
+
+
+def _mouse_enroll(client, name: str, n_samples: int = 5) -> None:
+    samples = [_mouse_sample(base_time=300.0 + j * 10) for j in range(n_samples)]
+    resp = client.post(
+        "/api/mouse/enroll",
+        data=json.dumps({"name": name, "samples": samples}),
+        content_type="application/json",
+    )
+    assert resp.status_code == 200
+
+
+# ---------------------------------------------------------------------------
+# Mouse dynamics API tests
+# ---------------------------------------------------------------------------
+
+
+class TestMouseEnroll:
+    def test_missing_name_returns_400(self, client):
+        resp = client.post(
+            "/api/mouse/enroll",
+            data=json.dumps({"name": "", "samples": [_mouse_sample()] * 5}),
+            content_type="application/json",
+        )
+        assert resp.status_code == 400
+
+    def test_too_few_samples_returns_400(self, client):
+        resp = client.post(
+            "/api/mouse/enroll",
+            data=json.dumps({"name": "Alice", "samples": [_mouse_sample()] * 2}),
+            content_type="application/json",
+        )
+        assert resp.status_code == 400
+
+    def test_success_returns_enrolled_list(self, client):
+        _mouse_enroll(client, "Bob")
+        data = client.get("/api/mouse/profiles").get_json()
+        assert any(e["name"] == "Bob" for e in data["enrolled"])
+
+    def test_re_enroll_overwrites(self, client):
+        _mouse_enroll(client, "Carol")
+        _mouse_enroll(client, "Carol")
+        data = client.get("/api/mouse/profiles").get_json()
+        assert sum(1 for e in data["enrolled"] if e["name"] == "Carol") == 1
+
+
+class TestMouseProfiles:
+    def test_empty_returns_empty_list(self, client):
+        data = client.get("/api/mouse/profiles").get_json()
+        assert data["enrolled"] == []
+
+    def test_enrolled_name_appears(self, client):
+        _mouse_enroll(client, "Dave")
+        data = client.get("/api/mouse/profiles").get_json()
+        assert any(e["name"] == "Dave" for e in data["enrolled"])
+
+    def test_num_samples_reported(self, client):
+        _mouse_enroll(client, "Eve", n_samples=5)
+        data = client.get("/api/mouse/profiles").get_json()
+        entry = next(e for e in data["enrolled"] if e["name"] == "Eve")
+        assert entry["num_samples"] == 5
+
+    def test_profile_detail_returns_fields(self, client):
+        _mouse_enroll(client, "Frank")
+        data = client.get("/api/mouse/profiles/Frank").get_json()
+        for key in ("mean_movement_times", "std_movement_times", "mean_click_dwells",
+                    "std_click_dwells", "mean_curvatures", "std_curvatures", "num_samples"):
+            assert key in data
+
+    def test_profile_detail_returns_404_for_unknown(self, client):
+        assert client.get("/api/mouse/profiles/Nobody").status_code == 404
+
+
+class TestMouseIdentify:
+    def test_no_profiles_returns_400(self, client):
+        resp = client.post(
+            "/api/mouse/identify",
+            data=json.dumps({"sample": _mouse_sample()}),
+            content_type="application/json",
+        )
+        assert resp.status_code == 400
+
+    def test_best_match_returned(self, client):
+        _mouse_enroll(client, "Grace")
+        _mouse_enroll(client, "Heidi")
+        resp = client.post(
+            "/api/mouse/identify",
+            data=json.dumps({"sample": _mouse_sample()}),
+            content_type="application/json",
+        )
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert "best_match" in data
+        assert "top_confidence" in data
+        assert "results" in data
+
+    def test_confidence_sums_to_100(self, client):
+        _mouse_enroll(client, "Ivan")
+        _mouse_enroll(client, "Judy")
+        data = client.post(
+            "/api/mouse/identify",
+            data=json.dumps({"sample": _mouse_sample()}),
+            content_type="application/json",
+        ).get_json()
+        total = sum(r["confidence"] for r in data["results"])
+        assert abs(total - 100.0) < 0.2
+
+    def test_single_profile_gets_100_confidence(self, client):
+        _mouse_enroll(client, "Karl")
+        data = client.post(
+            "/api/mouse/identify",
+            data=json.dumps({"sample": _mouse_sample()}),
+            content_type="application/json",
+        ).get_json()
+        assert data["top_confidence"] == pytest.approx(100.0)
+
+
+class TestMouseDeleteAndReset:
+    def test_delete_removes_profile(self, client):
+        _mouse_enroll(client, "Laura")
+        client.delete("/api/mouse/profiles/Laura")
+        data = client.get("/api/mouse/profiles").get_json()
+        assert "Laura" not in [e["name"] for e in data["enrolled"]]
+
+    def test_delete_non_existent_is_idempotent(self, client):
+        resp = client.delete("/api/mouse/profiles/Ghost")
+        assert resp.status_code == 200
+        assert resp.get_json()["success"] is True
+
+    def test_reset_clears_all(self, client):
+        _mouse_enroll(client, "Mallory")
+        _mouse_enroll(client, "Niaj")
+        client.post("/api/mouse/reset", content_type="application/json")
+        assert client.get("/api/mouse/profiles").get_json()["enrolled"] == []
+
+    def test_reset_returns_success(self, client):
+        resp = client.post("/api/mouse/reset", content_type="application/json")
+        assert resp.get_json()["success"] is True
+
+
+# ---------------------------------------------------------------------------
+# Admin API tests
+# ---------------------------------------------------------------------------
+
+
+class TestAdminLogin:
+    def test_correct_pin_returns_success(self, client):
+        resp = client.post(
+            "/api/admin/login",
+            data=json.dumps({"pin": DEFAULT_ADMIN_PIN}),
+            content_type="application/json",
+        )
+        assert resp.status_code == 200
+        assert resp.get_json()["success"] is True
+
+    def test_wrong_pin_returns_401(self, client):
+        resp = client.post(
+            "/api/admin/login",
+            data=json.dumps({"pin": "0000"}),
+            content_type="application/json",
+        )
+        assert resp.status_code == 401
+        assert "error" in resp.get_json()
+
+    def test_logout_returns_success(self, client):
+        client.post(
+            "/api/admin/login",
+            data=json.dumps({"pin": DEFAULT_ADMIN_PIN}),
+            content_type="application/json",
+        )
+        resp = client.post("/api/admin/logout", content_type="application/json")
+        assert resp.get_json()["success"] is True
+
+
+class TestAdminChangePin:
+    def _login(self, client) -> None:
+        client.post(
+            "/api/admin/login",
+            data=json.dumps({"pin": DEFAULT_ADMIN_PIN}),
+            content_type="application/json",
+        )
+
+    def test_unauthenticated_returns_403(self, client):
+        resp = client.post(
+            "/api/admin/change-pin",
+            data=json.dumps({"new_pin": "9999"}),
+            content_type="application/json",
+        )
+        assert resp.status_code == 403
+
+    def test_too_short_returns_400(self, client):
+        self._login(client)
+        resp = client.post(
+            "/api/admin/change-pin",
+            data=json.dumps({"new_pin": "12"}),
+            content_type="application/json",
+        )
+        assert resp.status_code == 400
+
+    def test_valid_change_returns_success(self, client):
+        self._login(client)
+        resp = client.post(
+            "/api/admin/change-pin",
+            data=json.dumps({"new_pin": "9876"}),
+            content_type="application/json",
+        )
+        assert resp.status_code == 200
+        assert resp.get_json()["success"] is True
+
+    def test_new_pin_takes_effect(self, client):
+        self._login(client)
+        client.post(
+            "/api/admin/change-pin",
+            data=json.dumps({"new_pin": "5555"}),
+            content_type="application/json",
+        )
+        client.post("/api/admin/logout", content_type="application/json")
+        resp = client.post(
+            "/api/admin/login",
+            data=json.dumps({"pin": "5555"}),
+            content_type="application/json",
+        )
+        assert resp.status_code == 200
+
+
+# ---------------------------------------------------------------------------
+# Face profiles API tests
+# ---------------------------------------------------------------------------
+
+FACE_FEATURES = [0.5 + i * 0.02 for i in range(16)]
+
+
+class TestFaceEnroll:
+    def test_missing_name_returns_400(self, client):
+        resp = client.post(
+            "/api/face/enroll",
+            data=json.dumps({"name": "", "features": FACE_FEATURES}),
+            content_type="application/json",
+        )
+        assert resp.status_code == 400
+
+    def test_missing_features_returns_400(self, client):
+        resp = client.post(
+            "/api/face/enroll",
+            data=json.dumps({"name": "Alice"}),
+            content_type="application/json",
+        )
+        assert resp.status_code == 400
+
+    def test_empty_features_returns_400(self, client):
+        resp = client.post(
+            "/api/face/enroll",
+            data=json.dumps({"name": "Alice", "features": []}),
+            content_type="application/json",
+        )
+        assert resp.status_code == 400
+
+    def test_success_stores_profile(self, client):
+        resp = client.post(
+            "/api/face/enroll",
+            data=json.dumps({"name": "Bob", "features": FACE_FEATURES}),
+            content_type="application/json",
+        )
+        assert resp.status_code == 200
+        assert "Bob" in resp.get_json()["enrolled"]
+
+    def test_re_enroll_overwrites(self, client):
+        for _ in range(2):
+            client.post(
+                "/api/face/enroll",
+                data=json.dumps({"name": "Carol", "features": FACE_FEATURES}),
+                content_type="application/json",
+            )
+        data = client.get("/api/face/profiles").get_json()
+        assert data["enrolled"].count("Carol") == 1
+
+
+class TestFaceProfiles:
+    def test_empty_returns_empty(self, client):
+        data = client.get("/api/face/profiles").get_json()
+        assert data["profiles"] == {}
+        assert data["enrolled"] == []
+
+    def test_enrolled_profile_returned(self, client):
+        client.post(
+            "/api/face/enroll",
+            data=json.dumps({"name": "Dave", "features": FACE_FEATURES}),
+            content_type="application/json",
+        )
+        data = client.get("/api/face/profiles").get_json()
+        assert "Dave" in data["profiles"]
+        assert data["profiles"]["Dave"] == FACE_FEATURES
+
+    def test_delete_removes_profile(self, client):
+        client.post(
+            "/api/face/enroll",
+            data=json.dumps({"name": "Eve", "features": FACE_FEATURES}),
+            content_type="application/json",
+        )
+        client.delete("/api/face/profiles/Eve")
+        data = client.get("/api/face/profiles").get_json()
+        assert "Eve" not in data["profiles"]
+
+    def test_delete_non_existent_is_idempotent(self, client):
+        resp = client.delete("/api/face/profiles/Ghost")
+        assert resp.status_code == 200
+
+    def test_reset_clears_all(self, client):
+        client.post(
+            "/api/face/enroll",
+            data=json.dumps({"name": "Frank", "features": FACE_FEATURES}),
+            content_type="application/json",
+        )
+        client.post("/api/face/reset", content_type="application/json")
+        assert client.get("/api/face/profiles").get_json()["profiles"] == {}
+
+
+# ---------------------------------------------------------------------------
+# Voice profiles API tests
+# ---------------------------------------------------------------------------
+
+VOICE_FEATURES = [float(i) * 0.1 for i in range(13)]
+
+
+class TestVoiceEnroll:
+    def test_missing_name_returns_400(self, client):
+        resp = client.post(
+            "/api/voice/enroll",
+            data=json.dumps({"name": "", "features": VOICE_FEATURES}),
+            content_type="application/json",
+        )
+        assert resp.status_code == 400
+
+    def test_missing_features_returns_400(self, client):
+        resp = client.post(
+            "/api/voice/enroll",
+            data=json.dumps({"name": "Alice"}),
+            content_type="application/json",
+        )
+        assert resp.status_code == 400
+
+    def test_success_stores_profile(self, client):
+        resp = client.post(
+            "/api/voice/enroll",
+            data=json.dumps({"name": "Bob", "features": VOICE_FEATURES}),
+            content_type="application/json",
+        )
+        assert resp.status_code == 200
+        assert "Bob" in resp.get_json()["enrolled"]
+
+
+class TestVoiceProfiles:
+    def test_empty_returns_empty(self, client):
+        data = client.get("/api/voice/profiles").get_json()
+        assert data["profiles"] == {}
+
+    def test_enrolled_profile_returned(self, client):
+        client.post(
+            "/api/voice/enroll",
+            data=json.dumps({"name": "Carol", "features": VOICE_FEATURES}),
+            content_type="application/json",
+        )
+        data = client.get("/api/voice/profiles").get_json()
+        assert "Carol" in data["profiles"]
+
+    def test_delete_removes_profile(self, client):
+        client.post(
+            "/api/voice/enroll",
+            data=json.dumps({"name": "Dave", "features": VOICE_FEATURES}),
+            content_type="application/json",
+        )
+        client.delete("/api/voice/profiles/Dave")
+        assert "Dave" not in client.get("/api/voice/profiles").get_json()["profiles"]
+
+    def test_delete_non_existent_is_idempotent(self, client):
+        assert client.delete("/api/voice/profiles/Ghost").status_code == 200
+
+    def test_reset_clears_all(self, client):
+        client.post(
+            "/api/voice/enroll",
+            data=json.dumps({"name": "Eve", "features": VOICE_FEATURES}),
+            content_type="application/json",
+        )
+        client.post("/api/voice/reset", content_type="application/json")
+        assert client.get("/api/voice/profiles").get_json()["profiles"] == {}
+
+
+# ---------------------------------------------------------------------------
+# Signature profiles API tests
+# ---------------------------------------------------------------------------
+
+SIG_FEATURES = {
+    "dur": 2.5,
+    "pathLen": 1.2,
+    "avgVel": 0.48,
+    "maxVel": 0.9,
+    "numStrokes": 3,
+    "dirRate": 0.6,
+}
+
+
+class TestSignatureEnroll:
+    def test_missing_name_returns_400(self, client):
+        resp = client.post(
+            "/api/signature/enroll",
+            data=json.dumps({"name": "", "features": SIG_FEATURES}),
+            content_type="application/json",
+        )
+        assert resp.status_code == 400
+
+    def test_missing_features_returns_400(self, client):
+        resp = client.post(
+            "/api/signature/enroll",
+            data=json.dumps({"name": "Alice"}),
+            content_type="application/json",
+        )
+        assert resp.status_code == 400
+
+    def test_success_stores_profile(self, client):
+        resp = client.post(
+            "/api/signature/enroll",
+            data=json.dumps({"name": "Bob", "features": SIG_FEATURES}),
+            content_type="application/json",
+        )
+        assert resp.status_code == 200
+        assert "Bob" in resp.get_json()["enrolled"]
+
+
+class TestSignatureProfiles:
+    def test_empty_returns_empty(self, client):
+        data = client.get("/api/signature/profiles").get_json()
+        assert data["profiles"] == {}
+
+    def test_enrolled_profile_returned(self, client):
+        client.post(
+            "/api/signature/enroll",
+            data=json.dumps({"name": "Carol", "features": SIG_FEATURES}),
+            content_type="application/json",
+        )
+        data = client.get("/api/signature/profiles").get_json()
+        assert "Carol" in data["profiles"]
+        assert data["profiles"]["Carol"] == SIG_FEATURES
+
+    def test_delete_removes_profile(self, client):
+        client.post(
+            "/api/signature/enroll",
+            data=json.dumps({"name": "Dave", "features": SIG_FEATURES}),
+            content_type="application/json",
+        )
+        client.delete("/api/signature/profiles/Dave")
+        assert "Dave" not in client.get("/api/signature/profiles").get_json()["profiles"]
+
+    def test_delete_non_existent_is_idempotent(self, client):
+        assert client.delete("/api/signature/profiles/Ghost").status_code == 200
+
+    def test_reset_clears_all(self, client):
+        client.post(
+            "/api/signature/enroll",
+            data=json.dumps({"name": "Eve", "features": SIG_FEATURES}),
+            content_type="application/json",
+        )
+        client.post("/api/signature/reset", content_type="application/json")
+        assert client.get("/api/signature/profiles").get_json()["profiles"] == {}

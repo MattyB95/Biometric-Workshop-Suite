@@ -11,9 +11,26 @@ from src.app import app as flask_app
 
 @pytest.fixture
 def client(tmp_path, monkeypatch):
-    """Flask test client with an isolated profiles file per test."""
+    """Flask test client with isolated profile and config files per test."""
     monkeypatch.setattr(
         flask_app_module, "PROFILES_FILE", str(tmp_path / "profiles.json")
+    )
+    monkeypatch.setattr(
+        flask_app_module, "MOUSE_PROFILES_FILE", str(tmp_path / "mouse_profiles.json")
+    )
+    monkeypatch.setattr(
+        flask_app_module, "FACE_PROFILES_FILE", str(tmp_path / "face_profiles.json")
+    )
+    monkeypatch.setattr(
+        flask_app_module, "VOICE_PROFILES_FILE", str(tmp_path / "voice_profiles.json")
+    )
+    monkeypatch.setattr(
+        flask_app_module,
+        "SIGNATURE_PROFILES_FILE",
+        str(tmp_path / "signature_profiles.json"),
+    )
+    monkeypatch.setattr(
+        flask_app_module, "ADMIN_CONFIG_FILE", str(tmp_path / "admin_config.json")
     )
     flask_app.config["TESTING"] = True
     with flask_app.test_client() as c:

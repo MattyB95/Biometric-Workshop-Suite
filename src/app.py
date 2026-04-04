@@ -591,5 +591,5 @@ def signature_reset() -> Response:
     return jsonify({"success": True})
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     app.run(debug=True, port=5000)

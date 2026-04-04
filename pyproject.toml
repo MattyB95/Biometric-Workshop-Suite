@@ -1,7 +1,7 @@
 [project]
 name = "biometric-workshop"
 version = "0.1.0"
-description = "Add your description here"
+description = "Interactive multi-modality biometric demonstration suite for classroom and workshop use"
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
@@ -17,7 +17,7 @@ dev = [
     "ty>=0.0.28",
     "pre-commit>=4.5.0",
     "pytest>=9.0.0",
-    "pytest-playwright>-0.7.0",
+    "pytest-playwright>=0.7.0",
     "pytest-cov>=7.1.0",
 ]
 
