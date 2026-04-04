@@ -228,6 +228,8 @@ def enroll() -> Response | tuple[Response, int]:
 @app.route("/api/identify", methods=["POST"])
 def identify() -> Response | tuple[Response, int]:
     data = request.json or {}
+    if not isinstance(data, dict):
+        return jsonify({"error": "JSON body must be an object"}), 400
     timing = data.get("timing")
     if not isinstance(timing, dict):
         return jsonify({"error": "timing is required"}), 400
@@ -335,6 +337,8 @@ def mouse_enroll() -> Response | tuple[Response, int]:
 @app.route("/api/mouse/identify", methods=["POST"])
 def mouse_identify() -> Response | tuple[Response, int]:
     data = request.json or {}
+    if not isinstance(data, dict):
+        return jsonify({"error": "JSON body must be an object"}), 400
     sample = data.get("sample")
     if not isinstance(sample, dict):
         return jsonify({"error": "sample is required"}), 400

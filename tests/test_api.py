@@ -116,6 +116,15 @@ class TestEnroll:
 
 
 class TestIdentify:
+    def test_non_dict_body_returns_400(self, client):
+        resp = client.post(
+            "/api/identify",
+            data=json.dumps([1, 2, 3]),
+            content_type="application/json",
+        )
+        assert resp.status_code == 400
+        assert "object" in resp.get_json()["error"].lower()
+
     def test_missing_timing_returns_400(self, client):
         resp = client.post(
             "/api/identify",
@@ -337,6 +346,15 @@ class TestMouseProfiles:
 
 
 class TestMouseIdentify:
+    def test_non_dict_body_returns_400(self, client):
+        resp = client.post(
+            "/api/mouse/identify",
+            data=json.dumps([1, 2, 3]),
+            content_type="application/json",
+        )
+        assert resp.status_code == 400
+        assert "object" in resp.get_json()["error"].lower()
+
     def test_missing_sample_returns_400(self, client):
         resp = client.post(
             "/api/mouse/identify",
