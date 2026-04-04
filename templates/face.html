@@ -1184,7 +1184,7 @@
             (n) => `
           <div class="profile-item">
             <span>&#x1F4CC;</span>
-            <span class="profile-item-name" data-name="${n}">${n}</span>
+            <span class="profile-item-name" data-name="${escapeHtml(n)}">${escapeHtml(n)}</span>
           </div>`
           )
           .join("");
@@ -1208,7 +1208,7 @@
               updateDescriptorGrid(fakeFeatures);
             }
             setStatus(
-              `Loaded profile for &ldquo;${n}&rdquo; &mdash; press Identify Face to compare.`,
+              `Loaded profile for &ldquo;${escapeHtml(n)}&rdquo; &mdash; press Identify Face to compare.`,
               "running"
             );
           });
@@ -1233,7 +1233,7 @@
         });
         faceProfiles[name] = currentFeatureValues.slice();
         renderFaceProfileList();
-        setStatus(`Enrolled &ldquo;${name}&rdquo;. Press Identify Face to compare.`, "running");
+        setStatus(`Enrolled &ldquo;${escapeHtml(name)}&rdquo;. Press Identify Face to compare.`, "running");
         nameInput.value = "";
       });
 
@@ -1252,7 +1252,7 @@
             (r, i) => `
           <div class="result-row">
             <div class="result-name-row">
-              <span${i === 0 ? ' class="result-best"' : ""}>${i === 0 ? "&#x2B50; " : ""}${r.name}</span>
+              <span${i === 0 ? ' class="result-best"' : ""}>${i === 0 ? "&#x2B50; " : ""}${escapeHtml(r.name)}</span>
               <span>${r.sim}%</span>
             </div>
             <div class="bar-track">
@@ -1264,7 +1264,7 @@
 
         const best = results[0];
         setStatus(
-          `Best match: ${best.name} (${best.sim}%) &mdash; ${best.sim >= 70 ? "Match" : "No confident match"}`,
+          `Best match: ${escapeHtml(best.name)} (${best.sim}%) &mdash; ${best.sim >= 70 ? "Match" : "No confident match"}`,
           best.sim >= 70 ? "running" : ""
         );
       });
@@ -1487,6 +1487,14 @@
           console.error("face-api model load error:", err);
         }
       })();
+
+      function escapeHtml(str) {
+        return String(str)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;");
+      }
     </script>
   </body>
 </html>

@@ -14,6 +14,7 @@ app = Flask(
     static_url_path="/static",
 )
 app.secret_key = os.environ.get("BWS_SECRET_KEY", "bws-workshop-dev-key-change-in-prod")
+app.config["MAX_CONTENT_LENGTH"] = 1 * 1024 * 1024  # 1 MB upload limit
 
 PROFILES_FILE: str = os.path.join(_ROOT, "profiles.json")
 PHRASE = "the quick brown fox"
@@ -28,77 +29,40 @@ SIGNATURE_PROFILES_FILE: str = os.path.join(_ROOT, "signature_profiles.json")
 ADMIN_CONFIG_FILE: str = os.path.join(_ROOT, "admin_config.json")
 DEFAULT_ADMIN_PIN = "1965"
 
+# ---------------------------------------------------------------------------
+# Algorithm constants
+# ---------------------------------------------------------------------------
+
+SOFTMAX_SCALE = 2.0          # controls sharpness of confidence distribution
+DWELL_FLOOR = 15.0           # ms – minimum std for keystroke dwell
+FLIGHT_FLOOR = 25.0          # ms – minimum std for keystroke flight
+SINGLE_SAMPLE_STD_MS = 30.0  # ms – default std when only one sample is enrolled
+MOUSE_TIME_FLOOR = 30.0      # ms – minimum std for mouse movement times
+MOUSE_DWELL_FLOOR = 15.0     # ms – minimum std for mouse click dwells
+MOUSE_CURVE_FLOOR = 0.03     # curvature units – minimum std for curvature
 
 # ---------------------------------------------------------------------------
 # Profile persistence
 # ---------------------------------------------------------------------------
 
 
-def load_profiles() -> dict[str, Any]:
-    if os.path.exists(PROFILES_FILE):
-        with open(PROFILES_FILE) as f:
+def _load_json(path: str) -> dict[str, Any]:
+    if os.path.exists(path):
+        with open(path) as f:
             return json.load(f)  # type: ignore[no-any-return]
     return {}
 
 
-def save_profiles(profiles: dict[str, Any]) -> None:
-    with open(PROFILES_FILE, "w") as f:
-        json.dump(profiles, f, indent=2)
-
-
-def load_mouse_profiles() -> dict[str, Any]:
-    if os.path.exists(MOUSE_PROFILES_FILE):
-        with open(MOUSE_PROFILES_FILE) as f:
-            return json.load(f)  # type: ignore[no-any-return]
-    return {}
-
-
-def save_mouse_profiles(profiles: dict[str, Any]) -> None:
-    with open(MOUSE_PROFILES_FILE, "w") as f:
-        json.dump(profiles, f, indent=2)
-
-
-def load_face_profiles() -> dict[str, Any]:
-    if os.path.exists(FACE_PROFILES_FILE):
-        with open(FACE_PROFILES_FILE) as f:
-            return json.load(f)  # type: ignore[no-any-return]
-    return {}
-
-
-def save_face_profiles(profiles: dict[str, Any]) -> None:
-    with open(FACE_PROFILES_FILE, "w") as f:
-        json.dump(profiles, f, indent=2)
-
-
-def load_voice_profiles() -> dict[str, Any]:
-    if os.path.exists(VOICE_PROFILES_FILE):
-        with open(VOICE_PROFILES_FILE) as f:
-            return json.load(f)  # type: ignore[no-any-return]
-    return {}
-
-
-def save_voice_profiles(profiles: dict[str, Any]) -> None:
-    with open(VOICE_PROFILES_FILE, "w") as f:
-        json.dump(profiles, f, indent=2)
-
-
-def load_signature_profiles() -> dict[str, Any]:
-    if os.path.exists(SIGNATURE_PROFILES_FILE):
-        with open(SIGNATURE_PROFILES_FILE) as f:
-            return json.load(f)  # type: ignore[no-any-return]
-    return {}
-
-
-def save_signature_profiles(profiles: dict[str, Any]) -> None:
-    with open(SIGNATURE_PROFILES_FILE, "w") as f:
-        json.dump(profiles, f, indent=2)
+def _save_json(path: str, data: dict[str, Any]) -> None:
+    with open(path, "w") as f:
+        json.dump(data, f, indent=2)
 
 
 def load_admin_pin() -> str:
     if os.path.exists(ADMIN_CONFIG_FILE):
         with open(ADMIN_CONFIG_FILE) as f:
-            data: dict[str, Any] = json.load(f)
-            return str(data.get("pin", DEFAULT_ADMIN_PIN))
+            cfg: dict[str, Any] = json.load(f)
+            return str(cfg.get("pin", DEFAULT_ADMIN_PIN))
     return DEFAULT_ADMIN_PIN
 
 
@@ -129,7 +93,7 @@ def mean_and_std(
         ]
     else:
         # Single sample – use generous defaults so one-sample profiles still work
-        stds = [30.0] * length
+        stds = [SINGLE_SAMPLE_STD_MS] * length
     return means, stds
 
 
@@ -142,15 +106,12 @@ def compute_distance(timing: dict[str, Any], profile: dict[str, Any]) -> float:
     total = 0.0
     n = 0
 
-    dwell_floor = 15.0  # ms – minimum std for dwell
-    flight_floor = 25.0  # ms – minimum std for flight
-
     for t, m, s in zip(timing["dwell"], profile["mean_dwell"], profile["std_dwell"]):
-        total += abs(t - m) / max(s, dwell_floor)
+        total += abs(t - m) / max(s, DWELL_FLOOR)
         n += 1
 
     for t, m, s in zip(timing["flight"], profile["mean_flight"], profile["std_flight"]):
-        total += abs(t - m) / max(s, flight_floor)
+        total += abs(t - m) / max(s, FLIGHT_FLOOR)
         n += 1
 
     return total / n if n > 0 else float("inf")
@@ -164,16 +125,12 @@ def compute_mouse_distance(sample: dict[str, Any], profile: dict[str, Any]) -> f
     total = 0.0
     n = 0
 
-    time_floor = 30.0  # ms
-    dwell_floor = 15.0  # ms
-    curve_floor = 0.03  # curvature units
-
     for t, m, s in zip(
         sample["movement_times"],
         profile["mean_movement_times"],
         profile["std_movement_times"],
     ):
-        total += abs(t - m) / max(s, time_floor)
+        total += abs(t - m) / max(s, MOUSE_TIME_FLOOR)
         n += 1
 
     for t, m, s in zip(
@@ -181,7 +138,7 @@ def compute_mouse_distance(sample: dict[str, Any], profile: dict[str, Any]) -> f
         profile["mean_click_dwells"],
         profile["std_click_dwells"],
     ):
-        total += abs(t - m) / max(s, dwell_floor)
+        total += abs(t - m) / max(s, MOUSE_DWELL_FLOOR)
         n += 1
 
     for t, m, s in zip(
@@ -189,7 +146,7 @@ def compute_mouse_distance(sample: dict[str, Any], profile: dict[str, Any]) -> f
         profile["mean_curvatures"],
         profile["std_curvatures"],
     ):
-        total += abs(t - m) / max(s, curve_floor)
+        total += abs(t - m) / max(s, MOUSE_CURVE_FLOOR)
         n += 1
 
     return total / n if n > 0 else float("inf")
@@ -239,7 +196,7 @@ def mouse() -> str:
 
 @app.route("/api/enroll", methods=["POST"])
 def enroll() -> Response | tuple[Response, int]:
-    data = request.json
+    data = request.json or {}
     name = (data.get("name") or "").strip()
     samples = data.get("samples", [])
 
@@ -255,7 +212,7 @@ def enroll() -> Response | tuple[Response, int]:
     mean_dwell, std_dwell = mean_and_std(dwell_samples)
     mean_flight, std_flight = mean_and_std(flight_samples)
 
-    profiles = load_profiles()
+    profiles = _load_json(PROFILES_FILE)
     profiles[name] = {
         "mean_dwell": mean_dwell,
         "std_dwell": std_dwell,
@@ -263,17 +220,17 @@ def enroll() -> Response | tuple[Response, int]:
         "std_flight": std_flight,
         "num_samples": len(samples),
     }
-    save_profiles(profiles)
+    _save_json(PROFILES_FILE, profiles)
 
     return jsonify({"success": True, "name": name, "enrolled": list(profiles.keys())})
 
 
 @app.route("/api/identify", methods=["POST"])
 def identify() -> Response | tuple[Response, int]:
-    data = request.json
+    data = request.json or {}
     timing = data.get("timing")
 
-    profiles = load_profiles()
+    profiles = _load_json(PROFILES_FILE)
     if not profiles:
         return (
             jsonify({"error": "No profiles enrolled yet. Ask someone to enrol first!"}),
@@ -289,9 +246,8 @@ def identify() -> Response | tuple[Response, int]:
 
     # Convert distances to confidence scores via softmax relative to best match.
     # Scaling factor controls how sharply peaked the distribution is.
-    scale = 2.0
     min_dist = results[0]["distance"]
-    raw_scores = [math.exp(-scale * (r["distance"] - min_dist)) for r in results]
+    raw_scores = [math.exp(-SOFTMAX_SCALE * (r["distance"] - min_dist)) for r in results]
     total = sum(raw_scores)
 
     for i, r in enumerate(results):
@@ -308,7 +264,7 @@ def identify() -> Response | tuple[Response, int]:
 
 @app.route("/api/profiles", methods=["GET"])
 def get_profiles() -> Response:
-    profiles = load_profiles()
+    profiles = _load_json(PROFILES_FILE)
     enrolled = [
         {"name": k, "num_samples": v["num_samples"]} for k, v in profiles.items()
     ]
@@ -317,7 +273,7 @@ def get_profiles() -> Response:
 
 @app.route("/api/profiles/<name>", methods=["GET"])
 def get_profile(name: str) -> Response | tuple[Response, int]:
-    profiles = load_profiles()
+    profiles = _load_json(PROFILES_FILE)
     if name not in profiles:
         return jsonify({"error": "Profile not found"}), 404
     return jsonify(profiles[name])
@@ -325,15 +281,15 @@ def get_profile(name: str) -> Response | tuple[Response, int]:
 
 @app.route("/api/profiles/<name>", methods=["DELETE"])
 def delete_profile(name: str) -> Response:
-    profiles = load_profiles()
+    profiles = _load_json(PROFILES_FILE)
     profiles.pop(name, None)
-    save_profiles(profiles)
+    _save_json(PROFILES_FILE, profiles)
     return jsonify({"success": True, "enrolled": list(profiles.keys())})
 
 
 @app.route("/api/reset", methods=["POST"])
 def reset() -> Response:
-    save_profiles({})
+    _save_json(PROFILES_FILE, {})
     return jsonify({"success": True})
 
 
@@ -344,7 +300,7 @@ def reset() -> Response:
 
 @app.route("/api/mouse/enroll", methods=["POST"])
 def mouse_enroll() -> Response | tuple[Response, int]:
-    data = request.json
+    data = request.json or {}
     name = (data.get("name") or "").strip()
     samples = data.get("samples", [])
 
@@ -358,7 +314,7 @@ def mouse_enroll() -> Response | tuple[Response, int]:
     mean_mt, std_mt = mean_and_std([s["movement_times"] for s in samples])
     mean_cv, std_cv = mean_and_std([s["curvatures"] for s in samples])
 
-    profiles = load_mouse_profiles()
+    profiles = _load_json(MOUSE_PROFILES_FILE)
     profiles[name] = {
         "mean_click_dwells": mean_cd,
         "std_click_dwells": std_cd,
@@ -368,16 +324,16 @@ def mouse_enroll() -> Response | tuple[Response, int]:
         "std_curvatures": std_cv,
         "num_samples": len(samples),
     }
-    save_mouse_profiles(profiles)
+    _save_json(MOUSE_PROFILES_FILE, profiles)
     return jsonify({"success": True, "name": name, "enrolled": list(profiles.keys())})
 
 
 @app.route("/api/mouse/identify", methods=["POST"])
 def mouse_identify() -> Response | tuple[Response, int]:
-    data = request.json
+    data = request.json or {}
     sample = data.get("sample")
 
-    profiles = load_mouse_profiles()
+    profiles = _load_json(MOUSE_PROFILES_FILE)
     if not profiles:
         return (
             jsonify({"error": "No profiles enrolled yet. Ask someone to enrol first!"}),
@@ -391,9 +347,8 @@ def mouse_identify() -> Response | tuple[Response, int]:
 
     results.sort(key=lambda r: r["distance"])
 
-    scale = 2.0
     min_dist = results[0]["distance"]
-    raw_scores = [math.exp(-scale * (r["distance"] - min_dist)) for r in results]
+    raw_scores = [math.exp(-SOFTMAX_SCALE * (r["distance"] - min_dist)) for r in results]
     total = sum(raw_scores)
     for i, r in enumerate(results):
         r["confidence"] = round(raw_scores[i] / total * 100, 1)
@@ -409,7 +364,7 @@ def mouse_identify() -> Response | tuple[Response, int]:
 
 @app.route("/api/mouse/profiles", methods=["GET"])
 def get_mouse_profiles() -> Response:
-    profiles = load_mouse_profiles()
+    profiles = _load_json(MOUSE_PROFILES_FILE)
     enrolled = [
         {"name": k, "num_samples": v["num_samples"]} for k, v in profiles.items()
     ]
@@ -418,7 +373,7 @@ def get_mouse_profiles() -> Response:
 
 @app.route("/api/mouse/profiles/<name>", methods=["GET"])
 def get_mouse_profile(name: str) -> Response | tuple[Response, int]:
-    profiles = load_mouse_profiles()
+    profiles = _load_json(MOUSE_PROFILES_FILE)
     if name not in profiles:
         return jsonify({"error": "Profile not found"}), 404
     return jsonify(profiles[name])
@@ -426,15 +381,15 @@ def get_mouse_profile(name: str) -> Response | tuple[Response, int]:
 
 @app.route("/api/mouse/profiles/<name>", methods=["DELETE"])
 def delete_mouse_profile(name: str) -> Response:
-    profiles = load_mouse_profiles()
+    profiles = _load_json(MOUSE_PROFILES_FILE)
     profiles.pop(name, None)
-    save_mouse_profiles(profiles)
+    _save_json(MOUSE_PROFILES_FILE, profiles)
     return jsonify({"success": True, "enrolled": list(profiles.keys())})
 
 
 @app.route("/api/mouse/reset", methods=["POST"])
 def mouse_reset() -> Response:
-    save_mouse_profiles({})
+    _save_json(MOUSE_PROFILES_FILE, {})
     return jsonify({"success": True})
 
 
@@ -485,29 +440,29 @@ def face_enroll() -> Response | tuple[Response, int]:
         return jsonify({"error": "Name is required"}), 400
     if not isinstance(features, list) or len(features) == 0:
         return jsonify({"error": "Features are required"}), 400
-    profiles = load_face_profiles()
+    profiles = _load_json(FACE_PROFILES_FILE)
     profiles[name] = features
-    save_face_profiles(profiles)
+    _save_json(FACE_PROFILES_FILE, profiles)
     return jsonify({"success": True, "name": name, "enrolled": list(profiles.keys())})
 
 
 @app.route("/api/face/profiles", methods=["GET"])
 def get_face_profiles() -> Response:
-    profiles = load_face_profiles()
+    profiles = _load_json(FACE_PROFILES_FILE)
     return jsonify({"profiles": profiles, "enrolled": list(profiles.keys())})
 
 
 @app.route("/api/face/profiles/<name>", methods=["DELETE"])
 def delete_face_profile(name: str) -> Response:
-    profiles = load_face_profiles()
+    profiles = _load_json(FACE_PROFILES_FILE)
     profiles.pop(name, None)
-    save_face_profiles(profiles)
+    _save_json(FACE_PROFILES_FILE, profiles)
     return jsonify({"success": True, "enrolled": list(profiles.keys())})
 
 
 @app.route("/api/face/reset", methods=["POST"])
 def face_reset() -> Response:
-    save_face_profiles({})
+    _save_json(FACE_PROFILES_FILE, {})
     return jsonify({"success": True})
 
 
@@ -525,29 +480,29 @@ def voice_enroll() -> Response | tuple[Response, int]:
         return jsonify({"error": "Name is required"}), 400
     if features is None:
         return jsonify({"error": "Features are required"}), 400
-    profiles = load_voice_profiles()
+    profiles = _load_json(VOICE_PROFILES_FILE)
     profiles[name] = features
-    save_voice_profiles(profiles)
+    _save_json(VOICE_PROFILES_FILE, profiles)
     return jsonify({"success": True, "name": name, "enrolled": list(profiles.keys())})
 
 
 @app.route("/api/voice/profiles", methods=["GET"])
 def get_voice_profiles() -> Response:
-    profiles = load_voice_profiles()
+    profiles = _load_json(VOICE_PROFILES_FILE)
     return jsonify({"profiles": profiles, "enrolled": list(profiles.keys())})
 
 
 @app.route("/api/voice/profiles/<name>", methods=["DELETE"])
 def delete_voice_profile(name: str) -> Response:
-    profiles = load_voice_profiles()
+    profiles = _load_json(VOICE_PROFILES_FILE)
     profiles.pop(name, None)
-    save_voice_profiles(profiles)
+    _save_json(VOICE_PROFILES_FILE, profiles)
     return jsonify({"success": True, "enrolled": list(profiles.keys())})
 
 
 @app.route("/api/voice/reset", methods=["POST"])
 def voice_reset() -> Response:
-    save_voice_profiles({})
+    _save_json(VOICE_PROFILES_FILE, {})
     return jsonify({"success": True})
 
 
@@ -565,29 +520,29 @@ def signature_enroll() -> Response | tuple[Response, int]:
         return jsonify({"error": "Name is required"}), 400
     if features is None:
         return jsonify({"error": "Features are required"}), 400
-    profiles = load_signature_profiles()
+    profiles = _load_json(SIGNATURE_PROFILES_FILE)
     profiles[name] = features
-    save_signature_profiles(profiles)
+    _save_json(SIGNATURE_PROFILES_FILE, profiles)
     return jsonify({"success": True, "name": name, "enrolled": list(profiles.keys())})
 
 
 @app.route("/api/signature/profiles", methods=["GET"])
 def get_signature_profiles() -> Response:
-    profiles = load_signature_profiles()
+    profiles = _load_json(SIGNATURE_PROFILES_FILE)
     return jsonify({"profiles": profiles, "enrolled": list(profiles.keys())})
 
 
 @app.route("/api/signature/profiles/<name>", methods=["DELETE"])
 def delete_signature_profile(name: str) -> Response:
-    profiles = load_signature_profiles()
+    profiles = _load_json(SIGNATURE_PROFILES_FILE)
     profiles.pop(name, None)
-    save_signature_profiles(profiles)
+    _save_json(SIGNATURE_PROFILES_FILE, profiles)
     return jsonify({"success": True, "enrolled": list(profiles.keys())})
 
 
 @app.route("/api/signature/reset", methods=["POST"])
 def signature_reset() -> Response:
-    save_signature_profiles({})
+    _save_json(SIGNATURE_PROFILES_FILE, {})
     return jsonify({"success": True})
 
 

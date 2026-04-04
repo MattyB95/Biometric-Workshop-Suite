@@ -999,7 +999,7 @@
             (n) => `
     <div class="profile-item">
       <span>&#x1F4CC;</span>
-      <span class="profile-item-name" data-name="${n}">${n}</span>
+      <span class="profile-item-name" data-name="${escapeHtml(n)}">${escapeHtml(n)}</span>
     </div>`
           )
           .join("");
@@ -1025,7 +1025,7 @@
               updateFeatGrid(f);
             }
             setStatus(
-              `Loaded profile for &ldquo;${n}&rdquo; &mdash; draw a signature to compare.`,
+              `Loaded profile for &ldquo;${escapeHtml(n)}&rdquo; &mdash; draw a signature to compare.`,
               ""
             );
           });
@@ -1068,7 +1068,7 @@
         profiles[name] = f;
         renderProfileList();
         setStatus(
-          `Enrolled &ldquo;${name}&rdquo;. Clear the canvas, draw again, then identify.`,
+          `Enrolled &ldquo;${escapeHtml(name)}&rdquo;. Clear the canvas, draw again, then identify.`,
           "success"
         );
         verifyResult.style.display = "none";
@@ -1094,7 +1094,7 @@
             (r, i) => `
     <div class="result-row">
       <div class="result-name-row">
-        <span${i === 0 ? ' class="result-best"' : ""}>${i === 0 ? "&#x2B50; " : ""}${r.name}</span>
+        <span${i === 0 ? ' class="result-best"' : ""}>${i === 0 ? "&#x2B50; " : ""}${escapeHtml(r.name)}</span>
         <span>${r.sim}%</span>
       </div>
       <div class="bar-track">
@@ -1106,7 +1106,7 @@
 
         const best = results[0];
         setStatus(
-          `Best match: ${best.name} (${best.sim}%) \u2014 ${best.sim >= 60 ? "Match" : "No confident match"}`,
+          `Best match: ${escapeHtml(best.name)} (${best.sim}%) \u2014 ${best.sim >= 60 ? "Match" : "No confident match"}`,
           best.sim >= 60 ? "success" : ""
         );
       });
@@ -1117,6 +1117,14 @@
       loadProfiles();
       window.addEventListener("resize", sizeCanvases);
       setStatus("Draw your signature in the box above. Use a mouse, trackpad, or touchscreen.", "");
+
+      function escapeHtml(str) {
+        return String(str)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;");
+      }
     </script>
   </body>
 </html>

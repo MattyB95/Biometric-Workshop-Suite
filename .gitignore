@@ -20,6 +20,10 @@ htmlcov/
 # MkDocs build output
 site/
 
+# Environment / secrets
+.env
+.env.*
+
 # Claude Code
 .claude/
 
