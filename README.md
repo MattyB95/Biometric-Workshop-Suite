@@ -4,7 +4,7 @@
 
 [![CI](https://github.com/MattyB95/Biometric-Workshop-Suite/actions/workflows/ci.yml/badge.svg)](https://github.com/MattyB95/Biometric-Workshop-Suite/actions/workflows/ci.yml)
 [![Docs](https://img.shields.io/badge/docs-MkDocs-blue?logo=readthedocs&logoColor=white)](https://mattyb95.github.io/Biometric-Workshop-Suite/documentation/)
-[![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)](htmlcov/index.html)
+[![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)](https://github.com/MattyB95/Biometric-Workshop-Suite/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/python-3.14%2B-blue?logo=python&logoColor=white)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 [![Educational Use Only](https://img.shields.io/badge/use-educational%20only-orange)](SECURITY.md)
@@ -25,11 +25,11 @@ An interactive, multi-modality biometric demonstration suite built for classroom
 ## Modules
 
 | Module                    | Technique                  | Features extracted                             |
-|---------------------------|----------------------------|------------------------------------------------|
+| ------------------------- | -------------------------- | ---------------------------------------------- |
 | ⌨️ **Keystroke Dynamics** | Typing rhythm analysis     | Dwell time, flight time per character          |
-| 🖱️ **Mouse Dynamics**    | Pointer movement profiling | Movement time, path curvature, click dwell     |
+| 🖱️ **Mouse Dynamics**     | Pointer movement profiling | Movement time, path curvature, click dwell     |
 | 🧑 **Face Recognition**   | Geometric facial features  | 16 normalised landmark ratios (68-point model) |
-| 🎙️ **Voice Biometrics**  | Speaker characterisation   | MFCC mean vector, pitch, spectrogram           |
+| 🎙️ **Voice Biometrics**   | Speaker characterisation   | MFCC mean vector, pitch, spectrogram           |
 | ✍️ **Signature Dynamics** | On-screen handwriting      | Duration, path length, velocity, stroke count  |
 
 Every module supports **Enrol** and **Identify** (or Verify) with live visualisations so students can see exactly which features are being extracted and how the matching score is calculated.
@@ -93,24 +93,29 @@ http://localhost:5000
 ### Module-specific notes
 
 **Keystroke Dynamics**
+
 - Students type `the quick brown fox` 5 times to build their profile. Encourage natural, consistent typing speed.
 - The fixed phrase keeps all profiles comparable. Changing it mid-session requires re-enrolling everyone.
 
 **Mouse Dynamics**
+
 - Students click through 8 on-screen targets 5 times. Movement paths are visualised live.
 - Results vary noticeably between a mouse and a trackpad — worth demonstrating.
 
 **Face Recognition**
+
 - Requires webcam access. One capture per student (single-sample enrolment).
 - Uses facial geometry (ratios between landmarks), not pixel comparison — lighting affects results.
 
 **Voice Biometrics**
+
 - Students speak for a few seconds to enrol. A second recording is used for identification.
 - Results are affected by background noise, microphone quality, and speaking style.
 
 **Signature Dynamics**
+
 - Students draw their signature on screen using a mouse, trackpad, or touchscreen.
-- The system measures *how* the signature is drawn (speed, pressure, stroke order), not just its shape.
+- The system measures _how_ the signature is drawn (speed, pressure, stroke order), not just its shape.
 
 ### Discussion prompts
 
@@ -172,7 +177,7 @@ Six scalar features are extracted from the stroke data: total duration, normalis
 Open `src/app.py` and edit the constants near the top:
 
 | Variable                        | Default                 | Description                                   |
-|---------------------------------|-------------------------|-----------------------------------------------|
+| ------------------------------- | ----------------------- | --------------------------------------------- |
 | `PHRASE`                        | `"the quick brown fox"` | The phrase typed in the Keystroke module      |
 | `ENROLL_SAMPLES_REQUIRED`       | `5`                     | Keystroke enrolment attempts required         |
 | `MOUSE_ENROLL_SAMPLES_REQUIRED` | `5`                     | Mouse enrolment attempts required             |
@@ -194,7 +199,7 @@ The included GitHub Actions workflow (`.github/workflows/docs.yml`) automaticall
 2. Go to **Settings → Pages**, set source to **GitHub Actions**.
 3. Your suite will be live at `https://<username>.github.io/<repo-name>/` and the documentation at `https://<username>.github.io/<repo-name>/documentation/`.
 
-> **Note:** In the static version, each student's data is stored in *their own browser*. The admin page on the static version can only manage data on the device where it is opened. For a shared server where all students connect to the same backend, use Option B or C.
+> **Note:** In the static version, each student's data is stored in _their own browser_. The admin page on the static version can only manage data on the device where it is opened. For a shared server where all students connect to the same backend, use Option B or C.
 
 ---
 
@@ -268,7 +273,7 @@ Then share `http://<your-local-ip>:5000` with students on the same Wi-Fi. No acc
 ## Troubleshooting
 
 | Problem                                               | Solution                                                                                                |
-|-------------------------------------------------------|---------------------------------------------------------------------------------------------------------|
+| ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
 | Wrong key resets the keystroke attempt                | Type carefully — the phrase must be typed exactly as shown                                              |
 | Keystroke/mouse results always favour the same person | Ensure at least 3–4 students have enrolled before identifying                                           |
 | Identification seems random                           | Try enrolling with more consistent speed and technique                                                  |
