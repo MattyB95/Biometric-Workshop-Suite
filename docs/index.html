@@ -360,10 +360,18 @@
             padding: 8px 16px;
             font-size: 0.8rem;
             text-decoration: none;
-            transition: border-color 0.2s, color 0.2s;
+            transition:
+              border-color 0.2s,
+              color 0.2s;
           "
-          onmouseover="this.style.borderColor='#ef4444';this.style.color='#fca5a5'"
-          onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-dim)'"
+          onmouseover="
+            this.style.borderColor = '#ef4444';
+            this.style.color = '#fca5a5';
+          "
+          onmouseout="
+            this.style.borderColor = 'var(--border)';
+            this.style.color = 'var(--text-dim)';
+          "
         >
           &#x1F512; Instructor Admin
         </a>

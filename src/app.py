@@ -33,13 +33,13 @@ DEFAULT_ADMIN_PIN = "1965"
 # Algorithm constants
 # ---------------------------------------------------------------------------
 
-SOFTMAX_SCALE = 2.0          # controls sharpness of confidence distribution
-DWELL_FLOOR = 15.0           # ms – minimum std for keystroke dwell
-FLIGHT_FLOOR = 25.0          # ms – minimum std for keystroke flight
+SOFTMAX_SCALE = 2.0  # controls sharpness of confidence distribution
+DWELL_FLOOR = 15.0  # ms – minimum std for keystroke dwell
+FLIGHT_FLOOR = 25.0  # ms – minimum std for keystroke flight
 SINGLE_SAMPLE_STD_MS = 30.0  # ms – default std when only one sample is enrolled
-MOUSE_TIME_FLOOR = 30.0      # ms – minimum std for mouse movement times
-MOUSE_DWELL_FLOOR = 15.0     # ms – minimum std for mouse click dwells
-MOUSE_CURVE_FLOOR = 0.03     # curvature units – minimum std for curvature
+MOUSE_TIME_FLOOR = 30.0  # ms – minimum std for mouse movement times
+MOUSE_DWELL_FLOOR = 15.0  # ms – minimum std for mouse click dwells
+MOUSE_CURVE_FLOOR = 0.03  # curvature units – minimum std for curvature
 
 # ---------------------------------------------------------------------------
 # Profile persistence
@@ -228,7 +228,11 @@ def enroll() -> Response | tuple[Response, int]:
 @app.route("/api/identify", methods=["POST"])
 def identify() -> Response | tuple[Response, int]:
     data = request.json or {}
+    if not isinstance(data, dict):
+        return jsonify({"error": "JSON body must be an object"}), 400
     timing = data.get("timing")
+    if not isinstance(timing, dict):
+        return jsonify({"error": "timing is required"}), 400
 
     profiles = _load_json(PROFILES_FILE)
     if not profiles:
@@ -247,7 +251,9 @@ def identify() -> Response | tuple[Response, int]:
     # Convert distances to confidence scores via softmax relative to best match.
     # Scaling factor controls how sharply peaked the distribution is.
     min_dist = results[0]["distance"]
-    raw_scores = [math.exp(-SOFTMAX_SCALE * (r["distance"] - min_dist)) for r in results]
+    raw_scores = [
+        math.exp(-SOFTMAX_SCALE * (r["distance"] - min_dist)) for r in results
+    ]
     total = sum(raw_scores)
 
     for i, r in enumerate(results):
@@ -331,7 +337,11 @@ def mouse_enroll() -> Response | tuple[Response, int]:
 @app.route("/api/mouse/identify", methods=["POST"])
 def mouse_identify() -> Response | tuple[Response, int]:
     data = request.json or {}
+    if not isinstance(data, dict):
+        return jsonify({"error": "JSON body must be an object"}), 400
     sample = data.get("sample")
+    if not isinstance(sample, dict):
+        return jsonify({"error": "sample is required"}), 400
 
     profiles = _load_json(MOUSE_PROFILES_FILE)
     if not profiles:
@@ -348,7 +358,9 @@ def mouse_identify() -> Response | tuple[Response, int]:
     results.sort(key=lambda r: r["distance"])
 
     min_dist = results[0]["distance"]
-    raw_scores = [math.exp(-SOFTMAX_SCALE * (r["distance"] - min_dist)) for r in results]
+    raw_scores = [
+        math.exp(-SOFTMAX_SCALE * (r["distance"] - min_dist)) for r in results
+    ]
     total = sum(raw_scores)
     for i, r in enumerate(results):
         r["confidence"] = round(raw_scores[i] / total * 100, 1)

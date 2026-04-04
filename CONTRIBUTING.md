@@ -73,9 +73,26 @@ Update admin panel PIN validation
 
 ---
 
+## Branching model
+
+This project uses a two-branch model:
+
+| Branch    | Purpose                                                                 |
+| --------- | ----------------------------------------------------------------------- |
+| `main`    | Stable, released code. Every push triggers an automated GitHub release. |
+| `develop` | Integration branch. All work targets `develop` first.                   |
+
+**Open all pull requests against `develop`**, not `main`. When a set of changes is ready to release, `develop` is merged into `main`.
+
+To make a new release:
+
+1. Bump the version in `pyproject.toml`
+2. Move the `[Unreleased]` entries in `CHANGELOG.md` into a new versioned section
+3. Merge `develop` → `main` — the release workflow creates the GitHub release automatically
+
 ## Pull requests
 
-- Open a PR against `main`.
+- Open a PR against `develop`.
 - Fill in the PR template.
 - One logical change per PR — separate bug fixes from new features.
 - If your change affects the workshop UX, briefly describe how you tested it in a browser.
@@ -84,14 +101,14 @@ Update admin panel PIN validation
 
 ## Code style
 
-| Tool | Purpose |
-|---|---|
-| `ruff` | Python linting and import sorting |
-| `black` | Python formatting |
-| `mypy` | Python static type checking (strict mode) |
+| Tool       | Purpose                                          |
+| ---------- | ------------------------------------------------ |
+| `ruff`     | Python linting and import sorting                |
+| `black`    | Python formatting                                |
+| `mypy`     | Python static type checking (strict mode)        |
 | `prettier` | HTML/JS formatting (docs/ and select templates/) |
-| `htmlhint` | HTML structure linting |
-| `eslint` | JavaScript linting |
+| `htmlhint` | HTML structure linting                           |
+| `eslint`   | JavaScript linting                               |
 
 All checks run automatically via pre-commit hooks once installed.
 

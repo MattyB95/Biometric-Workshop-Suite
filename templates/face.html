@@ -1233,7 +1233,10 @@
         });
         faceProfiles[name] = currentFeatureValues.slice();
         renderFaceProfileList();
-        setStatus(`Enrolled &ldquo;${escapeHtml(name)}&rdquo;. Press Identify Face to compare.`, "running");
+        setStatus(
+          `Enrolled &ldquo;${escapeHtml(name)}&rdquo;. Press Identify Face to compare.`,
+          "running"
+        );
         nameInput.value = "";
       });
 

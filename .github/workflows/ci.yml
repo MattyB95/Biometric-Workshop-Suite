@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, develop]
   pull_request:
-    branches: [main]
+    branches: [main, develop]
 
 jobs:
   lint-and-test:
@@ -54,4 +54,7 @@ jobs:
         run: npm ci
 
       - name: HTML / JS lint
-        run: just check-html
+        run: |
+          npx prettier --check "docs/*.html" templates/home.html templates/face.html templates/voice.html templates/signature.html templates/mouse.html
+          npx htmlhint "docs/*.html" "templates/*.html"
+          npx eslint "docs/*.html" templates/face.html templates/voice.html templates/signature.html templates/mouse.html

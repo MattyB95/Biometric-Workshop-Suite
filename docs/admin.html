@@ -79,7 +79,9 @@
         padding: 7px 14px;
         font-size: 0.85rem;
         text-decoration: none;
-        transition: border-color 0.2s, color 0.2s;
+        transition:
+          border-color 0.2s,
+          color 0.2s;
       }
       .btn-home:hover {
         border-color: var(--accent-h);
@@ -169,7 +171,9 @@
         font-size: 0.88rem;
         font-weight: 600;
         cursor: pointer;
-        transition: opacity 0.15s, transform 0.1s;
+        transition:
+          opacity 0.15s,
+          transform 0.1s;
       }
       .btn:active {
         transform: scale(0.97);
@@ -285,7 +289,10 @@
         padding: 4px 8px;
         cursor: pointer;
         font-size: 0.8rem;
-        transition: color 0.15s, border-color 0.15s, background 0.15s;
+        transition:
+          color 0.15s,
+          border-color 0.15s,
+          background 0.15s;
       }
       .btn-del-profile:hover {
         color: #fca5a5;
@@ -382,7 +389,9 @@
         <h1>Workshop Admin</h1>
       </div>
       <div style="display: flex; gap: 10px; align-items: center">
-        <button class="btn btn-ghost" id="btn-logout" style="display: none">&#x1F6AA; Log out</button>
+        <button class="btn btn-ghost" id="btn-logout" style="display: none">
+          &#x1F6AA; Log out
+        </button>
         <a href="./index.html" class="btn-home">&#x2190; All Modules</a>
       </div>
     </header>
@@ -565,7 +574,9 @@
 
     <div class="toast" id="toast"></div>
 
-    <footer>Biometric Workshop Suite &mdash; Admin Panel &mdash; Data stored locally in your browser.</footer>
+    <footer>
+      Biometric Workshop Suite &mdash; Admin Panel &mdash; Data stored locally in your browser.
+    </footer>
 
     <script>
       "use strict";
@@ -736,9 +747,7 @@
         );
       document
         .getElementById("face-reset")
-        .addEventListener("click", () =>
-          doReset(LS_KEYS.face, "face", "face-list", "face-count")
-        );
+        .addEventListener("click", () => doReset(LS_KEYS.face, "face", "face-list", "face-count"));
       document
         .getElementById("voice-reset")
         .addEventListener("click", () =>
