@@ -94,6 +94,16 @@ check-html:
     npx htmlhint "docs/*.html" "templates/*.html"
     npx eslint "docs/*.html" templates/face.html templates/voice.html templates/signature.html templates/mouse.html
 
+# ── Documentation (MkDocs) ──────────────────────────────────────────────────
+
+# Build the MkDocs documentation site to site/documentation/
+docs:
+    uv run mkdocs build
+
+# Serve the MkDocs documentation locally with live reload
+docs-serve:
+    uv run mkdocs serve
+
 # ── Tests ────────────────────────────────────────────────────────────────────
 
 # Install Playwright browsers (run once after first uv sync --group dev)

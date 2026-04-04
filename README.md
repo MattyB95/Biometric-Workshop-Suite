@@ -3,6 +3,7 @@
 ![Biometric Workshop Suite](social_preview.png)
 
 [![CI](https://github.com/MattyB95/Biometric-Workshop-Suite/actions/workflows/ci.yml/badge.svg)](https://github.com/MattyB95/Biometric-Workshop-Suite/actions/workflows/ci.yml)
+[![Docs](https://img.shields.io/badge/docs-MkDocs-blue?logo=readthedocs&logoColor=white)](https://mattyb95.github.io/Biometric-Workshop-Suite/documentation/)
 [![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)](htmlcov/index.html)
 [![Python](https://img.shields.io/badge/python-3.14%2B-blue?logo=python&logoColor=white)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
@@ -183,9 +184,11 @@ The admin PIN can also be changed at runtime via the admin panel without restart
 
 The `docs/` folder is a fully self-contained static version — all logic runs in JavaScript and all profiles are stored in the browser's `localStorage`. No Python or server required.
 
+The included GitHub Actions workflow (`.github/workflows/docs.yml`) automatically deploys both the static app and the MkDocs documentation to GitHub Pages on every push to `main`.
+
 1. Push the repository to GitHub.
-2. Go to **Settings → Pages**, set source to **Deploy from a branch**, branch `main`, folder `/docs`.
-3. Your suite will be live at `https://<username>.github.io/<repo-name>/`.
+2. Go to **Settings → Pages**, set source to **GitHub Actions**.
+3. Your suite will be live at `https://<username>.github.io/<repo-name>/` and the documentation at `https://<username>.github.io/<repo-name>/documentation/`.
 
 > **Note:** In the static version, each student's data is stored in *their own browser*. The admin page on the static version can only manage data on the device where it is opened. For a shared server where all students connect to the same backend, use Option B or C.
 

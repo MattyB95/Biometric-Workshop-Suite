@@ -1,0 +1,54 @@
+site_name: Biometric Workshop Suite
+site_description: Interactive multi-modality biometric demonstrations for the classroom
+site_url: https://mattyb95.github.io/Biometric-Workshop-Suite/documentation/
+repo_url: https://github.com/MattyB95/Biometric-Workshop-Suite
+repo_name: MattyB95/Biometric-Workshop-Suite
+docs_dir: mkdocs_docs
+site_dir: site/documentation
+
+theme:
+  name: material
+  palette:
+    scheme: slate
+    primary: blue
+    accent: light blue
+  icon:
+    repo: fontawesome/brands/github
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - navigation.indexes
+    - toc.follow
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.code.annotate
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.tabbed:
+      alternate_style: true
+  - tables
+  - attr_list
+  - md_in_html
+
+nav:
+  - Home: index.md
+  - Workshop Guide: workshop-guide.md
+  - Modules:
+    - modules/index.md
+    - Keystroke Dynamics: modules/keystroke.md
+    - Mouse Dynamics: modules/mouse.md
+    - Face Recognition: modules/face.md
+    - Voice Biometrics: modules/voice.md
+    - Signature Dynamics: modules/signature.md
+  - Admin Panel: admin.md
+  - How It Works: algorithms.md
+  - Deployment: deployment.md
+  - Contributing: contributing.md

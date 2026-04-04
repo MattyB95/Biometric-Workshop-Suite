@@ -17,6 +17,9 @@ htmlcov/
 .coverage
 .pytest_cache/
 
+# MkDocs build output
+site/
+
 # Claude Code
 .claude/
 
