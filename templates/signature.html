@@ -685,7 +685,6 @@
       const statDir = document.getElementById("statDir");
 
       // ─── State ────────────────────────────────────────────────────────────────
-      const STORAGE_KEY = "bws_signature_profiles";
       let profiles = {}; // name → feature object
       let isDrawing = false;
       let strokes = []; // array of stroke arrays
@@ -978,16 +977,14 @@
       sigCanvas.addEventListener("touchend", onPointerUp, { passive: false });
 
       // ─── Profile storage ──────────────────────────────────────────────────────
-      function loadProfiles() {
+      async function loadProfiles() {
         try {
-          profiles = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+          const data = await fetch("/api/signature/profiles").then((r) => r.json());
+          profiles = data.profiles || {};
         } catch (_e) {
           profiles = {};
         }
-      }
-
-      function saveProfiles() {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(profiles));
+        renderProfileList();
       }
 
       function renderProfileList() {
@@ -1003,7 +1000,6 @@
     <div class="profile-item">
       <span>&#x1F4CC;</span>
       <span class="profile-item-name" data-name="${n}">${n}</span>
-      <button class="btn-del" data-name="${n}">&#x2715;</button>
     </div>`
           )
           .join("");
@@ -1034,14 +1030,6 @@
             );
           });
         });
-        profileList.querySelectorAll(".btn-del").forEach((btn) => {
-          btn.addEventListener("click", () => {
-            delete profiles[btn.dataset.name];
-            saveProfiles();
-            renderProfileList();
-            verifyResult.style.display = "none";
-          });
-        });
         // Only enable identify if a signature has been drawn
         btnVerify.disabled = strokes.length === 0;
       }
@@ -1064,7 +1052,7 @@
         setStatus("Canvas cleared. Draw your signature above.", "");
       });
 
-      btnEnrol.addEventListener("click", () => {
+      btnEnrol.addEventListener("click", async () => {
         const name = nameInput.value.trim();
         if (!name) {
           setStatus("Enter a student name before enrolling.", "info");
@@ -1072,8 +1060,12 @@
         }
         const f = extractFeatures(strokes);
         if (!f) return;
+        await fetch("/api/signature/enroll", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, features: f }),
+        });
         profiles[name] = f;
-        saveProfiles();
         renderProfileList();
         setStatus(
           `Enrolled &ldquo;${name}&rdquo;. Clear the canvas, draw again, then identify.`,
@@ -1123,7 +1115,6 @@
       initFeatGrid();
       sizeCanvases();
       loadProfiles();
-      renderProfileList();
       window.addEventListener("resize", sizeCanvases);
       setStatus("Draw your signature in the box above. Use a mouse, trackpad, or touchscreen.", "");
     </script>

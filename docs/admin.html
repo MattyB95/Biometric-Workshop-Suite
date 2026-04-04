@@ -1,0 +1,786 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin &mdash; Biometric Workshop Suite</title>
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      :root {
+        --bg: #0f172a;
+        --surface: #1e293b;
+        --surface2: #273548;
+        --border: #334155;
+        --accent: #6366f1;
+        --accent-h: #818cf8;
+        --success: #22c55e;
+        --warning: #f59e0b;
+        --error: #ef4444;
+        --text: #f1f5f9;
+        --text-dim: #94a3b8;
+        --radius: 10px;
+      }
+
+      body {
+        font-family: "Segoe UI", system-ui, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      header {
+        background: linear-gradient(135deg, #1e1b4b 0%, #1e293b 100%);
+        border-bottom: 1px solid var(--border);
+        padding: 20px 32px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+      }
+      .header-left {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+      .header-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: rgba(239, 68, 68, 0.15);
+        border: 1px solid rgba(239, 68, 68, 0.4);
+        border-radius: 99px;
+        padding: 3px 12px;
+        font-size: 0.7rem;
+        color: #fca5a5;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+      header h1 {
+        font-size: 1.4rem;
+        font-weight: 700;
+      }
+      .btn-home {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        color: var(--text-dim);
+        border-radius: var(--radius);
+        padding: 7px 14px;
+        font-size: 0.85rem;
+        text-decoration: none;
+        transition: border-color 0.2s, color 0.2s;
+      }
+      .btn-home:hover {
+        border-color: var(--accent-h);
+        color: var(--text);
+      }
+
+      main {
+        flex: 1;
+        padding: 40px 24px;
+        max-width: 860px;
+        margin: 0 auto;
+        width: 100%;
+      }
+
+      /* Login */
+      .login-wrap {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 60vh;
+      }
+      .login-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 40px 36px;
+        width: 100%;
+        max-width: 380px;
+        text-align: center;
+      }
+      .lock-icon {
+        font-size: 2.8rem;
+        margin-bottom: 16px;
+      }
+      .login-card h2 {
+        font-size: 1.2rem;
+        margin-bottom: 6px;
+      }
+      .login-card p {
+        font-size: 0.85rem;
+        color: var(--text-dim);
+        margin-bottom: 24px;
+      }
+      .pin-input {
+        width: 100%;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        color: var(--text);
+        font-size: 1.4rem;
+        letter-spacing: 0.3em;
+        text-align: center;
+        padding: 12px;
+        margin-bottom: 14px;
+        outline: none;
+        transition: border-color 0.2s;
+      }
+      .pin-input:focus {
+        border-color: var(--accent);
+      }
+      .login-error {
+        color: var(--error);
+        font-size: 0.82rem;
+        margin-bottom: 10px;
+        min-height: 20px;
+      }
+      .local-notice {
+        margin-top: 14px;
+        font-size: 0.75rem;
+        color: var(--text-dim);
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 7px;
+        padding: 8px 12px;
+        line-height: 1.5;
+      }
+
+      /* Buttons */
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        border: none;
+        border-radius: 8px;
+        padding: 9px 18px;
+        font-size: 0.88rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: opacity 0.15s, transform 0.1s;
+      }
+      .btn:active {
+        transform: scale(0.97);
+      }
+      .btn:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+      .btn-primary {
+        background: var(--accent);
+        color: #fff;
+      }
+      .btn-primary:hover:not(:disabled) {
+        background: var(--accent-h);
+      }
+      .btn-danger {
+        background: #7f1d1d;
+        color: #fca5a5;
+        border: 1px solid #991b1b;
+      }
+      .btn-danger:hover:not(:disabled) {
+        background: #991b1b;
+      }
+      .btn-ghost {
+        background: var(--surface2);
+        color: var(--text-dim);
+        border: 1px solid var(--border);
+      }
+      .btn-ghost:hover:not(:disabled) {
+        border-color: var(--accent-h);
+        color: var(--text);
+      }
+      .btn-full {
+        width: 100%;
+      }
+
+      /* Cards */
+      .section-title {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        color: var(--text-dim);
+        margin-bottom: 16px;
+        margin-top: 36px;
+      }
+      .section-title:first-child {
+        margin-top: 0;
+      }
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        overflow: hidden;
+        margin-bottom: 16px;
+      }
+      .card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 18px;
+        border-bottom: 1px solid var(--border);
+        background: var(--surface2);
+      }
+      .card-header-left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .modality-icon {
+        font-size: 1.3rem;
+      }
+      .modality-name {
+        font-size: 0.95rem;
+        font-weight: 700;
+      }
+      .profile-count {
+        font-size: 0.75rem;
+        color: var(--text-dim);
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 99px;
+        padding: 2px 10px;
+      }
+      .card-body {
+        padding: 14px 18px;
+      }
+
+      /* Profile list */
+      .profile-list {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        margin-bottom: 12px;
+      }
+      .profile-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 7px;
+        padding: 8px 12px;
+      }
+      .profile-name {
+        font-size: 0.9rem;
+        font-weight: 600;
+      }
+      .btn-del-profile {
+        background: none;
+        border: 1px solid transparent;
+        color: var(--text-dim);
+        border-radius: 6px;
+        padding: 4px 8px;
+        cursor: pointer;
+        font-size: 0.8rem;
+        transition: color 0.15s, border-color 0.15s, background 0.15s;
+      }
+      .btn-del-profile:hover {
+        color: #fca5a5;
+        border-color: #991b1b;
+        background: rgba(127, 29, 29, 0.25);
+      }
+      .empty-msg {
+        font-size: 0.85rem;
+        color: var(--text-dim);
+        padding: 10px 0;
+        text-align: center;
+      }
+      .reset-row {
+        display: flex;
+        justify-content: flex-end;
+      }
+
+      /* Change PIN */
+      .pin-form {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .field-label {
+        font-size: 0.8rem;
+        color: var(--text-dim);
+        margin-bottom: 4px;
+      }
+      .text-input {
+        width: 100%;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        color: var(--text);
+        font-size: 1rem;
+        padding: 9px 12px;
+        outline: none;
+        transition: border-color 0.2s;
+      }
+      .text-input:focus {
+        border-color: var(--accent);
+      }
+      .pin-msg {
+        font-size: 0.82rem;
+        min-height: 20px;
+      }
+      .pin-msg.success {
+        color: var(--success);
+      }
+      .pin-msg.error {
+        color: var(--error);
+      }
+
+      /* Toast */
+      .toast {
+        position: fixed;
+        bottom: 24px;
+        left: 50%;
+        transform: translateX(-50%) translateY(80px);
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 10px 20px;
+        font-size: 0.85rem;
+        transition: transform 0.3s;
+        pointer-events: none;
+        z-index: 999;
+      }
+      .toast.show {
+        transform: translateX(-50%) translateY(0);
+      }
+      .toast.success {
+        border-color: var(--success);
+        color: #86efac;
+      }
+      .toast.error {
+        border-color: var(--error);
+        color: #fca5a5;
+      }
+
+      footer {
+        text-align: center;
+        padding: 20px;
+        font-size: 0.75rem;
+        color: var(--text-dim);
+        border-top: 1px solid var(--border);
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="header-left">
+        <div class="header-badge">&#x1F512; Admin</div>
+        <h1>Workshop Admin</h1>
+      </div>
+      <div style="display: flex; gap: 10px; align-items: center">
+        <button class="btn btn-ghost" id="btn-logout" style="display: none">&#x1F6AA; Log out</button>
+        <a href="./index.html" class="btn-home">&#x2190; All Modules</a>
+      </div>
+    </header>
+
+    <main>
+      <!-- LOGIN -->
+      <div class="login-wrap" id="login-section">
+        <div class="login-card">
+          <div class="lock-icon">&#x1F512;</div>
+          <h2>Admin Access</h2>
+          <p>Enter the admin PIN to manage profiles.</p>
+          <input
+            type="password"
+            class="pin-input"
+            id="pin-input"
+            placeholder="&bull;&bull;&bull;&bull;"
+            maxlength="32"
+            autocomplete="current-password"
+          />
+          <div class="login-error" id="login-error"></div>
+          <button class="btn btn-primary btn-full" id="btn-login">Unlock</button>
+          <div class="local-notice">
+            &#x2139;&#xFE0F; This is the static (offline) version. Each student&#x2019;s data is
+            stored in their own browser &mdash; this admin page only manages data on
+            <strong>this device</strong>.
+          </div>
+        </div>
+      </div>
+
+      <!-- DASHBOARD -->
+      <div id="dashboard-section" style="display: none">
+        <p class="section-title">Profile Management</p>
+
+        <!-- Keystroke -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-header-left">
+              <span class="modality-icon">&#x2328;&#xFE0F;</span>
+              <span class="modality-name">Keystroke Dynamics</span>
+            </div>
+            <span class="profile-count" id="ks-count">0 profiles</span>
+          </div>
+          <div class="card-body">
+            <div class="profile-list" id="ks-list"></div>
+            <div class="reset-row">
+              <button class="btn btn-danger" id="ks-reset">
+                &#x1F5D1; Reset All Keystroke Profiles
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mouse -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-header-left">
+              <span class="modality-icon">&#x1F5B1;&#xFE0F;</span>
+              <span class="modality-name">Mouse Dynamics</span>
+            </div>
+            <span class="profile-count" id="mouse-count">0 profiles</span>
+          </div>
+          <div class="card-body">
+            <div class="profile-list" id="mouse-list"></div>
+            <div class="reset-row">
+              <button class="btn btn-danger" id="mouse-reset">
+                &#x1F5D1; Reset All Mouse Profiles
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Face -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-header-left">
+              <span class="modality-icon">&#x1F9D1;</span>
+              <span class="modality-name">Face Recognition</span>
+            </div>
+            <span class="profile-count" id="face-count">0 profiles</span>
+          </div>
+          <div class="card-body">
+            <div class="profile-list" id="face-list"></div>
+            <div class="reset-row">
+              <button class="btn btn-danger" id="face-reset">
+                &#x1F5D1; Reset All Face Profiles
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Voice -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-header-left">
+              <span class="modality-icon">&#x1F399;&#xFE0F;</span>
+              <span class="modality-name">Voice Biometrics</span>
+            </div>
+            <span class="profile-count" id="voice-count">0 profiles</span>
+          </div>
+          <div class="card-body">
+            <div class="profile-list" id="voice-list"></div>
+            <div class="reset-row">
+              <button class="btn btn-danger" id="voice-reset">
+                &#x1F5D1; Reset All Voice Profiles
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Signature -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-header-left">
+              <span class="modality-icon">&#x270D;&#xFE0F;</span>
+              <span class="modality-name">Signature Dynamics</span>
+            </div>
+            <span class="profile-count" id="sig-count">0 profiles</span>
+          </div>
+          <div class="card-body">
+            <div class="profile-list" id="sig-list"></div>
+            <div class="reset-row">
+              <button class="btn btn-danger" id="sig-reset">
+                &#x1F5D1; Reset All Signature Profiles
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Reset Everything -->
+        <div style="margin-top: 8px; margin-bottom: 36px; display: flex; justify-content: flex-end">
+          <button
+            class="btn btn-danger"
+            id="btn-reset-all"
+            style="font-size: 0.9rem; padding: 10px 22px"
+          >
+            &#x26A0;&#xFE0F; Reset ALL Modalities
+          </button>
+        </div>
+
+        <!-- Change PIN -->
+        <p class="section-title">Security</p>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-header-left">
+              <span class="modality-icon">&#x1F511;</span>
+              <span class="modality-name">Change Admin PIN</span>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="pin-form">
+              <div>
+                <div class="field-label">New PIN (minimum 4 characters)</div>
+                <input
+                  type="password"
+                  class="text-input"
+                  id="new-pin-input"
+                  placeholder="Enter new PIN"
+                  maxlength="32"
+                  autocomplete="new-password"
+                />
+              </div>
+              <div>
+                <div class="field-label">Confirm new PIN</div>
+                <input
+                  type="password"
+                  class="text-input"
+                  id="confirm-pin-input"
+                  placeholder="Confirm new PIN"
+                  maxlength="32"
+                  autocomplete="new-password"
+                />
+              </div>
+              <div class="pin-msg" id="pin-change-msg"></div>
+              <button class="btn btn-primary" id="btn-change-pin">Update PIN</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <div class="toast" id="toast"></div>
+
+    <footer>Biometric Workshop Suite &mdash; Admin Panel &mdash; Data stored locally in your browser.</footer>
+
+    <script>
+      "use strict";
+
+      // ── localStorage keys ────────────────────────────────────────────────────
+      const PIN_KEY = "bws_admin_pin";
+      const DEFAULT_PIN = "1965";
+      const LS_KEYS = {
+        keystroke: "kd-profiles",
+        mouse: "mouse_profiles",
+        face: "bws_face_profiles",
+        voice: "bws_voice_profiles",
+        signature: "bws_signature_profiles",
+      };
+
+      // ── DOM refs ─────────────────────────────────────────────────────────────
+      const loginSection = document.getElementById("login-section");
+      const dashboardSection = document.getElementById("dashboard-section");
+      const pinInput = document.getElementById("pin-input");
+      const loginError = document.getElementById("login-error");
+      const btnLogin = document.getElementById("btn-login");
+      const btnLogout = document.getElementById("btn-logout");
+
+      // ── PIN helpers ──────────────────────────────────────────────────────────
+      function getPin() {
+        return localStorage.getItem(PIN_KEY) || DEFAULT_PIN;
+      }
+      function setPin(p) {
+        localStorage.setItem(PIN_KEY, p);
+      }
+
+      // ── Auth ─────────────────────────────────────────────────────────────────
+      // Session state kept in memory only (lost on tab close/refresh)
+      let authenticated = false;
+
+      function showDashboard() {
+        loginSection.style.display = "none";
+        dashboardSection.style.display = "block";
+        btnLogout.style.display = "inline-flex";
+        authenticated = true;
+        renderAll();
+      }
+
+      function showLogin() {
+        loginSection.style.display = "flex";
+        dashboardSection.style.display = "none";
+        btnLogout.style.display = "none";
+        authenticated = false;
+      }
+
+      function doLogin() {
+        const entered = pinInput.value;
+        if (entered === getPin()) {
+          loginError.textContent = "";
+          showDashboard();
+        } else {
+          loginError.textContent = "Incorrect PIN.";
+          pinInput.value = "";
+          pinInput.focus();
+        }
+      }
+
+      btnLogin.addEventListener("click", doLogin);
+      pinInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") doLogin();
+      });
+
+      btnLogout.addEventListener("click", () => {
+        pinInput.value = "";
+        loginError.textContent = "";
+        showLogin();
+      });
+
+      // ── Toast ────────────────────────────────────────────────────────────────
+      let toastTimer = null;
+      function showToast(msg, type) {
+        const t = document.getElementById("toast");
+        t.textContent = msg;
+        t.className = "toast show" + (type ? " " + type : "");
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => {
+          t.className = "toast";
+        }, 2500);
+      }
+
+      // ── Escape helper ────────────────────────────────────────────────────────
+      function esc(str) {
+        return String(str)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;");
+      }
+
+      // ── Render a modality ────────────────────────────────────────────────────
+      function renderModality(lsKey, listId, countId, onDeleted) {
+        let profiles = {};
+        try {
+          profiles = JSON.parse(localStorage.getItem(lsKey) || "{}");
+        } catch (_e) {
+          profiles = {};
+        }
+        const names = Object.keys(profiles);
+        const n = names.length;
+
+        document.getElementById(countId).textContent = n + " profile" + (n !== 1 ? "s" : "");
+        const listEl = document.getElementById(listId);
+
+        if (n === 0) {
+          listEl.innerHTML = '<div class="empty-msg">No profiles enrolled yet.</div>';
+          return;
+        }
+
+        listEl.innerHTML = "";
+        names.forEach((name) => {
+          const row = document.createElement("div");
+          row.className = "profile-row";
+          row.innerHTML = `
+            <div class="profile-name">${esc(name)}</div>
+            <button class="btn-del-profile" title="Delete profile">&#x1F5D1;</button>`;
+          row.querySelector(".btn-del-profile").addEventListener("click", () => {
+            if (!confirm(`Delete profile for "${name}"?`)) return;
+            const all = JSON.parse(localStorage.getItem(lsKey) || "{}");
+            delete all[name];
+            localStorage.setItem(lsKey, JSON.stringify(all));
+            showToast(`Deleted "${name}"`, "success");
+            onDeleted();
+          });
+          listEl.appendChild(row);
+        });
+      }
+
+      function renderAll() {
+        renderModality(LS_KEYS.keystroke, "ks-list", "ks-count", () =>
+          renderModality(LS_KEYS.keystroke, "ks-list", "ks-count", () => {})
+        );
+        renderModality(LS_KEYS.mouse, "mouse-list", "mouse-count", () =>
+          renderModality(LS_KEYS.mouse, "mouse-list", "mouse-count", () => {})
+        );
+        renderModality(LS_KEYS.face, "face-list", "face-count", () =>
+          renderModality(LS_KEYS.face, "face-list", "face-count", () => {})
+        );
+        renderModality(LS_KEYS.voice, "voice-list", "voice-count", () =>
+          renderModality(LS_KEYS.voice, "voice-list", "voice-count", () => {})
+        );
+        renderModality(LS_KEYS.signature, "sig-list", "sig-count", () =>
+          renderModality(LS_KEYS.signature, "sig-list", "sig-count", () => {})
+        );
+      }
+
+      // ── Reset buttons ────────────────────────────────────────────────────────
+      function doReset(lsKey, label, listId, countId) {
+        if (!confirm(`Delete ALL ${label} profiles? This cannot be undone.`)) return;
+        localStorage.removeItem(lsKey);
+        showToast(`All ${label} profiles deleted`, "success");
+        renderModality(lsKey, listId, countId, () => {});
+      }
+
+      document
+        .getElementById("ks-reset")
+        .addEventListener("click", () =>
+          doReset(LS_KEYS.keystroke, "keystroke", "ks-list", "ks-count")
+        );
+      document
+        .getElementById("mouse-reset")
+        .addEventListener("click", () =>
+          doReset(LS_KEYS.mouse, "mouse", "mouse-list", "mouse-count")
+        );
+      document
+        .getElementById("face-reset")
+        .addEventListener("click", () =>
+          doReset(LS_KEYS.face, "face", "face-list", "face-count")
+        );
+      document
+        .getElementById("voice-reset")
+        .addEventListener("click", () =>
+          doReset(LS_KEYS.voice, "voice", "voice-list", "voice-count")
+        );
+      document
+        .getElementById("sig-reset")
+        .addEventListener("click", () =>
+          doReset(LS_KEYS.signature, "signature", "sig-list", "sig-count")
+        );
+
+      document.getElementById("btn-reset-all").addEventListener("click", () => {
+        if (!confirm("Delete ALL profiles for ALL modalities? This cannot be undone.")) return;
+        Object.values(LS_KEYS).forEach((k) => localStorage.removeItem(k));
+        showToast("All profiles deleted", "success");
+        renderAll();
+      });
+
+      // ── Change PIN ───────────────────────────────────────────────────────────
+      document.getElementById("btn-change-pin").addEventListener("click", () => {
+        const newPin = document.getElementById("new-pin-input").value.trim();
+        const confirm2 = document.getElementById("confirm-pin-input").value.trim();
+        const msg = document.getElementById("pin-change-msg");
+        msg.textContent = "";
+        msg.className = "pin-msg";
+
+        if (newPin.length < 4) {
+          msg.textContent = "PIN must be at least 4 characters.";
+          msg.className = "pin-msg error";
+          return;
+        }
+        if (newPin !== confirm2) {
+          msg.textContent = "PINs do not match.";
+          msg.className = "pin-msg error";
+          return;
+        }
+        setPin(newPin);
+        msg.textContent = "PIN updated successfully.";
+        msg.className = "pin-msg success";
+        document.getElementById("new-pin-input").value = "";
+        document.getElementById("confirm-pin-input").value = "";
+      });
+    </script>
+  </body>
+</html>

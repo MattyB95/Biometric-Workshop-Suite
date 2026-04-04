@@ -1003,7 +1003,6 @@
     <div class="profile-item">
       <span>&#x1F4CC;</span>
       <span class="profile-item-name" data-name="${n}">${n}</span>
-      <button class="btn-del" data-name="${n}">&#x2715;</button>
     </div>`
           )
           .join("");
@@ -1032,14 +1031,6 @@
               `Loaded profile for &ldquo;${n}&rdquo; &mdash; draw a signature to compare.`,
               ""
             );
-          });
-        });
-        profileList.querySelectorAll(".btn-del").forEach((btn) => {
-          btn.addEventListener("click", () => {
-            delete profiles[btn.dataset.name];
-            saveProfiles();
-            renderProfileList();
-            verifyResult.style.display = "none";
           });
         });
         // Only enable identify if a signature has been drawn

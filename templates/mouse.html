@@ -603,9 +603,6 @@
           <div class="card-header">Enrolled Profiles</div>
           <div class="card-body">
             <div id="profile-list"><div class="empty-msg">Loading&hellip;</div></div>
-            <button class="btn btn-danger" id="btn-reset" style="width: 100%; margin-top: 4px">
-              &#x1F5D1; Reset All Profiles
-            </button>
           </div>
         </div>
       </div>
@@ -744,7 +741,6 @@
       const btnIdentifyAgain      = document.getElementById('btn-identify-again');
 
       const profileListEl = document.getElementById('profile-list');
-      const btnReset      = document.getElementById('btn-reset');
 
       // ── State ─────────────────────────────────────────────────────────────────
       let currentMode     = 'idle';   // 'idle' | 'enroll' | 'identify'
@@ -1166,35 +1162,16 @@
                 <div class="profile-item-name">${escapeHtml(p.name)}</div>
                 <div class="profile-item-meta">${p.num_samples} sample${p.num_samples !== 1 ? 's' : ''}</div>
               </div>
-              <div style="display:flex;gap:6px">
-                <button class="btn btn-ghost"
-                        style="padding:5px 10px;font-size:0.8rem" data-action="stats">Stats</button>
-                <button class="btn btn-danger"
-                        style="padding:5px 10px;font-size:0.8rem" data-action="delete">&#x1F5D1;</button>
-              </div>`;
+              <button class="btn btn-ghost"
+                      style="padding:5px 10px;font-size:0.8rem" data-action="stats">Stats</button>`;
             el.querySelector('.profile-item-name').addEventListener('click', () => showProfileModal(p.name));
             el.querySelector('[data-action="stats"]').addEventListener('click', () => showProfileModal(p.name));
-            el.querySelector('[data-action="delete"]').addEventListener('click', () => deleteProfile(p.name));
             profileListEl.appendChild(el);
           });
         } catch {
           profileListEl.innerHTML = '<div class="empty-msg" style="color:var(--error)">Failed to load.</div>';
         }
       }
-
-      async function deleteProfile(name) {
-        if (!confirm(`Delete profile for "${name}"?`)) return;
-        await fetch(`/api/mouse/profiles/${encodeURIComponent(name)}`, { method: 'DELETE' });
-        if (selectedProfile === name) selectedProfile = null;
-        loadProfiles();
-      }
-
-      btnReset.addEventListener('click', async () => {
-        if (!confirm('Delete ALL mouse profiles? This cannot be undone.')) return;
-        await fetch('/api/mouse/reset', { method: 'POST' });
-        selectedProfile = null;
-        loadProfiles();
-      });
 
       loadProfiles();
 

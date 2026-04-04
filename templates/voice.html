@@ -656,7 +656,6 @@
       let melFilters = null;
       let sampleRate = 44100;
 
-      const STORAGE_KEY = "bws_voice_profiles";
       let profiles = {}; // name → mean MFCC vector
       let recordingFrames = []; // MFCC frames collected during recording
       let isRecording = false;
@@ -945,16 +944,14 @@
       }
 
       // ─── Profile storage ──────────────────────────────────────────────────────
-      function loadProfiles() {
+      async function loadProfiles() {
         try {
-          profiles = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+          const data = await fetch("/api/voice/profiles").then((r) => r.json());
+          profiles = data.profiles || {};
         } catch (_e) {
           profiles = {};
         }
-      }
-
-      function saveProfiles() {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(profiles));
+        renderProfileList();
       }
 
       function renderProfileList() {
@@ -970,7 +967,6 @@
     <div class="profile-item">
       <span>&#x1F4CC;</span>
       <span class="profile-item-name" data-name="${n}">${n}</span>
-      <button class="btn-del" data-name="${n}">&#x2715;</button>
     </div>`
           )
           .join("");
@@ -989,27 +985,24 @@
             );
           });
         });
-        profileList.querySelectorAll(".btn-del").forEach((btn) => {
-          btn.addEventListener("click", () => {
-            delete profiles[btn.dataset.name];
-            saveProfiles();
-            renderProfileList();
-            verifyResult.style.display = "none";
-          });
-        });
         btnVerify.disabled = recordingFrames.length === 0;
       }
 
       // ─── Enrol ────────────────────────────────────────────────────────────────
-      function enrol() {
+      async function enrol() {
         const name = nameInput.value.trim();
         if (!name) {
           setStatus("Enter a student name before enrolling.", "info");
           return;
         }
         if (recordingFrames.length === 0) return;
-        profiles[name] = meanVector(recordingFrames);
-        saveProfiles();
+        const meanVec = meanVector(recordingFrames);
+        await fetch("/api/voice/enroll", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, features: meanVec }),
+        });
+        profiles[name] = meanVec;
         renderProfileList();
         setStatus(`Enrolled &ldquo;${name}&rdquo;. Record another sample to identify.`, "success");
         recordingFrames = [];
@@ -1112,7 +1105,6 @@
       (function init() {
         initMfccBars();
         loadProfiles();
-        renderProfileList();
 
         // Size canvases to their container width
         function sizeCanvases() {

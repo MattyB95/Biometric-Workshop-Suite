@@ -3,7 +3,7 @@ import math
 import os
 from typing import Any
 
-from flask import Flask, Response, jsonify, render_template, request
+from flask import Flask, Response, jsonify, render_template, request, session
 
 _ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -13,6 +13,7 @@ app = Flask(
     static_folder=os.path.join(_ROOT, "static"),
     static_url_path="/static",
 )
+app.secret_key = os.environ.get("BWS_SECRET_KEY", "bws-workshop-dev-key-change-in-prod")
 
 PROFILES_FILE: str = os.path.join(_ROOT, "profiles.json")
 PHRASE = "the quick brown fox"
@@ -20,6 +21,12 @@ ENROLL_SAMPLES_REQUIRED = 5
 
 MOUSE_PROFILES_FILE: str = os.path.join(_ROOT, "mouse_profiles.json")
 MOUSE_ENROLL_SAMPLES_REQUIRED = 5
+
+FACE_PROFILES_FILE: str = os.path.join(_ROOT, "face_profiles.json")
+VOICE_PROFILES_FILE: str = os.path.join(_ROOT, "voice_profiles.json")
+SIGNATURE_PROFILES_FILE: str = os.path.join(_ROOT, "signature_profiles.json")
+ADMIN_CONFIG_FILE: str = os.path.join(_ROOT, "admin_config.json")
+DEFAULT_ADMIN_PIN = "1965"
 
 
 # ---------------------------------------------------------------------------
@@ -49,6 +56,55 @@ def load_mouse_profiles() -> dict[str, Any]:
 def save_mouse_profiles(profiles: dict[str, Any]) -> None:
     with open(MOUSE_PROFILES_FILE, "w") as f:
         json.dump(profiles, f, indent=2)
+
+
+def load_face_profiles() -> dict[str, Any]:
+    if os.path.exists(FACE_PROFILES_FILE):
+        with open(FACE_PROFILES_FILE) as f:
+            return json.load(f)  # type: ignore[no-any-return]
+    return {}
+
+
+def save_face_profiles(profiles: dict[str, Any]) -> None:
+    with open(FACE_PROFILES_FILE, "w") as f:
+        json.dump(profiles, f, indent=2)
+
+
+def load_voice_profiles() -> dict[str, Any]:
+    if os.path.exists(VOICE_PROFILES_FILE):
+        with open(VOICE_PROFILES_FILE) as f:
+            return json.load(f)  # type: ignore[no-any-return]
+    return {}
+
+
+def save_voice_profiles(profiles: dict[str, Any]) -> None:
+    with open(VOICE_PROFILES_FILE, "w") as f:
+        json.dump(profiles, f, indent=2)
+
+
+def load_signature_profiles() -> dict[str, Any]:
+    if os.path.exists(SIGNATURE_PROFILES_FILE):
+        with open(SIGNATURE_PROFILES_FILE) as f:
+            return json.load(f)  # type: ignore[no-any-return]
+    return {}
+
+
+def save_signature_profiles(profiles: dict[str, Any]) -> None:
+    with open(SIGNATURE_PROFILES_FILE, "w") as f:
+        json.dump(profiles, f, indent=2)
+
+
+def load_admin_pin() -> str:
+    if os.path.exists(ADMIN_CONFIG_FILE):
+        with open(ADMIN_CONFIG_FILE) as f:
+            data: dict[str, Any] = json.load(f)
+            return str(data.get("pin", DEFAULT_ADMIN_PIN))
+    return DEFAULT_ADMIN_PIN
+
+
+def save_admin_pin(pin: str) -> None:
+    with open(ADMIN_CONFIG_FILE, "w") as f:
+        json.dump({"pin": pin}, f)
 
 
 # ---------------------------------------------------------------------------
@@ -147,6 +203,11 @@ def compute_mouse_distance(sample: dict[str, Any], profile: dict[str, Any]) -> f
 @app.route("/")
 def home() -> str:
     return render_template("home.html")
+
+
+@app.route("/admin")
+def admin() -> str:
+    return render_template("admin.html", authenticated=session.get("admin", False))
 
 
 @app.route("/keystroke")
@@ -374,6 +435,159 @@ def delete_mouse_profile(name: str) -> Response:
 @app.route("/api/mouse/reset", methods=["POST"])
 def mouse_reset() -> Response:
     save_mouse_profiles({})
+    return jsonify({"success": True})
+
+
+# ---------------------------------------------------------------------------
+# Admin API
+# ---------------------------------------------------------------------------
+
+
+@app.route("/api/admin/login", methods=["POST"])
+def admin_login() -> Response | tuple[Response, int]:
+    data = request.json or {}
+    pin = str(data.get("pin", "")).strip()
+    if pin == load_admin_pin():
+        session["admin"] = True
+        return jsonify({"success": True})
+    return jsonify({"error": "Incorrect PIN"}), 401
+
+
+@app.route("/api/admin/logout", methods=["POST"])
+def admin_logout() -> Response:
+    session.pop("admin", None)
+    return jsonify({"success": True})
+
+
+@app.route("/api/admin/change-pin", methods=["POST"])
+def admin_change_pin() -> Response | tuple[Response, int]:
+    if not session.get("admin"):
+        return jsonify({"error": "Not authenticated"}), 403
+    data = request.json or {}
+    new_pin = str(data.get("new_pin", "")).strip()
+    if len(new_pin) < 4:
+        return jsonify({"error": "PIN must be at least 4 characters"}), 400
+    save_admin_pin(new_pin)
+    return jsonify({"success": True})
+
+
+# ---------------------------------------------------------------------------
+# Face profiles API
+# ---------------------------------------------------------------------------
+
+
+@app.route("/api/face/enroll", methods=["POST"])
+def face_enroll() -> Response | tuple[Response, int]:
+    data = request.json or {}
+    name = str(data.get("name", "")).strip()
+    features = data.get("features")
+    if not name:
+        return jsonify({"error": "Name is required"}), 400
+    if not isinstance(features, list) or len(features) == 0:
+        return jsonify({"error": "Features are required"}), 400
+    profiles = load_face_profiles()
+    profiles[name] = features
+    save_face_profiles(profiles)
+    return jsonify({"success": True, "name": name, "enrolled": list(profiles.keys())})
+
+
+@app.route("/api/face/profiles", methods=["GET"])
+def get_face_profiles() -> Response:
+    profiles = load_face_profiles()
+    return jsonify({"profiles": profiles, "enrolled": list(profiles.keys())})
+
+
+@app.route("/api/face/profiles/<name>", methods=["DELETE"])
+def delete_face_profile(name: str) -> Response:
+    profiles = load_face_profiles()
+    profiles.pop(name, None)
+    save_face_profiles(profiles)
+    return jsonify({"success": True, "enrolled": list(profiles.keys())})
+
+
+@app.route("/api/face/reset", methods=["POST"])
+def face_reset() -> Response:
+    save_face_profiles({})
+    return jsonify({"success": True})
+
+
+# ---------------------------------------------------------------------------
+# Voice profiles API
+# ---------------------------------------------------------------------------
+
+
+@app.route("/api/voice/enroll", methods=["POST"])
+def voice_enroll() -> Response | tuple[Response, int]:
+    data = request.json or {}
+    name = str(data.get("name", "")).strip()
+    features = data.get("features")
+    if not name:
+        return jsonify({"error": "Name is required"}), 400
+    if features is None:
+        return jsonify({"error": "Features are required"}), 400
+    profiles = load_voice_profiles()
+    profiles[name] = features
+    save_voice_profiles(profiles)
+    return jsonify({"success": True, "name": name, "enrolled": list(profiles.keys())})
+
+
+@app.route("/api/voice/profiles", methods=["GET"])
+def get_voice_profiles() -> Response:
+    profiles = load_voice_profiles()
+    return jsonify({"profiles": profiles, "enrolled": list(profiles.keys())})
+
+
+@app.route("/api/voice/profiles/<name>", methods=["DELETE"])
+def delete_voice_profile(name: str) -> Response:
+    profiles = load_voice_profiles()
+    profiles.pop(name, None)
+    save_voice_profiles(profiles)
+    return jsonify({"success": True, "enrolled": list(profiles.keys())})
+
+
+@app.route("/api/voice/reset", methods=["POST"])
+def voice_reset() -> Response:
+    save_voice_profiles({})
+    return jsonify({"success": True})
+
+
+# ---------------------------------------------------------------------------
+# Signature profiles API
+# ---------------------------------------------------------------------------
+
+
+@app.route("/api/signature/enroll", methods=["POST"])
+def signature_enroll() -> Response | tuple[Response, int]:
+    data = request.json or {}
+    name = str(data.get("name", "")).strip()
+    features = data.get("features")
+    if not name:
+        return jsonify({"error": "Name is required"}), 400
+    if features is None:
+        return jsonify({"error": "Features are required"}), 400
+    profiles = load_signature_profiles()
+    profiles[name] = features
+    save_signature_profiles(profiles)
+    return jsonify({"success": True, "name": name, "enrolled": list(profiles.keys())})
+
+
+@app.route("/api/signature/profiles", methods=["GET"])
+def get_signature_profiles() -> Response:
+    profiles = load_signature_profiles()
+    return jsonify({"profiles": profiles, "enrolled": list(profiles.keys())})
+
+
+@app.route("/api/signature/profiles/<name>", methods=["DELETE"])
+def delete_signature_profile(name: str) -> Response:
+    profiles = load_signature_profiles()
+    profiles.pop(name, None)
+    save_signature_profiles(profiles)
+    return jsonify({"success": True, "enrolled": list(profiles.keys())})
+
+
+@app.route("/api/signature/reset", methods=["POST"])
+def signature_reset() -> Response:
+    save_signature_profiles({})
     return jsonify({"success": True})
 
 

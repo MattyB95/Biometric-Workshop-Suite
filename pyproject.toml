@@ -4,17 +4,20 @@ version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.14"
-dependencies = ["flask", "gunicorn"]
+dependencies = [
+    "flask>=3.1.0",
+    "gunicorn>=25.3.0",
+]
 
 [dependency-groups]
 dev = [
-    "ruff",
-    "black",
-    "mypy",
-    "ty",
-    "pre-commit",
-    "pytest",
-    "pytest-playwright",
+    "ruff>=0.15.0",
+    "black>=26.3.0",
+    "mypy>=1.20.0",
+    "ty>=0.0.28",
+    "pre-commit>=4.5.0",
+    "pytest>=9.0.0",
+    "pytest-playwright>-0.7.0",
     "pytest-cov>=7.1.0",
 ]
 

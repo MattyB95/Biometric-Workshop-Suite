@@ -720,7 +720,6 @@
                 &#x1F4E5; Import
                 <input type="file" id="import-file" accept=".json" style="display: none" />
               </label>
-              <button class="btn btn-danger" id="btn-reset">&#x1F5D1;</button>
             </div>
           </div>
         </div>
@@ -877,7 +876,6 @@
       const btnIdentifyAgain = document.getElementById("btn-identify-again");
 
       const studentListEl = document.getElementById("student-list");
-      const btnReset = document.getElementById("btn-reset");
       const btnExport = document.getElementById("btn-export");
       const importFile = document.getElementById("import-file");
 
@@ -1267,32 +1265,15 @@
               <div class="student-name">${escapeHtml(name)}</div>
               <div class="student-meta">${p.numSamples} sample${p.numSamples !== 1 ? "s" : ""}</div>
             </div>
-            <div style="display:flex;gap:6px">
-              <button class="btn btn-ghost"
-                      style="padding:5px 10px;font-size:0.8rem" data-action="stats">Stats</button>
-              <button class="btn btn-danger"
-                      style="padding:5px 10px;font-size:0.8rem" data-action="delete">&#x1F5D1;</button>
-            </div>`;
+            <button class="btn btn-ghost"
+                    style="padding:5px 10px;font-size:0.8rem" data-action="stats">Stats</button>`;
           el.querySelector(".student-name").addEventListener("click", () => showProfileModal(name));
           el.querySelector("[data-action='stats']").addEventListener("click", () =>
             showProfileModal(name)
           );
-          el.querySelector("[data-action='delete']").addEventListener("click", () => {
-            if (!confirm(`Delete profile for "${name}"?`)) return;
-            const all = loadProfiles();
-            delete all[name];
-            saveProfiles(all);
-            loadStudents();
-          });
           studentListEl.appendChild(el);
         });
       }
-
-      btnReset.addEventListener("click", () => {
-        if (!confirm("Delete ALL profiles? This cannot be undone.")) return;
-        saveProfiles({});
-        loadStudents();
-      });
 
       // Export
       btnExport.addEventListener("click", () => {

@@ -1188,7 +1188,6 @@
           <div class="profile-item">
             <span>&#x1F4CC;</span>
             <span class="profile-item-name" data-name="${n}">${n}</span>
-            <button class="btn-del" data-name="${n}">&#x2715;</button>
           </div>`
           )
           .join("");
@@ -1215,14 +1214,6 @@
               `Loaded profile for &ldquo;${n}&rdquo; &mdash; press Identify Face to compare.`,
               "running"
             );
-          });
-        });
-        profileList.querySelectorAll(".btn-del").forEach((btn) => {
-          btn.addEventListener("click", () => {
-            delete faceProfiles[btn.dataset.name];
-            saveFaceProfiles();
-            renderFaceProfileList();
-            identifyResult.style.display = "none";
           });
         });
         btnIdentify.disabled = currentFeatureValues === null;

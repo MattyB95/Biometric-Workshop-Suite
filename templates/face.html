@@ -925,7 +925,6 @@
       const resultList = document.getElementById("resultList");
 
       // ─── State ────────────────────────────────────────────────────────────────
-      const FACE_STORAGE_KEY = "bws_face_profiles";
       const FACE_FEATURE_LABELS = [
         "Inter-ocular dist",
         "Eye aspect ratio (R)",
@@ -1163,16 +1162,14 @@
         return na > 0 && nb > 0 ? dot / (Math.sqrt(na) * Math.sqrt(nb)) : 0;
       }
 
-      function loadFaceProfiles() {
+      async function loadFaceProfiles() {
         try {
-          faceProfiles = JSON.parse(localStorage.getItem(FACE_STORAGE_KEY) || "{}");
+          const data = await fetch("/api/face/profiles").then((r) => r.json());
+          faceProfiles = data.profiles || {};
         } catch (_e) {
           faceProfiles = {};
         }
-      }
-
-      function saveFaceProfiles() {
-        localStorage.setItem(FACE_STORAGE_KEY, JSON.stringify(faceProfiles));
+        renderFaceProfileList();
       }
 
       function renderFaceProfileList() {
@@ -1188,7 +1185,6 @@
           <div class="profile-item">
             <span>&#x1F4CC;</span>
             <span class="profile-item-name" data-name="${n}">${n}</span>
-            <button class="btn-del" data-name="${n}">&#x2715;</button>
           </div>`
           )
           .join("");
@@ -1217,18 +1213,10 @@
             );
           });
         });
-        profileList.querySelectorAll(".btn-del").forEach((btn) => {
-          btn.addEventListener("click", () => {
-            delete faceProfiles[btn.dataset.name];
-            saveFaceProfiles();
-            renderFaceProfileList();
-            identifyResult.style.display = "none";
-          });
-        });
         btnIdentify.disabled = currentFeatureValues === null;
       }
 
-      btnCapture.addEventListener("click", () => {
+      btnCapture.addEventListener("click", async () => {
         const name = nameInput.value.trim();
         if (!name) {
           setStatus("Enter a student name before capturing.", "loading");
@@ -1238,8 +1226,12 @@
           setStatus("No face detected — position yourself in frame first.", "error");
           return;
         }
+        await fetch("/api/face/enroll", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, features: currentFeatureValues.slice() }),
+        });
         faceProfiles[name] = currentFeatureValues.slice();
-        saveFaceProfiles();
         renderFaceProfileList();
         setStatus(`Enrolled &ldquo;${name}&rdquo;. Press Identify Face to compare.`, "running");
         nameInput.value = "";
@@ -1475,7 +1467,6 @@
       (async function loadModels() {
         initDescriptorGrid();
         loadFaceProfiles();
-        renderFaceProfileList();
         overlayText.textContent = "Loading face detection models\u2026";
         overlaySub.textContent = "This may take a moment on first load.";
 

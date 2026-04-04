@@ -970,7 +970,6 @@
     <div class="profile-item">
       <span>&#x1F4CC;</span>
       <span class="profile-item-name" data-name="${n}">${n}</span>
-      <button class="btn-del" data-name="${n}">&#x2715;</button>
     </div>`
           )
           .join("");
@@ -987,14 +986,6 @@
               `Loaded profile for &ldquo;${n}&rdquo; &mdash; record a sample to compare.`,
               "info"
             );
-          });
-        });
-        profileList.querySelectorAll(".btn-del").forEach((btn) => {
-          btn.addEventListener("click", () => {
-            delete profiles[btn.dataset.name];
-            saveProfiles();
-            renderProfileList();
-            verifyResult.style.display = "none";
           });
         });
         btnVerify.disabled = recordingFrames.length === 0;

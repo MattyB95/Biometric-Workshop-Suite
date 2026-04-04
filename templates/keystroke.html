@@ -382,8 +382,6 @@
       <div class="card-header">Enrolled Students</div>
       <div class="card-body">
         <div id="student-list"><div class="empty-msg">Loading&hellip;</div></div>
-        <button class="btn btn-danger" id="btn-reset"
-                style="width:100%;margin-top:4px">&#x1F5D1; Reset All Profiles</button>
       </div>
     </div>
 
@@ -490,7 +488,6 @@
   const btnIdentifyAgain      = document.getElementById("btn-identify-again");
 
   const studentListEl = document.getElementById("student-list");
-  const btnReset      = document.getElementById("btn-reset");
 
   // ── Unified status ────────────────────────────────────────────────────
   function setStatus(msg, type) {
@@ -826,33 +823,16 @@
             <div class="student-name">${escapeHtml(s.name)}</div>
             <div class="student-meta">${s.num_samples} sample${s.num_samples !== 1 ? "s" : ""}</div>
           </div>
-          <div style="display:flex;gap:6px">
-            <button class="btn btn-ghost"
-                    style="padding:5px 10px;font-size:0.8rem" data-action="stats">Stats</button>
-            <button class="btn btn-danger"
-                    style="padding:5px 10px;font-size:0.8rem" data-action="delete">&#x1F5D1;</button>
-          </div>`;
+          <button class="btn btn-ghost"
+                  style="padding:5px 10px;font-size:0.8rem" data-action="stats">Stats</button>`;
         el.querySelector(".student-name").addEventListener("click", () => showProfileModal(s.name));
         el.querySelector("[data-action='stats']").addEventListener("click", () => showProfileModal(s.name));
-        el.querySelector("[data-action='delete']").addEventListener("click", () => deleteStudent(s.name));
         studentListEl.appendChild(el);
       });
     } catch {
       studentListEl.innerHTML = '<div class="empty-msg" style="color:var(--error)">Failed to load.</div>';
     }
   }
-
-  async function deleteStudent(name) {
-    if (!confirm(`Delete profile for "${name}"?`)) return;
-    await fetch(`/api/profiles/${encodeURIComponent(name)}`, { method: "DELETE" });
-    loadStudents();
-  }
-
-  btnReset.addEventListener("click", async () => {
-    if (!confirm("Delete ALL profiles? This cannot be undone.")) return;
-    await fetch("/api/reset", { method: "POST" });
-    loadStudents();
-  });
 
   // Load on page start
   loadStudents();

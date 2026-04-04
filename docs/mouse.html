@@ -603,9 +603,6 @@
           <div class="card-header">Enrolled Profiles</div>
           <div class="card-body">
             <div id="profile-list"><div class="empty-msg">No profiles enrolled yet.</div></div>
-            <button class="btn btn-danger" id="btn-reset" style="width: 100%; margin-top: 4px">
-              &#x1F5D1; Reset All Profiles
-            </button>
           </div>
         </div>
       </div>
@@ -743,7 +740,6 @@
       const btnIdentifyAgain = document.getElementById("btn-identify-again");
 
       const profileListEl = document.getElementById("profile-list");
-      const btnReset = document.getElementById("btn-reset");
 
       // ── State ─────────────────────────────────────────────────────────────────
       let currentMode = "idle";
@@ -1197,40 +1193,17 @@
           <div class="profile-item-name">${escapeHtml(name)}</div>
           <div class="profile-item-meta">${p.num_samples} sample${p.num_samples !== 1 ? "s" : ""}</div>
         </div>
-        <div style="display:flex;gap:6px">
           <button class="btn btn-ghost"
-                  style="padding:5px 10px;font-size:0.8rem" data-action="stats">Stats</button>
-          <button class="btn btn-danger"
-                  style="padding:5px 10px;font-size:0.8rem" data-action="delete">&#x1F5D1;</button>
-        </div>`;
+                  style="padding:5px 10px;font-size:0.8rem" data-action="stats">Stats</button>`;
           el.querySelector(".profile-item-name").addEventListener("click", () =>
             showProfileModal(name)
           );
           el.querySelector('[data-action="stats"]').addEventListener("click", () =>
             showProfileModal(name)
           );
-          el.querySelector('[data-action="delete"]').addEventListener("click", () =>
-            deleteProfile(name)
-          );
           profileListEl.appendChild(el);
         });
       }
-
-      function deleteProfile(name) {
-        if (!confirm(`Delete profile for "${name}"?`)) return;
-        const profiles = lsLoad();
-        delete profiles[name];
-        lsSave(profiles);
-        if (selectedProfile === name) selectedProfile = null;
-        renderProfileList();
-      }
-
-      btnReset.addEventListener("click", () => {
-        if (!confirm("Delete ALL mouse profiles? This cannot be undone.")) return;
-        lsSave({});
-        selectedProfile = null;
-        renderProfileList();
-      });
 
       renderProfileList();
 
