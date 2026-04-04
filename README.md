@@ -1,4 +1,4 @@
-# Biometric Workshop Suite
+# Biometric Workshop Suite 🫆
 
 ![Biometric Workshop Suite](social_preview.png)
 
