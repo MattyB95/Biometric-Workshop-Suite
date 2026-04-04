@@ -10,6 +10,10 @@
 [![Educational Use Only](https://img.shields.io/badge/use-educational%20only-orange)](SECURITY.md)
 [![Static Version](https://img.shields.io/badge/static%20demo-GitHub%20Pages-8A2BE2?logo=github)](https://mattyb95.github.io/Biometric-Workshop-Suite/)
 
+[![GitHub Sponsors](https://img.shields.io/badge/GitHub%20Sponsors-sponsor-EA4AAA?logo=github-sponsors&logoColor=white)](https://github.com/sponsors/MattyB95)
+[![Ko-fi](https://img.shields.io/badge/Ko--fi-support%20me-FF5E5B?logo=ko-fi&logoColor=white)](https://ko-fi.com/mattyb95)
+[![thanks.dev](https://img.shields.io/badge/thanks.dev-support-4B79A1?logo=heart&logoColor=white)](https://thanks.dev/u/gh/MattyB95)
+
 An interactive, multi-modality biometric demonstration suite built for classroom and workshop use. Students enrol their biometric traits across five different techniques and see in real time how each system works — from feature extraction through to matching and identification.
 
 > **⚠️ Educational Use Only**
@@ -273,6 +277,16 @@ Then share `http://<your-local-ip>:5000` with students on the same Wi-Fi. No acc
 | Microphone not working (Voice module)                 | Check browser permissions and ensure no other app holds the mic                                         |
 | Face model fails to load                              | The model files in `static/models/` must be accessible — check the browser console for 404 errors       |
 | Admin PIN forgotten                                   | Delete `admin_config.json` from the project root; the default PIN `1965` will be restored on next start |
+
+---
+
+## Support
+
+If you find this project useful for your teaching or workshops, consider buying me a coffee — it helps cover hosting costs and motivates continued development.
+
+[![GitHub Sponsors](https://img.shields.io/badge/GitHub%20Sponsors-Sponsor%20this%20project-EA4AAA?logo=github-sponsors&logoColor=white&style=for-the-badge)](https://github.com/sponsors/MattyB95)
+[![Ko-fi](https://img.shields.io/badge/Ko--fi-Buy%20me%20a%20coffee-FF5E5B?logo=ko-fi&logoColor=white&style=for-the-badge)](https://ko-fi.com/mattyb95)
+[![thanks.dev](https://img.shields.io/badge/thanks.dev-Support%20this%20project-4B79A1?logo=github-sponsors&logoColor=white&style=for-the-badge)](https://thanks.dev/u/gh/MattyB95)
 
 ---
 
