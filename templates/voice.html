@@ -1004,7 +1004,10 @@
         });
         profiles[name] = meanVec;
         renderProfileList();
-        setStatus(`Enrolled &ldquo;${escapeHtml(name)}&rdquo;. Record another sample to identify.`, "success");
+        setStatus(
+          `Enrolled &ldquo;${escapeHtml(name)}&rdquo;. Record another sample to identify.`,
+          "success"
+        );
         recordingFrames = [];
         nameInput.value = "";
         btnEnrol.disabled = true;

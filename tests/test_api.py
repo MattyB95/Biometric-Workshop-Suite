@@ -116,6 +116,15 @@ class TestEnroll:
 
 
 class TestIdentify:
+    def test_missing_timing_returns_400(self, client):
+        resp = client.post(
+            "/api/identify",
+            data=json.dumps({}),
+            content_type="application/json",
+        )
+        assert resp.status_code == 400
+        assert "timing" in resp.get_json()["error"].lower()
+
     def test_no_profiles_returns_400(self, client):
         resp = client.post(
             "/api/identify",
@@ -239,7 +248,9 @@ N_SEG = 7
 N_TGT = 8
 
 
-def _mouse_sample(base_time: float = 300.0, base_dwell: float = 80.0, base_curve: float = 0.1) -> dict:
+def _mouse_sample(
+    base_time: float = 300.0, base_dwell: float = 80.0, base_curve: float = 0.1
+) -> dict:
     return {
         "movement_times": [base_time + i * 5 for i in range(N_SEG)],
         "click_dwells": [base_dwell + i * 2 for i in range(N_TGT)],
@@ -310,8 +321,15 @@ class TestMouseProfiles:
     def test_profile_detail_returns_fields(self, client):
         _mouse_enroll(client, "Frank")
         data = client.get("/api/mouse/profiles/Frank").get_json()
-        for key in ("mean_movement_times", "std_movement_times", "mean_click_dwells",
-                    "std_click_dwells", "mean_curvatures", "std_curvatures", "num_samples"):
+        for key in (
+            "mean_movement_times",
+            "std_movement_times",
+            "mean_click_dwells",
+            "std_click_dwells",
+            "mean_curvatures",
+            "std_curvatures",
+            "num_samples",
+        ):
             assert key in data
 
     def test_profile_detail_returns_404_for_unknown(self, client):
@@ -319,6 +337,15 @@ class TestMouseProfiles:
 
 
 class TestMouseIdentify:
+    def test_missing_sample_returns_400(self, client):
+        resp = client.post(
+            "/api/mouse/identify",
+            data=json.dumps({}),
+            content_type="application/json",
+        )
+        assert resp.status_code == 400
+        assert "sample" in resp.get_json()["error"].lower()
+
     def test_no_profiles_returns_400(self, client):
         resp = client.post(
             "/api/mouse/identify",
@@ -695,7 +722,9 @@ class TestSignatureProfiles:
             content_type="application/json",
         )
         client.delete("/api/signature/profiles/Dave")
-        assert "Dave" not in client.get("/api/signature/profiles").get_json()["profiles"]
+        assert (
+            "Dave" not in client.get("/api/signature/profiles").get_json()["profiles"]
+        )
 
     def test_delete_non_existent_is_idempotent(self, client):
         assert client.delete("/api/signature/profiles/Ghost").status_code == 200
