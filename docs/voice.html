@@ -990,7 +990,7 @@
             nameEl.closest(".profile-item").classList.add("selected");
             updateMfccBars(profiles[n]);
             setStatus(
-              `Loaded profile for &ldquo;${n}&rdquo; &mdash; record a sample to compare.`,
+              `Loaded profile for "${n}" — record a sample to compare.`,
               "info"
             );
           });
@@ -1046,9 +1046,12 @@
           .join("");
 
         const best = results[0];
+        const baseMsg = `Best match: ${best.name} (${best.sim}%) — ${best.sim >= 70 ? "Match" : "No confident match"}. Press `;
+        const suffixHtml = '<strong>Start Recording</strong> to try again.';
         setStatus(
-          `Best match: ${best.name} (${best.sim}%) &mdash; ${best.sim >= 70 ? "Match" : "No confident match"}. Press <strong>Start Recording</strong> to try again.`,
-          best.sim >= 70 ? "success" : "recording"
+          baseMsg,
+          best.sim >= 70 ? "success" : "recording",
+          suffixHtml
         );
         recordingFrames = [];
         btnEnrol.disabled = true;
@@ -1088,13 +1091,19 @@
         btnRecord.disabled = false;
         btnStop.disabled = true;
         setStatus(
-          "Microphone stopped. Press <strong>Start Recording</strong> to reopen the microphone.",
-          ""
+          "Microphone stopped. Press ",
+          "",
+          "<strong>Start Recording</strong> to reopen the microphone."
         );
       }
 
-      function setStatus(msg, type) {
-        statusBar.innerHTML = msg;
+      function setStatus(msg, type, htmlSuffix = "") {
+        statusBar.textContent = msg;
+        if (htmlSuffix) {
+          const wrapper = document.createElement("span");
+          wrapper.innerHTML = htmlSuffix;
+          statusBar.appendChild(wrapper);
+        }
         statusBar.className = `status-bar ${type}`;
       }
 
@@ -1102,7 +1111,7 @@
       btnRecord.addEventListener("click", async () => {
         if (!stream) {
           btnRecord.disabled = true;
-          setStatus("Opening microphone&hellip;", "info");
+          setStatus("Opening microphone…", "info");
           await startMic();
         }
         if (stream) startRecording();
