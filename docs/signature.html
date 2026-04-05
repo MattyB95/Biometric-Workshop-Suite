@@ -1027,10 +1027,7 @@
               );
               updateFeatGrid(f);
             }
-            setStatus(
-              `Loaded profile for "${n}" — draw a signature to compare.`,
-              ""
-            );
+            setStatus(`Loaded profile for "${n}" — draw a signature to compare.`, "");
           });
         });
         // Only enable identify if a signature has been drawn
@@ -1066,10 +1063,7 @@
         profiles[name] = f;
         saveProfiles();
         renderProfileList();
-        setStatus(
-          `Enrolled "${name}". Clear the canvas, draw again, then identify.`,
-          "success"
-        );
+        setStatus(`Enrolled "${name}". Clear the canvas, draw again, then identify.`, "success");
         verifyResult.style.display = "none";
         nameInput.value = "";
         btnEnrol.disabled = true;

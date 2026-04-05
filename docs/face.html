@@ -1210,10 +1210,7 @@
               renderFeatures(fakeFeatures);
               updateDescriptorGrid(fakeFeatures);
             }
-            setStatus(
-              `Loaded profile for "${n}" — press Identify Face to compare.`,
-              "running"
-            );
+            setStatus(`Loaded profile for "${n}" — press Identify Face to compare.`, "running");
           });
         });
         btnIdentify.disabled = currentFeatureValues === null;

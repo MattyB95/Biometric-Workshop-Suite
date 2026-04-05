@@ -989,10 +989,7 @@
               .forEach((el) => el.classList.remove("selected"));
             nameEl.closest(".profile-item").classList.add("selected");
             updateMfccBars(profiles[n]);
-            setStatus(
-              `Loaded profile for "${n}" — record a sample to compare.`,
-              "info"
-            );
+            setStatus(`Loaded profile for "${n}" — record a sample to compare.`, "info");
           });
         });
         btnVerify.disabled = recordingFrames.length === 0;
