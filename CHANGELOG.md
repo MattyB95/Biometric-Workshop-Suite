@@ -11,6 +11,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.3.0] - 2026-04-05
+
+### Added
+
+- **Admin Settings Panel** — instructors can now configure per-modality parameters at runtime via the admin page without editing code or restarting the server:
+  - Keystroke: typing phrase, enrolment attempts required, confidence sensitivity (softmax scale)
+  - Mouse: enrolment attempts required, confidence sensitivity (softmax scale)
+  - Voice: recording duration (3–60 seconds)
+  - Signature: enrolment attempts required
+- Settings persisted to `admin_config.json` (Flask) or `localStorage` (static site) and survive page reloads
+- New API endpoints: `GET/POST /api/admin/keystroke-settings`, `GET/POST /api/admin/mouse-settings`, `GET/POST /api/admin/voice-settings`, `GET/POST /api/admin/signature-settings`
+- **Multi-sample signature enrolment** — students draw their signature the configured number of times (default: 3); features are averaged into a single representative profile, reducing within-session variability
+- Enrolment progress dots on the signature page show how many samples have been collected
+- Profile management (export/import/delete/reset) restricted to the admin panel; individual modality pages no longer expose these controls
+- Settings section added to the keystroke page in the static site removed; all settings now live in the admin panel
+
+### Changed
+
+- Keystroke and mouse identify now apply a configurable softmax scale (previously hardcoded to `2.0` in client-side JavaScript and server-side Python)
+- Voice `ENROL_FRAMES` now derived from the configurable duration setting (`duration × 60`) rather than a hardcoded constant in both Flask template and static page
+- Signature enrol button relabelled **Save Sample** to reflect the multi-sample collection flow
+- `admin_config.json` now stores per-modality settings in addition to the admin PIN
+- Jinja2 template values injected into `<script>` blocks wrapped as `parseInt("{{ value }}", 10)` to keep files parseable by ESLint without excluding them from linting
+
+### Fixed
+
+- `_load_cfg()` return type annotated correctly — `dict(json.load(f))` instead of bare `json.load(f)` to satisfy mypy strict mode
+- ESLint parsing errors in `templates/voice.html` and `templates/signature.html` caused by bare Jinja2 expressions inside `<script>` blocks
+
+### Tests
+
+- 135 → 167 tests; coverage 84% → 100%
+- Added `TestKeystrokeSettings`, `TestMouseSettings`, `TestVoiceSettings`, `TestSignatureSettings` covering auth guards, defaults, save/read-back, input validation, and integration assertions
+- Added `TestSettingsPersistence` to exercise the `_load_cfg` file-read branch
+- Added `test_import_non_dict_profile_value_returns_400` for keystroke, mouse, and signature import validators
+
+---
+
 ## [0.2.0] - 2026-04-05
 
 ### Added
