@@ -1087,7 +1087,10 @@
         stream = audioCtx = analyser = source = null;
         btnRecord.disabled = false;
         btnStop.disabled = true;
-        setStatus("Microphone stopped. Press <strong>Start Recording</strong> to reopen the microphone.", "");
+        setStatus(
+          "Microphone stopped. Press <strong>Start Recording</strong> to reopen the microphone.",
+          ""
+        );
       }
 
       function setStatus(msg, type) {
