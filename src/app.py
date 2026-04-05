@@ -97,16 +97,14 @@ _SIGNATURE_REQUIRED_FIELDS = (
 
 
 def _is_finite_number(x: Any) -> bool:
-    return (
-        isinstance(x, (int, float))
-        and not isinstance(x, bool)
-        and math.isfinite(x)
-    )
+    return isinstance(x, (int, float)) and not isinstance(x, bool) and math.isfinite(x)
 
 
 def _is_numeric_list(lst: Any) -> bool:
-    return isinstance(lst, list) and len(lst) > 0 and all(
-        _is_finite_number(x) for x in lst
+    return (
+        isinstance(lst, list)
+        and len(lst) > 0
+        and all(_is_finite_number(x) for x in lst)
     )
 
 
@@ -142,9 +140,7 @@ def _valid_features_profile(v: Any) -> bool:
 def _valid_signature_profile(v: Any) -> bool:
     if not isinstance(v, dict):
         return False
-    return all(
-        k in v and _is_finite_number(v[k]) for k in _SIGNATURE_REQUIRED_FIELDS
-    )
+    return all(k in v and _is_finite_number(v[k]) for k in _SIGNATURE_REQUIRED_FIELDS)
 
 
 # ---------------------------------------------------------------------------
