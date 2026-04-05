@@ -407,18 +407,6 @@
         color: var(--accent-h);
         text-decoration: underline;
       }
-      .btn-del {
-        padding: 2px 7px;
-        background: none;
-        border: 1px solid rgba(239, 68, 68, 0.4);
-        border-radius: 4px;
-        color: #ef4444;
-        font-size: 0.72rem;
-        cursor: pointer;
-      }
-      .btn-del:hover {
-        background: rgba(239, 68, 68, 0.12);
-      }
       .result-list {
         display: flex;
         flex-direction: column;
@@ -645,7 +633,9 @@
       const N_MEL = 26;
       const N_MFCC = 13;
       const FFT_SIZE = 2048;
-      const ENROL_FRAMES = 600; // ~10 s at 60 fps
+      const ENROL_FRAMES = Math.round(
+        parseFloat(localStorage.getItem("voice-duration") || "10") * 60
+      ); // configurable via admin
 
       // ─── State ────────────────────────────────────────────────────────────────
       let audioCtx = null;
