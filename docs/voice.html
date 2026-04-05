@@ -1070,14 +1070,9 @@
           melFilters = buildMelFilters(FFT_SIZE, sampleRate);
 
           running = true;
-          btnRecord.disabled = false;
-          btnStop.disabled = true;
-          setStatus(
-            "Microphone active. Press <strong>Start Recording</strong> and speak for ~10 seconds to capture your voiceprint.",
-            "info"
-          );
           renderLoop();
         } catch (err) {
+          btnRecord.disabled = false;
           setStatus(`Microphone error: ${err.message}`, "recording");
         }
       }
@@ -1090,9 +1085,9 @@
         if (stream) stream.getTracks().forEach((t) => t.stop());
         if (audioCtx) audioCtx.close();
         stream = audioCtx = analyser = source = null;
-        btnRecord.disabled = true;
+        btnRecord.disabled = false;
         btnStop.disabled = true;
-        setStatus("Microphone stopped. Press Start Recording to resume.", "");
+        setStatus("Microphone stopped. Press <strong>Start Recording</strong> to reopen the microphone.", "");
       }
 
       function setStatus(msg, type) {
@@ -1101,7 +1096,16 @@
       }
 
       // ─── Event listeners ──────────────────────────────────────────────────────
-      btnRecord.addEventListener("click", startRecording);
+      btnRecord.addEventListener("click", async () => {
+        if (!stream) {
+          btnRecord.disabled = true;
+          setStatus("Opening microphone&hellip;", "info");
+          await startMic();
+          if (stream) startRecording();
+        } else {
+          startRecording();
+        }
+      });
       btnStop.addEventListener("click", () => {
         if (isRecording) finishRecording();
         else stopMic();
@@ -1143,21 +1147,6 @@
           ""
         );
         btnRecord.disabled = false;
-
-        // Hijack the record button to first open the mic on first click
-        let micReady = false;
-        btnRecord.addEventListener(
-          "click",
-          async () => {
-            if (!micReady) {
-              micReady = true;
-              btnRecord.disabled = true;
-              setStatus("Opening microphone&hellip;", "info");
-              await startMic();
-            }
-          },
-          { once: true }
-        );
       })();
     </script>
   </body>

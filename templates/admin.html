@@ -732,9 +732,22 @@
             <button class="btn-del-profile" title="Delete profile">&#x1F5D1;</button>`;
           row.querySelector(".btn-del-profile").addEventListener("click", async () => {
             if (!confirm(`Delete profile for "${name}"?`)) return;
-            await fetch(`${deleteUrl}/${encodeURIComponent(name)}`, { method: "DELETE" });
-            showToast(`Deleted "${name}"`, "success");
-            onDeleted();
+            try {
+              const res = await fetch(`${deleteUrl}/${encodeURIComponent(name)}`, { method: "DELETE" });
+              if (!res.ok) {
+                let errorMessage = `Delete failed (${res.status})`;
+                try {
+                  const d = await res.json();
+                  if (d && typeof d.error === "string" && d.error.trim()) errorMessage = d.error;
+                } catch (_) {}
+                showToast(errorMessage, "error");
+                return;
+              }
+              showToast(`Deleted "${name}"`, "success");
+              onDeleted();
+            } catch (_e) {
+              showToast(`Failed to delete "${name}"`, "error");
+            }
           });
           listEl.appendChild(row);
         });
@@ -847,7 +860,11 @@
         try {
           const text = await file.text();
           const profiles = JSON.parse(text);
-          if (typeof profiles !== "object" || Array.isArray(profiles)) {
+          if (
+            profiles === null ||
+            typeof profiles !== "object" ||
+            Array.isArray(profiles)
+          ) {
             showToast("Invalid profile file", "error");
             return;
           }
@@ -873,9 +890,22 @@
       // ── Reset buttons ────────────────────────────────────────────────────────
       async function doReset(url, label, reloadFn) {
         if (!confirm(`Delete ALL ${label} profiles? This cannot be undone.`)) return;
-        await fetch(url, { method: "POST" });
-        showToast(`All ${label} profiles deleted`, "success");
-        reloadFn();
+        try {
+          const res = await fetch(url, { method: "POST" });
+          if (!res.ok) {
+            let errorMessage = `Reset failed (${res.status})`;
+            try {
+              const d = await res.json();
+              if (d && typeof d.error === "string" && d.error.trim()) errorMessage = d.error;
+            } catch (_) {}
+            showToast(errorMessage, "error");
+            return;
+          }
+          showToast(`All ${label} profiles deleted`, "success");
+          reloadFn();
+        } catch (_e) {
+          showToast(`Reset failed`, "error");
+        }
       }
 
       document.getElementById("ks-reset").addEventListener("click",

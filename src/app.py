@@ -72,6 +72,45 @@ def save_admin_pin(pin: str) -> None:
 
 
 # ---------------------------------------------------------------------------
+# Import schema validation helpers
+# ---------------------------------------------------------------------------
+
+_KEYSTROKE_REQUIRED_LISTS = ("mean_dwell", "std_dwell", "mean_flight", "std_flight")
+_MOUSE_REQUIRED_LISTS = (
+    "mean_click_dwells",
+    "std_click_dwells",
+    "mean_movement_times",
+    "std_movement_times",
+    "mean_curvatures",
+    "std_curvatures",
+)
+
+
+def _valid_keystroke_profile(v: Any) -> bool:
+    if not isinstance(v, dict):
+        return False
+    if not isinstance(v.get("num_samples"), int):
+        return False
+    return all(isinstance(v.get(k), list) for k in _KEYSTROKE_REQUIRED_LISTS)
+
+
+def _valid_mouse_profile(v: Any) -> bool:
+    if not isinstance(v, dict):
+        return False
+    if not isinstance(v.get("num_samples"), int):
+        return False
+    return all(isinstance(v.get(k), list) for k in _MOUSE_REQUIRED_LISTS)
+
+
+def _valid_features_profile(v: Any) -> bool:
+    return isinstance(v, list) and len(v) > 0
+
+
+def _valid_signature_profile(v: Any) -> bool:
+    return isinstance(v, dict) and len(v) > 0
+
+
+# ---------------------------------------------------------------------------
 # Maths helpers
 # ---------------------------------------------------------------------------
 
@@ -313,6 +352,10 @@ def import_profiles() -> Response | tuple[Response, int]:
     data = request.json
     if not isinstance(data, dict):
         return jsonify({"error": "JSON body must be an object"}), 400
+    invalid = [k for k, v in data.items() if not _valid_keystroke_profile(v)]
+    if invalid:
+        names = ", ".join(invalid)
+        return jsonify({"error": f"Invalid profile shape for: {names}"}), 400
     profiles = _load_json(PROFILES_FILE)
     profiles.update(data)
     _save_json(PROFILES_FILE, profiles)
@@ -439,6 +482,10 @@ def import_mouse_profiles() -> Response | tuple[Response, int]:
     data = request.json
     if not isinstance(data, dict):
         return jsonify({"error": "JSON body must be an object"}), 400
+    invalid = [k for k, v in data.items() if not _valid_mouse_profile(v)]
+    if invalid:
+        names = ", ".join(invalid)
+        return jsonify({"error": f"Invalid profile shape for: {names}"}), 400
     profiles = _load_json(MOUSE_PROFILES_FILE)
     profiles.update(data)
     _save_json(MOUSE_PROFILES_FILE, profiles)
@@ -532,6 +579,10 @@ def import_face_profiles() -> Response | tuple[Response, int]:
     data = request.json
     if not isinstance(data, dict):
         return jsonify({"error": "JSON body must be an object"}), 400
+    invalid = [k for k, v in data.items() if not _valid_features_profile(v)]
+    if invalid:
+        names = ", ".join(invalid)
+        return jsonify({"error": f"Invalid profile shape for: {names}"}), 400
     profiles = _load_json(FACE_PROFILES_FILE)
     profiles.update(data)
     _save_json(FACE_PROFILES_FILE, profiles)
@@ -592,6 +643,10 @@ def import_voice_profiles() -> Response | tuple[Response, int]:
     data = request.json
     if not isinstance(data, dict):
         return jsonify({"error": "JSON body must be an object"}), 400
+    invalid = [k for k, v in data.items() if not _valid_features_profile(v)]
+    if invalid:
+        names = ", ".join(invalid)
+        return jsonify({"error": f"Invalid profile shape for: {names}"}), 400
     profiles = _load_json(VOICE_PROFILES_FILE)
     profiles.update(data)
     _save_json(VOICE_PROFILES_FILE, profiles)
@@ -652,6 +707,10 @@ def import_signature_profiles() -> Response | tuple[Response, int]:
     data = request.json
     if not isinstance(data, dict):
         return jsonify({"error": "JSON body must be an object"}), 400
+    invalid = [k for k, v in data.items() if not _valid_signature_profile(v)]
+    if invalid:
+        names = ", ".join(invalid)
+        return jsonify({"error": f"Invalid profile shape for: {names}"}), 400
     profiles = _load_json(SIGNATURE_PROFILES_FILE)
     profiles.update(data)
     _save_json(SIGNATURE_PROFILES_FILE, profiles)

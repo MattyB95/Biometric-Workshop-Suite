@@ -821,6 +821,15 @@ class TestKeystrokeExportImport:
         )
         assert resp.status_code == 400
 
+    def test_import_invalid_schema_returns_400(self, client):
+        _admin_login(client)
+        resp = client.post(
+            "/api/import",
+            data=json.dumps({"Alice": {"bad_key": "not_a_profile"}}),
+            content_type="application/json",
+        )
+        assert resp.status_code == 400
+
 
 class TestMouseExportImport:
     def test_export_unauthenticated_returns_403(self, client):
@@ -841,21 +850,39 @@ class TestMouseExportImport:
         assert isinstance(resp.get_json(), dict)
 
     def test_import_merges_profiles(self, client):
+        _mouse_enroll(client, "TestUser")
         _admin_login(client)
-        payload = {"TestUser": {"speeds": [1.0, 2.0]}}
-        client.post(
+        payload = client.get("/api/mouse/export").get_json()
+        assert "TestUser" in payload
+
+        client.post("/api/mouse/reset", content_type="application/json")
+        _mouse_enroll(client, "ExistingUser")
+
+        resp = client.post(
             "/api/mouse/import",
             data=json.dumps(payload),
             content_type="application/json",
         )
+        assert resp.status_code == 200
+        assert resp.get_json()["imported"] == len(payload)
         data = client.get("/api/mouse/export").get_json()
         assert "TestUser" in data
+        assert "ExistingUser" in data
 
     def test_import_non_object_returns_400(self, client):
         _admin_login(client)
         resp = client.post(
             "/api/mouse/import",
             data=json.dumps("bad"),
+            content_type="application/json",
+        )
+        assert resp.status_code == 400
+
+    def test_import_invalid_schema_returns_400(self, client):
+        _admin_login(client)
+        resp = client.post(
+            "/api/mouse/import",
+            data=json.dumps({"Alice": {"speeds": [1.0, 2.0]}}),
             content_type="application/json",
         )
         assert resp.status_code == 400
@@ -911,6 +938,15 @@ class TestFaceExportImport:
         )
         assert resp.status_code == 400
 
+    def test_import_invalid_schema_returns_400(self, client):
+        _admin_login(client)
+        resp = client.post(
+            "/api/face/import",
+            data=json.dumps({"Alice": 42}),
+            content_type="application/json",
+        )
+        assert resp.status_code == 400
+
 
 class TestVoiceExportImport:
     def test_export_unauthenticated_returns_403(self, client):
@@ -962,6 +998,15 @@ class TestVoiceExportImport:
         )
         assert resp.status_code == 400
 
+    def test_import_invalid_schema_returns_400(self, client):
+        _admin_login(client)
+        resp = client.post(
+            "/api/voice/import",
+            data=json.dumps({"Alice": []}),
+            content_type="application/json",
+        )
+        assert resp.status_code == 400
+
 
 class TestSignatureExportImport:
     def test_export_unauthenticated_returns_403(self, client):
@@ -1009,6 +1054,15 @@ class TestSignatureExportImport:
         resp = client.post(
             "/api/signature/import",
             data=json.dumps("invalid"),
+            content_type="application/json",
+        )
+        assert resp.status_code == 400
+
+    def test_import_invalid_schema_returns_400(self, client):
+        _admin_login(client)
+        resp = client.post(
+            "/api/signature/import",
+            data=json.dumps({"Alice": [1, 2, 3]}),
             content_type="application/json",
         )
         assert resp.status_code == 400
