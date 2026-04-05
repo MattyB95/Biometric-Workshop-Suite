@@ -109,7 +109,7 @@ http://localhost:5000
 
 **Voice Biometrics**
 
-- Students speak for a few seconds to enrol. A second recording is used for identification.
+- Students speak for ~10 seconds to enrol. A second recording is used for identification.
 - Results are affected by background noise, microphone quality, and speaking style.
 
 **Signature Dynamics**
@@ -140,6 +140,8 @@ From the admin panel the instructor can:
 - Delete individual profiles
 - Reset all profiles for a specific modality
 - Reset all profiles across all modalities at once (clean slate)
+- Export profiles for any modality as a JSON file
+- Import profiles from a previously exported JSON file
 - Change the admin PIN
 
 > To change the default PIN before a session, navigate to `/admin`, log in with `1965`, and use the **Change Admin PIN** form.

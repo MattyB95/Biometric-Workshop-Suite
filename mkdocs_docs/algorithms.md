@@ -21,13 +21,13 @@ distance = mean over all features of  |sample[i] − mean[i]| / max(std[i], floo
 
 The `floor` prevents division by near-zero standard deviations when a feature is very consistent:
 
-| Modality | Floor values |
-|---|---|
-| Keystroke dwell | 15 ms |
-| Keystroke flight | 25 ms |
-| Mouse movement time | 30 ms |
-| Mouse click dwell | 20 ms |
-| Mouse curvature | 0.05 |
+| Modality            | Floor values |
+| ------------------- | ------------ |
+| Keystroke dwell     | 15 ms        |
+| Keystroke flight    | 25 ms        |
+| Mouse movement time | 30 ms        |
+| Mouse click dwell   | 15 ms        |
+| Mouse curvature     | 0.03         |
 
 **Why this works:** features with low variance (consistent behaviour) have a small `std`, so even a small deviation produces a large normalised distance. Consistent features are effectively weighted more heavily.
 
@@ -83,14 +83,14 @@ Identification uses the same cosine similarity formula as face recognition, appl
 
 Six scalar features are extracted from the stroke data:
 
-| Feature | How computed |
-|---|---|
-| Duration | `end_time − start_time` in seconds |
-| Path length | Sum of Euclidean distances between consecutive points, normalised by canvas diagonal |
-| Average velocity | `path_length / duration` |
-| Peak velocity | Maximum instantaneous speed between consecutive points |
-| Stroke count | Number of pen-down events (mouse/touch down without up) |
-| Direction-change rate | Count of direction reversals per second of drawing time |
+| Feature               | How computed                                                                         |
+| --------------------- | ------------------------------------------------------------------------------------ |
+| Duration              | `end_time − start_time` in seconds                                                   |
+| Path length           | Sum of Euclidean distances between consecutive points, normalised by canvas diagonal |
+| Average velocity      | `path_length / duration`                                                             |
+| Peak velocity         | Maximum instantaneous speed between consecutive points                               |
+| Stroke count          | Number of pen-down events (mouse/touch down without up)                              |
+| Direction-change rate | Count of direction reversals per second of drawing time                              |
 
 ### Matching: weighted Euclidean distance
 

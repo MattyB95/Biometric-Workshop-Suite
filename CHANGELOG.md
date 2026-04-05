@@ -30,7 +30,7 @@ Initial public release of the Biometric Workshop Suite.
 - GitHub Actions docs workflow — MkDocs site and static app deployed to GitHub Pages
 - GitHub Actions release workflow — automatically publishes a GitHub release on every push to `main`
 - MkDocs documentation site with module explainers and workshop guide
-- Comprehensive test suite: 97 tests, 100% coverage (unit, API, and Playwright E2E)
+- Comprehensive test suite: 99 tests, 100% coverage (unit, API, and Playwright E2E)
 - Code quality toolchain: `ruff`, `black`, `mypy`, `prettier`, `eslint`, `htmlhint`, `pre-commit`
 - `justfile` task runner with shortcuts for all common development tasks
 - Dependabot configuration for automated dependency updates targeting `develop`
