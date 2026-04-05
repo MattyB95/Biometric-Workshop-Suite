@@ -637,6 +637,9 @@ def admin_change_pin() -> Response | tuple[Response, int]:
     if len(new_pin) < 4:
         return jsonify({"error": "PIN must be at least 4 characters"}), 400
     save_admin_pin(new_pin)
+    # Note: existing authenticated sessions remain valid after a PIN change.
+    # The PIN is only checked at login time, not on every request. This is
+    # intentional for workshop use — see SECURITY.md.
     return jsonify({"success": True})
 
 
