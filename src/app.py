@@ -299,6 +299,22 @@ def reset() -> Response:
     return jsonify({"success": True})
 
 
+@app.route("/api/export", methods=["GET"])
+def export_profiles() -> Response:
+    return jsonify(_load_json(PROFILES_FILE))
+
+
+@app.route("/api/import", methods=["POST"])
+def import_profiles() -> Response | tuple[Response, int]:
+    data = request.json
+    if not isinstance(data, dict):
+        return jsonify({"error": "JSON body must be an object"}), 400
+    profiles = _load_json(PROFILES_FILE)
+    profiles.update(data)
+    _save_json(PROFILES_FILE, profiles)
+    return jsonify({"success": True, "imported": len(data)})
+
+
 # ---------------------------------------------------------------------------
 # Mouse dynamics API
 # ---------------------------------------------------------------------------
@@ -405,6 +421,22 @@ def mouse_reset() -> Response:
     return jsonify({"success": True})
 
 
+@app.route("/api/mouse/export", methods=["GET"])
+def export_mouse_profiles() -> Response:
+    return jsonify(_load_json(MOUSE_PROFILES_FILE))
+
+
+@app.route("/api/mouse/import", methods=["POST"])
+def import_mouse_profiles() -> Response | tuple[Response, int]:
+    data = request.json
+    if not isinstance(data, dict):
+        return jsonify({"error": "JSON body must be an object"}), 400
+    profiles = _load_json(MOUSE_PROFILES_FILE)
+    profiles.update(data)
+    _save_json(MOUSE_PROFILES_FILE, profiles)
+    return jsonify({"success": True, "imported": len(data)})
+
+
 # ---------------------------------------------------------------------------
 # Admin API
 # ---------------------------------------------------------------------------
@@ -478,6 +510,22 @@ def face_reset() -> Response:
     return jsonify({"success": True})
 
 
+@app.route("/api/face/export", methods=["GET"])
+def export_face_profiles() -> Response:
+    return jsonify(_load_json(FACE_PROFILES_FILE))
+
+
+@app.route("/api/face/import", methods=["POST"])
+def import_face_profiles() -> Response | tuple[Response, int]:
+    data = request.json
+    if not isinstance(data, dict):
+        return jsonify({"error": "JSON body must be an object"}), 400
+    profiles = _load_json(FACE_PROFILES_FILE)
+    profiles.update(data)
+    _save_json(FACE_PROFILES_FILE, profiles)
+    return jsonify({"success": True, "imported": len(data)})
+
+
 # ---------------------------------------------------------------------------
 # Voice profiles API
 # ---------------------------------------------------------------------------
@@ -518,6 +566,22 @@ def voice_reset() -> Response:
     return jsonify({"success": True})
 
 
+@app.route("/api/voice/export", methods=["GET"])
+def export_voice_profiles() -> Response:
+    return jsonify(_load_json(VOICE_PROFILES_FILE))
+
+
+@app.route("/api/voice/import", methods=["POST"])
+def import_voice_profiles() -> Response | tuple[Response, int]:
+    data = request.json
+    if not isinstance(data, dict):
+        return jsonify({"error": "JSON body must be an object"}), 400
+    profiles = _load_json(VOICE_PROFILES_FILE)
+    profiles.update(data)
+    _save_json(VOICE_PROFILES_FILE, profiles)
+    return jsonify({"success": True, "imported": len(data)})
+
+
 # ---------------------------------------------------------------------------
 # Signature profiles API
 # ---------------------------------------------------------------------------
@@ -556,6 +620,22 @@ def delete_signature_profile(name: str) -> Response:
 def signature_reset() -> Response:
     _save_json(SIGNATURE_PROFILES_FILE, {})
     return jsonify({"success": True})
+
+
+@app.route("/api/signature/export", methods=["GET"])
+def export_signature_profiles() -> Response:
+    return jsonify(_load_json(SIGNATURE_PROFILES_FILE))
+
+
+@app.route("/api/signature/import", methods=["POST"])
+def import_signature_profiles() -> Response | tuple[Response, int]:
+    data = request.json
+    if not isinstance(data, dict):
+        return jsonify({"error": "JSON body must be an object"}), 400
+    profiles = _load_json(SIGNATURE_PROFILES_FILE)
+    profiles.update(data)
+    _save_json(SIGNATURE_PROFILES_FILE, profiles)
+    return jsonify({"success": True, "imported": len(data)})
 
 
 if __name__ == "__main__":  # pragma: no cover

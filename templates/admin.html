@@ -1,702 +1,961 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Admin &mdash; Biometric Workshop Suite</title>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin &mdash; Biometric Workshop Suite</title>
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
 
-    :root {
-      --bg:       #0f172a;
-      --surface:  #1e293b;
-      --surface2: #273548;
-      --border:   #334155;
-      --accent:   #6366f1;
-      --accent-h: #818cf8;
-      --success:  #22c55e;
-      --warning:  #f59e0b;
-      --error:    #ef4444;
-      --text:     #f1f5f9;
-      --text-dim: #94a3b8;
-      --radius:   10px;
-    }
+      :root {
+        --bg: #0f172a;
+        --surface: #1e293b;
+        --surface2: #273548;
+        --border: #334155;
+        --accent: #6366f1;
+        --accent-h: #818cf8;
+        --success: #22c55e;
+        --warning: #f59e0b;
+        --error: #ef4444;
+        --text: #f1f5f9;
+        --text-dim: #94a3b8;
+        --radius: 10px;
+      }
 
-    body {
-      font-family: 'Segoe UI', system-ui, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
+      body {
+        font-family: "Segoe UI", system-ui, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
 
-    /* ── Header ── */
-    header {
-      background: linear-gradient(135deg, #1e1b4b 0%, #1e293b 100%);
-      border-bottom: 1px solid var(--border);
-      padding: 20px 32px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-    }
-    .header-left { display: flex; align-items: center; gap: 14px; }
-    .header-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      background: rgba(239,68,68,0.15);
-      border: 1px solid rgba(239,68,68,0.4);
-      border-radius: 99px;
-      padding: 3px 12px;
-      font-size: 0.7rem;
-      color: #fca5a5;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-    }
-    header h1 { font-size: 1.4rem; font-weight: 700; }
-    .btn-home {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      color: var(--text-dim);
-      border-radius: var(--radius);
-      padding: 7px 14px;
-      font-size: 0.85rem;
-      text-decoration: none;
-      transition: border-color 0.2s, color 0.2s;
-    }
-    .btn-home:hover { border-color: var(--accent-h); color: var(--text); }
+      /* ── Header ── */
+      header {
+        background: linear-gradient(135deg, #1e1b4b 0%, #1e293b 100%);
+        border-bottom: 1px solid var(--border);
+        padding: 20px 32px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+      }
+      .header-left {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+      .header-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: rgba(239, 68, 68, 0.15);
+        border: 1px solid rgba(239, 68, 68, 0.4);
+        border-radius: 99px;
+        padding: 3px 12px;
+        font-size: 0.7rem;
+        color: #fca5a5;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+      header h1 {
+        font-size: 1.4rem;
+        font-weight: 700;
+      }
+      .btn-home {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        color: var(--text-dim);
+        border-radius: var(--radius);
+        padding: 7px 14px;
+        font-size: 0.85rem;
+        text-decoration: none;
+        transition:
+          border-color 0.2s,
+          color 0.2s;
+      }
+      .btn-home:hover {
+        border-color: var(--accent-h);
+        color: var(--text);
+      }
 
-    /* ── Layout ── */
-    main {
-      flex: 1;
-      padding: 40px 24px;
-      max-width: 860px;
-      margin: 0 auto;
-      width: 100%;
-    }
+      /* ── Layout ── */
+      main {
+        flex: 1;
+        padding: 40px 24px;
+        max-width: 860px;
+        margin: 0 auto;
+        width: 100%;
+      }
 
-    /* ── Login card ── */
-    .login-wrap {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 60vh;
-    }
-    .login-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 40px 36px;
-      width: 100%;
-      max-width: 380px;
-      text-align: center;
-    }
-    .lock-icon { font-size: 2.8rem; margin-bottom: 16px; }
-    .login-card h2 { font-size: 1.2rem; margin-bottom: 6px; }
-    .login-card p { font-size: 0.85rem; color: var(--text-dim); margin-bottom: 24px; }
-    .pin-input {
-      width: 100%;
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      color: var(--text);
-      font-size: 1.4rem;
-      letter-spacing: 0.3em;
-      text-align: center;
-      padding: 12px;
-      margin-bottom: 14px;
-      outline: none;
-      transition: border-color 0.2s;
-    }
-    .pin-input:focus { border-color: var(--accent); }
-    .login-error {
-      color: var(--error);
-      font-size: 0.82rem;
-      margin-bottom: 10px;
-      min-height: 20px;
-    }
+      /* ── Login card ── */
+      .login-wrap {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 60vh;
+      }
+      .login-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 40px 36px;
+        width: 100%;
+        max-width: 380px;
+        text-align: center;
+      }
+      .lock-icon {
+        font-size: 2.8rem;
+        margin-bottom: 16px;
+      }
+      .login-card h2 {
+        font-size: 1.2rem;
+        margin-bottom: 6px;
+      }
+      .login-card p {
+        font-size: 0.85rem;
+        color: var(--text-dim);
+        margin-bottom: 24px;
+      }
+      .pin-input {
+        width: 100%;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        color: var(--text);
+        font-size: 1.4rem;
+        letter-spacing: 0.3em;
+        text-align: center;
+        padding: 12px;
+        margin-bottom: 14px;
+        outline: none;
+        transition: border-color 0.2s;
+      }
+      .pin-input:focus {
+        border-color: var(--accent);
+      }
+      .login-error {
+        color: var(--error);
+        font-size: 0.82rem;
+        margin-bottom: 10px;
+        min-height: 20px;
+      }
 
-    /* ── Buttons ── */
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 7px;
-      border: none;
-      border-radius: 8px;
-      padding: 9px 18px;
-      font-size: 0.88rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: opacity 0.15s, transform 0.1s;
-    }
-    .btn:active { transform: scale(0.97); }
-    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
-    .btn-primary   { background: var(--accent);  color: #fff; }
-    .btn-primary:hover:not(:disabled) { background: var(--accent-h); }
-    .btn-danger    { background: #7f1d1d; color: #fca5a5; border: 1px solid #991b1b; }
-    .btn-danger:hover:not(:disabled)  { background: #991b1b; }
-    .btn-ghost     { background: var(--surface2); color: var(--text-dim); border: 1px solid var(--border); }
-    .btn-ghost:hover:not(:disabled)   { border-color: var(--accent-h); color: var(--text); }
-    .btn-success   { background: #14532d; color: #86efac; border: 1px solid #166534; }
-    .btn-full { width: 100%; }
+      /* ── Buttons ── */
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        border: none;
+        border-radius: 8px;
+        padding: 9px 18px;
+        font-size: 0.88rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition:
+          opacity 0.15s,
+          transform 0.1s;
+      }
+      .btn:active {
+        transform: scale(0.97);
+      }
+      .btn:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+      .btn-primary {
+        background: var(--accent);
+        color: #fff;
+      }
+      .btn-primary:hover:not(:disabled) {
+        background: var(--accent-h);
+      }
+      .btn-danger {
+        background: #7f1d1d;
+        color: #fca5a5;
+        border: 1px solid #991b1b;
+      }
+      .btn-danger:hover:not(:disabled) {
+        background: #991b1b;
+      }
+      .btn-ghost {
+        background: var(--surface2);
+        color: var(--text-dim);
+        border: 1px solid var(--border);
+      }
+      .btn-ghost:hover:not(:disabled) {
+        border-color: var(--accent-h);
+        color: var(--text);
+      }
+      .btn-success {
+        background: #14532d;
+        color: #86efac;
+        border: 1px solid #166534;
+      }
+      .btn-full {
+        width: 100%;
+      }
 
-    /* ── Section cards ── */
-    .section-title {
-      font-size: 0.7rem;
-      text-transform: uppercase;
-      letter-spacing: 0.12em;
-      color: var(--text-dim);
-      margin-bottom: 16px;
-      margin-top: 36px;
-    }
-    .section-title:first-child { margin-top: 0; }
+      /* ── Section cards ── */
+      .section-title {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        color: var(--text-dim);
+        margin-bottom: 16px;
+        margin-top: 36px;
+      }
+      .section-title:first-child {
+        margin-top: 0;
+      }
 
-    .card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      overflow: hidden;
-      margin-bottom: 16px;
-    }
-    .card-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 14px 18px;
-      border-bottom: 1px solid var(--border);
-      background: var(--surface2);
-    }
-    .card-header-left { display: flex; align-items: center; gap: 10px; }
-    .modality-icon { font-size: 1.3rem; }
-    .modality-name { font-size: 0.95rem; font-weight: 700; }
-    .profile-count {
-      font-size: 0.75rem;
-      color: var(--text-dim);
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 99px;
-      padding: 2px 10px;
-    }
-    .card-body { padding: 14px 18px; }
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        overflow: hidden;
+        margin-bottom: 16px;
+      }
+      .card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 18px;
+        border-bottom: 1px solid var(--border);
+        background: var(--surface2);
+      }
+      .card-header-left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .modality-icon {
+        font-size: 1.3rem;
+      }
+      .modality-name {
+        font-size: 0.95rem;
+        font-weight: 700;
+      }
+      .profile-count {
+        font-size: 0.75rem;
+        color: var(--text-dim);
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 99px;
+        padding: 2px 10px;
+      }
+      .card-body {
+        padding: 14px 18px;
+      }
 
-    /* ── Profile list ── */
-    .profile-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
-    .profile-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 7px;
-      padding: 8px 12px;
-    }
-    .profile-name { font-size: 0.9rem; font-weight: 600; }
-    .profile-meta { font-size: 0.75rem; color: var(--text-dim); margin-top: 2px; }
-    .btn-del-profile {
-      background: none;
-      border: 1px solid transparent;
-      color: var(--text-dim);
-      border-radius: 6px;
-      padding: 4px 8px;
-      cursor: pointer;
-      font-size: 0.8rem;
-      transition: color 0.15s, border-color 0.15s, background 0.15s;
-    }
-    .btn-del-profile:hover {
-      color: #fca5a5;
-      border-color: #991b1b;
-      background: #7f1d1d40;
-    }
-    .empty-msg {
-      font-size: 0.85rem;
-      color: var(--text-dim);
-      padding: 10px 0;
-      text-align: center;
-    }
-    .reset-row { display: flex; justify-content: flex-end; }
+      /* ── Profile list ── */
+      .profile-list {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        margin-bottom: 12px;
+      }
+      .profile-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 7px;
+        padding: 8px 12px;
+      }
+      .profile-name {
+        font-size: 0.9rem;
+        font-weight: 600;
+      }
+      .profile-meta {
+        font-size: 0.75rem;
+        color: var(--text-dim);
+        margin-top: 2px;
+      }
+      .btn-del-profile {
+        background: none;
+        border: 1px solid transparent;
+        color: var(--text-dim);
+        border-radius: 6px;
+        padding: 4px 8px;
+        cursor: pointer;
+        font-size: 0.8rem;
+        transition:
+          color 0.15s,
+          border-color 0.15s,
+          background 0.15s;
+      }
+      .btn-del-profile:hover {
+        color: #fca5a5;
+        border-color: #991b1b;
+        background: #7f1d1d40;
+      }
+      .empty-msg {
+        font-size: 0.85rem;
+        color: var(--text-dim);
+        padding: 10px 0;
+        text-align: center;
+      }
+      .reset-row {
+        display: flex;
+        justify-content: flex-end;
+      }
+      .action-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+      }
+      .btn-sm {
+        font-size: 0.8rem;
+        padding: 6px 12px;
+      }
 
-    /* ── Change PIN card ── */
-    .pin-form { display: flex; flex-direction: column; gap: 12px; }
-    .field-label {
-      font-size: 0.8rem;
-      color: var(--text-dim);
-      margin-bottom: 4px;
-    }
-    .text-input {
-      width: 100%;
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      color: var(--text);
-      font-size: 1rem;
-      padding: 9px 12px;
-      outline: none;
-      transition: border-color 0.2s;
-    }
-    .text-input:focus { border-color: var(--accent); }
-    .pin-msg { font-size: 0.82rem; min-height: 20px; }
-    .pin-msg.success { color: var(--success); }
-    .pin-msg.error   { color: var(--error); }
+      /* ── Change PIN card ── */
+      .pin-form {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .field-label {
+        font-size: 0.8rem;
+        color: var(--text-dim);
+        margin-bottom: 4px;
+      }
+      .text-input {
+        width: 100%;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        color: var(--text);
+        font-size: 1rem;
+        padding: 9px 12px;
+        outline: none;
+        transition: border-color 0.2s;
+      }
+      .text-input:focus {
+        border-color: var(--accent);
+      }
+      .pin-msg {
+        font-size: 0.82rem;
+        min-height: 20px;
+      }
+      .pin-msg.success {
+        color: var(--success);
+      }
+      .pin-msg.error {
+        color: var(--error);
+      }
 
-    /* ── Toast ── */
-    .toast {
-      position: fixed;
-      bottom: 24px;
-      left: 50%;
-      transform: translateX(-50%) translateY(80px);
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 10px 20px;
-      font-size: 0.85rem;
-      transition: transform 0.3s;
-      pointer-events: none;
-      z-index: 999;
-    }
-    .toast.show { transform: translateX(-50%) translateY(0); }
-    .toast.success { border-color: var(--success); color: #86efac; }
-    .toast.error   { border-color: var(--error);   color: #fca5a5; }
+      /* ── Toast ── */
+      .toast {
+        position: fixed;
+        bottom: 24px;
+        left: 50%;
+        transform: translateX(-50%) translateY(80px);
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 10px 20px;
+        font-size: 0.85rem;
+        transition: transform 0.3s;
+        pointer-events: none;
+        z-index: 999;
+      }
+      .toast.show {
+        transform: translateX(-50%) translateY(0);
+      }
+      .toast.success {
+        border-color: var(--success);
+        color: #86efac;
+      }
+      .toast.error {
+        border-color: var(--error);
+        color: #fca5a5;
+      }
 
-    footer {
-      text-align: center;
-      padding: 20px;
-      font-size: 0.75rem;
-      color: var(--text-dim);
-      border-top: 1px solid var(--border);
-    }
-  </style>
-</head>
-<body>
-  <header>
-    <div class="header-left">
-      <div class="header-badge">&#x1F512; Admin</div>
-      <h1>Workshop Admin</h1>
-    </div>
-    <div style="display:flex;gap:10px;align-items:center">
-      <button class="btn btn-ghost" id="btn-logout" style="display:none">&#x1F6AA; Log out</button>
-      <a href="/" class="btn-home">&#x2190; All Modules</a>
-    </div>
-  </header>
-
-  <main>
-    <!-- ── LOGIN ── -->
-    <div class="login-wrap" id="login-section">
-      <div class="login-card">
-        <div class="lock-icon">&#x1F512;</div>
-        <h2>Admin Access</h2>
-        <p>Enter the admin PIN to manage profiles.</p>
-        <input type="password" class="pin-input" id="pin-input"
-               placeholder="&bull;&bull;&bull;&bull;" maxlength="32"
-               autocomplete="current-password" />
-        <div class="login-error" id="login-error"></div>
-        <button class="btn btn-primary btn-full" id="btn-login">Unlock</button>
+      footer {
+        text-align: center;
+        padding: 20px;
+        font-size: 0.75rem;
+        color: var(--text-dim);
+        border-top: 1px solid var(--border);
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="header-left">
+        <div class="header-badge">&#x1F512; Admin</div>
+        <h1>Workshop Admin</h1>
       </div>
-    </div>
-
-    <!-- ── DASHBOARD ── -->
-    <div id="dashboard-section" style="display:none">
-
-      <p class="section-title">Profile Management</p>
-
-      <!-- Keystroke -->
-      <div class="card">
-        <div class="card-header">
-          <div class="card-header-left">
-            <span class="modality-icon">&#x2328;&#xFE0F;</span>
-            <span class="modality-name">Keystroke Dynamics</span>
-          </div>
-          <span class="profile-count" id="ks-count">0 profiles</span>
-        </div>
-        <div class="card-body">
-          <div class="profile-list" id="ks-list">
-            <div class="empty-msg">Loading&hellip;</div>
-          </div>
-          <div class="reset-row">
-            <button class="btn btn-danger" id="ks-reset">&#x1F5D1; Reset All Keystroke Profiles</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Mouse -->
-      <div class="card">
-        <div class="card-header">
-          <div class="card-header-left">
-            <span class="modality-icon">&#x1F5B1;&#xFE0F;</span>
-            <span class="modality-name">Mouse Dynamics</span>
-          </div>
-          <span class="profile-count" id="mouse-count">0 profiles</span>
-        </div>
-        <div class="card-body">
-          <div class="profile-list" id="mouse-list">
-            <div class="empty-msg">Loading&hellip;</div>
-          </div>
-          <div class="reset-row">
-            <button class="btn btn-danger" id="mouse-reset">&#x1F5D1; Reset All Mouse Profiles</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Face -->
-      <div class="card">
-        <div class="card-header">
-          <div class="card-header-left">
-            <span class="modality-icon">&#x1F9D1;</span>
-            <span class="modality-name">Face Recognition</span>
-          </div>
-          <span class="profile-count" id="face-count">0 profiles</span>
-        </div>
-        <div class="card-body">
-          <div class="profile-list" id="face-list">
-            <div class="empty-msg">Loading&hellip;</div>
-          </div>
-          <div class="reset-row">
-            <button class="btn btn-danger" id="face-reset">&#x1F5D1; Reset All Face Profiles</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Voice -->
-      <div class="card">
-        <div class="card-header">
-          <div class="card-header-left">
-            <span class="modality-icon">&#x1F399;&#xFE0F;</span>
-            <span class="modality-name">Voice Biometrics</span>
-          </div>
-          <span class="profile-count" id="voice-count">0 profiles</span>
-        </div>
-        <div class="card-body">
-          <div class="profile-list" id="voice-list">
-            <div class="empty-msg">Loading&hellip;</div>
-          </div>
-          <div class="reset-row">
-            <button class="btn btn-danger" id="voice-reset">&#x1F5D1; Reset All Voice Profiles</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Signature -->
-      <div class="card">
-        <div class="card-header">
-          <div class="card-header-left">
-            <span class="modality-icon">&#x270D;&#xFE0F;</span>
-            <span class="modality-name">Signature Dynamics</span>
-          </div>
-          <span class="profile-count" id="sig-count">0 profiles</span>
-        </div>
-        <div class="card-body">
-          <div class="profile-list" id="sig-list">
-            <div class="empty-msg">Loading&hellip;</div>
-          </div>
-          <div class="reset-row">
-            <button class="btn btn-danger" id="sig-reset">&#x1F5D1; Reset All Signature Profiles</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Reset Everything -->
-      <div style="margin-top:8px;margin-bottom:36px;display:flex;justify-content:flex-end">
-        <button class="btn btn-danger" id="btn-reset-all"
-                style="font-size:0.9rem;padding:10px 22px">
-          &#x26A0;&#xFE0F; Reset ALL Modalities
+      <div style="display: flex; gap: 10px; align-items: center">
+        <button class="btn btn-ghost" id="btn-logout" style="display: none">
+          &#x1F6AA; Log out
         </button>
+        <a href="/" class="btn-home">&#x2190; All Modules</a>
       </div>
+    </header>
 
-      <!-- Change PIN -->
-      <p class="section-title">Security</p>
-      <div class="card">
-        <div class="card-header">
-          <div class="card-header-left">
-            <span class="modality-icon">&#x1F511;</span>
-            <span class="modality-name">Change Admin PIN</span>
-          </div>
-        </div>
-        <div class="card-body">
-          <div class="pin-form">
-            <div>
-              <div class="field-label">New PIN (minimum 4 characters)</div>
-              <input type="password" class="text-input" id="new-pin-input"
-                     placeholder="Enter new PIN" maxlength="32" autocomplete="new-password" />
-            </div>
-            <div>
-              <div class="field-label">Confirm new PIN</div>
-              <input type="password" class="text-input" id="confirm-pin-input"
-                     placeholder="Confirm new PIN" maxlength="32" autocomplete="new-password" />
-            </div>
-            <div class="pin-msg" id="pin-change-msg"></div>
-            <button class="btn btn-primary" id="btn-change-pin">Update PIN</button>
-          </div>
+    <main>
+      <!-- ── LOGIN ── -->
+      <div class="login-wrap" id="login-section">
+        <div class="login-card">
+          <div class="lock-icon">&#x1F512;</div>
+          <h2>Admin Access</h2>
+          <p>Enter the admin PIN to manage profiles.</p>
+          <input
+            type="password"
+            class="pin-input"
+            id="pin-input"
+            placeholder="&bull;&bull;&bull;&bull;"
+            maxlength="32"
+            autocomplete="current-password"
+          />
+          <div class="login-error" id="login-error"></div>
+          <button class="btn btn-primary btn-full" id="btn-login">Unlock</button>
         </div>
       </div>
 
-    </div><!-- /dashboard -->
-  </main>
+      <!-- ── DASHBOARD ── -->
+      <div id="dashboard-section" style="display: none">
+        <p class="section-title">Profile Management</p>
 
-  <div class="toast" id="toast"></div>
+        <!-- Keystroke -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-header-left">
+              <span class="modality-icon">&#x2328;&#xFE0F;</span>
+              <span class="modality-name">Keystroke Dynamics</span>
+            </div>
+            <span class="profile-count" id="ks-count">0 profiles</span>
+          </div>
+          <div class="card-body">
+            <div class="profile-list" id="ks-list">
+              <div class="empty-msg">Loading&hellip;</div>
+            </div>
+            <div class="action-row">
+              <div style="display: flex; gap: 6px">
+                <button class="btn btn-ghost btn-sm" id="ks-export">&#x2B07; Export</button>
+                <label class="btn btn-ghost btn-sm" for="ks-import-file" style="cursor: pointer"
+                  >&#x2B06; Import</label
+                >
+                <input type="file" id="ks-import-file" accept=".json" style="display: none" />
+              </div>
+              <button class="btn btn-danger btn-sm" id="ks-reset">&#x1F5D1; Reset All</button>
+            </div>
+          </div>
+        </div>
 
-  <footer>Biometric Workshop Suite &mdash; Admin Panel</footer>
+        <!-- Mouse -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-header-left">
+              <span class="modality-icon">&#x1F5B1;&#xFE0F;</span>
+              <span class="modality-name">Mouse Dynamics</span>
+            </div>
+            <span class="profile-count" id="mouse-count">0 profiles</span>
+          </div>
+          <div class="card-body">
+            <div class="profile-list" id="mouse-list">
+              <div class="empty-msg">Loading&hellip;</div>
+            </div>
+            <div class="action-row">
+              <div style="display: flex; gap: 6px">
+                <button class="btn btn-ghost btn-sm" id="mouse-export">&#x2B07; Export</button>
+                <label class="btn btn-ghost btn-sm" for="mouse-import-file" style="cursor: pointer"
+                  >&#x2B06; Import</label
+                >
+                <input type="file" id="mouse-import-file" accept=".json" style="display: none" />
+              </div>
+              <button class="btn btn-danger btn-sm" id="mouse-reset">&#x1F5D1; Reset All</button>
+            </div>
+          </div>
+        </div>
 
-  <script>
-    "use strict";
+        <!-- Face -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-header-left">
+              <span class="modality-icon">&#x1F9D1;</span>
+              <span class="modality-name">Face Recognition</span>
+            </div>
+            <span class="profile-count" id="face-count">0 profiles</span>
+          </div>
+          <div class="card-body">
+            <div class="profile-list" id="face-list">
+              <div class="empty-msg">Loading&hellip;</div>
+            </div>
+            <div class="action-row">
+              <div style="display: flex; gap: 6px">
+                <button class="btn btn-ghost btn-sm" id="face-export">&#x2B07; Export</button>
+                <label class="btn btn-ghost btn-sm" for="face-import-file" style="cursor: pointer"
+                  >&#x2B06; Import</label
+                >
+                <input type="file" id="face-import-file" accept=".json" style="display: none" />
+              </div>
+              <button class="btn btn-danger btn-sm" id="face-reset">&#x1F5D1; Reset All</button>
+            </div>
+          </div>
+        </div>
 
-    const loginSection    = document.getElementById("login-section");
-    const dashboardSection = document.getElementById("dashboard-section");
-    const pinInput        = document.getElementById("pin-input");
-    const loginError      = document.getElementById("login-error");
-    const btnLogin        = document.getElementById("btn-login");
-    const btnLogout       = document.getElementById("btn-logout");
+        <!-- Voice -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-header-left">
+              <span class="modality-icon">&#x1F399;&#xFE0F;</span>
+              <span class="modality-name">Voice Biometrics</span>
+            </div>
+            <span class="profile-count" id="voice-count">0 profiles</span>
+          </div>
+          <div class="card-body">
+            <div class="profile-list" id="voice-list">
+              <div class="empty-msg">Loading&hellip;</div>
+            </div>
+            <div class="action-row">
+              <div style="display: flex; gap: 6px">
+                <button class="btn btn-ghost btn-sm" id="voice-export">&#x2B07; Export</button>
+                <label class="btn btn-ghost btn-sm" for="voice-import-file" style="cursor: pointer"
+                  >&#x2B06; Import</label
+                >
+                <input type="file" id="voice-import-file" accept=".json" style="display: none" />
+              </div>
+              <button class="btn btn-danger btn-sm" id="voice-reset">&#x1F5D1; Reset All</button>
+            </div>
+          </div>
+        </div>
 
-    // ── Auth state from server ───────────────────────────────────────────────
-    let isAuthenticated = {{ 'true' if authenticated else 'false' }};
+        <!-- Signature -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-header-left">
+              <span class="modality-icon">&#x270D;&#xFE0F;</span>
+              <span class="modality-name">Signature Dynamics</span>
+            </div>
+            <span class="profile-count" id="sig-count">0 profiles</span>
+          </div>
+          <div class="card-body">
+            <div class="profile-list" id="sig-list">
+              <div class="empty-msg">Loading&hellip;</div>
+            </div>
+            <div class="action-row">
+              <div style="display: flex; gap: 6px">
+                <button class="btn btn-ghost btn-sm" id="sig-export">&#x2B07; Export</button>
+                <label class="btn btn-ghost btn-sm" for="sig-import-file" style="cursor: pointer"
+                  >&#x2B06; Import</label
+                >
+                <input type="file" id="sig-import-file" accept=".json" style="display: none" />
+              </div>
+              <button class="btn btn-danger btn-sm" id="sig-reset">&#x1F5D1; Reset All</button>
+            </div>
+          </div>
+        </div>
 
-    function showDashboard() {
-      loginSection.style.display = "none";
-      dashboardSection.style.display = "block";
-      btnLogout.style.display = "inline-flex";
-      loadAll();
-    }
+        <!-- Reset Everything -->
+        <div style="margin-top: 8px; margin-bottom: 36px; display: flex; justify-content: flex-end">
+          <button
+            class="btn btn-danger"
+            id="btn-reset-all"
+            style="font-size: 0.9rem; padding: 10px 22px"
+          >
+            &#x26A0;&#xFE0F; Reset ALL Modalities
+          </button>
+        </div>
 
-    function showLogin() {
-      loginSection.style.display = "flex";
-      dashboardSection.style.display = "none";
-      btnLogout.style.display = "none";
-    }
+        <!-- Change PIN -->
+        <p class="section-title">Security</p>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-header-left">
+              <span class="modality-icon">&#x1F511;</span>
+              <span class="modality-name">Change Admin PIN</span>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="pin-form">
+              <div>
+                <div class="field-label">New PIN (minimum 4 characters)</div>
+                <input
+                  type="password"
+                  class="text-input"
+                  id="new-pin-input"
+                  placeholder="Enter new PIN"
+                  maxlength="32"
+                  autocomplete="new-password"
+                />
+              </div>
+              <div>
+                <div class="field-label">Confirm new PIN</div>
+                <input
+                  type="password"
+                  class="text-input"
+                  id="confirm-pin-input"
+                  placeholder="Confirm new PIN"
+                  maxlength="32"
+                  autocomplete="new-password"
+                />
+              </div>
+              <div class="pin-msg" id="pin-change-msg"></div>
+              <button class="btn btn-primary" id="btn-change-pin">Update PIN</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- /dashboard -->
+    </main>
 
-    if (isAuthenticated) {
-      showDashboard();
-    }
+    <div class="toast" id="toast"></div>
 
-    // ── Login ────────────────────────────────────────────────────────────────
-    async function doLogin() {
-      const pin = pinInput.value;
-      if (!pin) return;
-      btnLogin.disabled = true;
-      loginError.textContent = "";
-      try {
-        const res = await fetch("/api/admin/login", {
+    <footer>Biometric Workshop Suite &mdash; Admin Panel</footer>
+
+    <script>
+      "use strict";
+
+      const loginSection    = document.getElementById("login-section");
+      const dashboardSection = document.getElementById("dashboard-section");
+      const pinInput        = document.getElementById("pin-input");
+      const loginError      = document.getElementById("login-error");
+      const btnLogin        = document.getElementById("btn-login");
+      const btnLogout       = document.getElementById("btn-logout");
+
+      // ── Auth state from server ───────────────────────────────────────────────
+      let isAuthenticated = {{ 'true' if authenticated else 'false' }};
+
+      function showDashboard() {
+        loginSection.style.display = "none";
+        dashboardSection.style.display = "block";
+        btnLogout.style.display = "inline-flex";
+        loadAll();
+      }
+
+      function showLogin() {
+        loginSection.style.display = "flex";
+        dashboardSection.style.display = "none";
+        btnLogout.style.display = "none";
+      }
+
+      if (isAuthenticated) {
+        showDashboard();
+      }
+
+      // ── Login ────────────────────────────────────────────────────────────────
+      async function doLogin() {
+        const pin = pinInput.value;
+        if (!pin) return;
+        btnLogin.disabled = true;
+        loginError.textContent = "";
+        try {
+          const res = await fetch("/api/admin/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ pin }),
+          });
+          if (res.ok) {
+            isAuthenticated = true;
+            showDashboard();
+          } else {
+            const data = await res.json();
+            loginError.textContent = data.error || "Incorrect PIN";
+            pinInput.value = "";
+            pinInput.focus();
+          }
+        } finally {
+          btnLogin.disabled = false;
+        }
+      }
+
+      btnLogin.addEventListener("click", doLogin);
+      pinInput.addEventListener("keydown", (e) => { if (e.key === "Enter") doLogin(); });
+
+      // ── Logout ───────────────────────────────────────────────────────────────
+      btnLogout.addEventListener("click", async () => {
+        await fetch("/api/admin/logout", { method: "POST" });
+        isAuthenticated = false;
+        pinInput.value = "";
+        loginError.textContent = "";
+        showLogin();
+      });
+
+      // ── Toast helper ─────────────────────────────────────────────────────────
+      let toastTimer = null;
+      function showToast(msg, type = "") {
+        const t = document.getElementById("toast");
+        t.textContent = msg;
+        t.className = "toast show" + (type ? " " + type : "");
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => { t.className = "toast"; }, 2500);
+      }
+
+      // ── Escape helper ────────────────────────────────────────────────────────
+      function esc(str) {
+        return String(str)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;");
+      }
+
+      // ── Render a modality profile list ───────────────────────────────────────
+      function renderList(listEl, countEl, profiles, deleteUrl, onDeleted) {
+        const names = Object.keys(profiles);
+        const n = names.length;
+        countEl.textContent = n + " profile" + (n !== 1 ? "s" : "");
+
+        if (n === 0) {
+          listEl.innerHTML = '<div class="empty-msg">No profiles enrolled yet.</div>';
+          return;
+        }
+
+        listEl.innerHTML = "";
+        names.forEach((name) => {
+          const row = document.createElement("div");
+          row.className = "profile-row";
+          const meta = profiles[name];
+          const metaText = meta && meta.num_samples ? `${meta.num_samples} sample${meta.num_samples !== 1 ? "s" : ""}` : "";
+          row.innerHTML = `
+            <div>
+              <div class="profile-name">${esc(name)}</div>
+              ${metaText ? `<div class="profile-meta">${metaText}</div>` : ""}
+            </div>
+            <button class="btn-del-profile" title="Delete profile">&#x1F5D1;</button>`;
+          row.querySelector(".btn-del-profile").addEventListener("click", async () => {
+            if (!confirm(`Delete profile for "${name}"?`)) return;
+            await fetch(`${deleteUrl}/${encodeURIComponent(name)}`, { method: "DELETE" });
+            showToast(`Deleted "${name}"`, "success");
+            onDeleted();
+          });
+          listEl.appendChild(row);
+        });
+      }
+
+      // ── Load helpers ─────────────────────────────────────────────────────────
+      async function loadKeystroke() {
+        const data = await fetch("/api/profiles").then((r) => r.json());
+        const profiles = {};
+        (data.enrolled || []).forEach((p) => { profiles[p.name] = p; });
+        renderList(
+          document.getElementById("ks-list"),
+          document.getElementById("ks-count"),
+          profiles,
+          "/api/profiles",
+          loadKeystroke
+        );
+      }
+
+      async function loadMouse() {
+        const data = await fetch("/api/mouse/profiles").then((r) => r.json());
+        const profiles = {};
+        (data.enrolled || []).forEach((p) => { profiles[p.name] = p; });
+        renderList(
+          document.getElementById("mouse-list"),
+          document.getElementById("mouse-count"),
+          profiles,
+          "/api/mouse/profiles",
+          loadMouse
+        );
+      }
+
+      async function loadFace() {
+        const data = await fetch("/api/face/profiles").then((r) => r.json());
+        renderList(
+          document.getElementById("face-list"),
+          document.getElementById("face-count"),
+          data.profiles || {},
+          "/api/face/profiles",
+          loadFace
+        );
+      }
+
+      async function loadVoice() {
+        const data = await fetch("/api/voice/profiles").then((r) => r.json());
+        renderList(
+          document.getElementById("voice-list"),
+          document.getElementById("voice-count"),
+          data.profiles || {},
+          "/api/voice/profiles",
+          loadVoice
+        );
+      }
+
+      async function loadSignature() {
+        const data = await fetch("/api/signature/profiles").then((r) => r.json());
+        renderList(
+          document.getElementById("sig-list"),
+          document.getElementById("sig-count"),
+          data.profiles || {},
+          "/api/signature/profiles",
+          loadSignature
+        );
+      }
+
+      function loadAll() {
+        loadKeystroke();
+        loadMouse();
+        loadFace();
+        loadVoice();
+        loadSignature();
+      }
+
+      // ── Export ───────────────────────────────────────────────────────────────
+      async function doExport(url, filename) {
+        const res = await fetch(url);
+        const data = await res.json();
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(a.href);
+        showToast("Exported " + filename, "success");
+      }
+
+      // ── Import ───────────────────────────────────────────────────────────────
+      async function doImport(url, file, reloadFn) {
+        try {
+          const text = await file.text();
+          const profiles = JSON.parse(text);
+          if (typeof profiles !== "object" || Array.isArray(profiles)) {
+            showToast("Invalid profile file", "error");
+            return;
+          }
+          const res = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(profiles),
+          });
+          if (res.ok) {
+            const d = await res.json();
+            const n = d.imported;
+            showToast("Imported " + n + " profile" + (n !== 1 ? "s" : ""), "success");
+            reloadFn();
+          } else {
+            const err = await res.json();
+            showToast(err.error || "Import failed", "error");
+          }
+        } catch (_e) {
+          showToast("Invalid JSON file", "error");
+        }
+      }
+
+      // ── Reset buttons ────────────────────────────────────────────────────────
+      async function doReset(url, label, reloadFn) {
+        if (!confirm(`Delete ALL ${label} profiles? This cannot be undone.`)) return;
+        await fetch(url, { method: "POST" });
+        showToast(`All ${label} profiles deleted`, "success");
+        reloadFn();
+      }
+
+      document.getElementById("ks-reset").addEventListener("click",
+        () => doReset("/api/reset", "keystroke", loadKeystroke));
+      document.getElementById("mouse-reset").addEventListener("click",
+        () => doReset("/api/mouse/reset", "mouse", loadMouse));
+      document.getElementById("face-reset").addEventListener("click",
+        () => doReset("/api/face/reset", "face", loadFace));
+      document.getElementById("voice-reset").addEventListener("click",
+        () => doReset("/api/voice/reset", "voice", loadVoice));
+      document.getElementById("sig-reset").addEventListener("click",
+        () => doReset("/api/signature/reset", "signature", loadSignature));
+
+      document.getElementById("btn-reset-all").addEventListener("click", async () => {
+        if (!confirm("Delete ALL profiles for ALL modalities? This cannot be undone.")) return;
+        await Promise.all([
+          fetch("/api/reset", { method: "POST" }),
+          fetch("/api/mouse/reset", { method: "POST" }),
+          fetch("/api/face/reset", { method: "POST" }),
+          fetch("/api/voice/reset", { method: "POST" }),
+          fetch("/api/signature/reset", { method: "POST" }),
+        ]);
+        showToast("All profiles deleted", "success");
+        loadAll();
+      });
+
+      // ── Export buttons ───────────────────────────────────────────────────────
+      document.getElementById("ks-export").addEventListener("click",
+        () => doExport("/api/export", "keystroke-profiles.json"));
+      document.getElementById("mouse-export").addEventListener("click",
+        () => doExport("/api/mouse/export", "mouse-profiles.json"));
+      document.getElementById("face-export").addEventListener("click",
+        () => doExport("/api/face/export", "face-profiles.json"));
+      document.getElementById("voice-export").addEventListener("click",
+        () => doExport("/api/voice/export", "voice-profiles.json"));
+      document.getElementById("sig-export").addEventListener("click",
+        () => doExport("/api/signature/export", "signature-profiles.json"));
+
+      // ── Import file inputs ───────────────────────────────────────────────────
+      document.getElementById("ks-import-file").addEventListener("change", function() {
+        if (!this.files[0]) return;
+        doImport("/api/import", this.files[0], loadKeystroke);
+        this.value = "";
+      });
+      document.getElementById("mouse-import-file").addEventListener("change", function() {
+        if (!this.files[0]) return;
+        doImport("/api/mouse/import", this.files[0], loadMouse);
+        this.value = "";
+      });
+      document.getElementById("face-import-file").addEventListener("change", function() {
+        if (!this.files[0]) return;
+        doImport("/api/face/import", this.files[0], loadFace);
+        this.value = "";
+      });
+      document.getElementById("voice-import-file").addEventListener("change", function() {
+        if (!this.files[0]) return;
+        doImport("/api/voice/import", this.files[0], loadVoice);
+        this.value = "";
+      });
+      document.getElementById("sig-import-file").addEventListener("change", function() {
+        if (!this.files[0]) return;
+        doImport("/api/signature/import", this.files[0], loadSignature);
+        this.value = "";
+      });
+
+      // ── Change PIN ───────────────────────────────────────────────────────────
+      document.getElementById("btn-change-pin").addEventListener("click", async () => {
+        const newPin  = document.getElementById("new-pin-input").value.trim();
+        const confirm2 = document.getElementById("confirm-pin-input").value.trim();
+        const msg = document.getElementById("pin-change-msg");
+
+        msg.textContent = "";
+        msg.className = "pin-msg";
+
+        if (newPin.length < 4) {
+          msg.textContent = "PIN must be at least 4 characters.";
+          msg.className = "pin-msg error";
+          return;
+        }
+        if (newPin !== confirm2) {
+          msg.textContent = "PINs do not match.";
+          msg.className = "pin-msg error";
+          return;
+        }
+
+        const res = await fetch("/api/admin/change-pin", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ pin }),
+          body: JSON.stringify({ new_pin: newPin }),
         });
+        const data = await res.json();
         if (res.ok) {
-          isAuthenticated = true;
-          showDashboard();
+          msg.textContent = "PIN updated successfully.";
+          msg.className = "pin-msg success";
+          document.getElementById("new-pin-input").value = "";
+          document.getElementById("confirm-pin-input").value = "";
         } else {
-          const data = await res.json();
-          loginError.textContent = data.error || "Incorrect PIN";
-          pinInput.value = "";
-          pinInput.focus();
+          msg.textContent = data.error || "Failed to update PIN.";
+          msg.className = "pin-msg error";
         }
-      } finally {
-        btnLogin.disabled = false;
-      }
-    }
-
-    btnLogin.addEventListener("click", doLogin);
-    pinInput.addEventListener("keydown", (e) => { if (e.key === "Enter") doLogin(); });
-
-    // ── Logout ───────────────────────────────────────────────────────────────
-    btnLogout.addEventListener("click", async () => {
-      await fetch("/api/admin/logout", { method: "POST" });
-      isAuthenticated = false;
-      pinInput.value = "";
-      loginError.textContent = "";
-      showLogin();
-    });
-
-    // ── Toast helper ─────────────────────────────────────────────────────────
-    let toastTimer = null;
-    function showToast(msg, type = "") {
-      const t = document.getElementById("toast");
-      t.textContent = msg;
-      t.className = "toast show" + (type ? " " + type : "");
-      clearTimeout(toastTimer);
-      toastTimer = setTimeout(() => { t.className = "toast"; }, 2500);
-    }
-
-    // ── Escape helper ────────────────────────────────────────────────────────
-    function esc(str) {
-      return String(str)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;");
-    }
-
-    // ── Render a modality profile list ───────────────────────────────────────
-    function renderList(listEl, countEl, profiles, deleteUrl, onDeleted) {
-      const names = Object.keys(profiles);
-      const n = names.length;
-      countEl.textContent = n + " profile" + (n !== 1 ? "s" : "");
-
-      if (n === 0) {
-        listEl.innerHTML = '<div class="empty-msg">No profiles enrolled yet.</div>';
-        return;
-      }
-
-      listEl.innerHTML = "";
-      names.forEach((name) => {
-        const row = document.createElement("div");
-        row.className = "profile-row";
-        const meta = profiles[name];
-        const metaText = meta && meta.num_samples ? `${meta.num_samples} sample${meta.num_samples !== 1 ? "s" : ""}` : "";
-        row.innerHTML = `
-          <div>
-            <div class="profile-name">${esc(name)}</div>
-            ${metaText ? `<div class="profile-meta">${metaText}</div>` : ""}
-          </div>
-          <button class="btn-del-profile" title="Delete profile">&#x1F5D1;</button>`;
-        row.querySelector(".btn-del-profile").addEventListener("click", async () => {
-          if (!confirm(`Delete profile for "${name}"?`)) return;
-          await fetch(`${deleteUrl}/${encodeURIComponent(name)}`, { method: "DELETE" });
-          showToast(`Deleted "${name}"`, "success");
-          onDeleted();
-        });
-        listEl.appendChild(row);
       });
-    }
-
-    // ── Load helpers ─────────────────────────────────────────────────────────
-    async function loadKeystroke() {
-      const data = await fetch("/api/profiles").then((r) => r.json());
-      const profiles = {};
-      (data.enrolled || []).forEach((p) => { profiles[p.name] = p; });
-      renderList(
-        document.getElementById("ks-list"),
-        document.getElementById("ks-count"),
-        profiles,
-        "/api/profiles",
-        loadKeystroke
-      );
-    }
-
-    async function loadMouse() {
-      const data = await fetch("/api/mouse/profiles").then((r) => r.json());
-      const profiles = {};
-      (data.enrolled || []).forEach((p) => { profiles[p.name] = p; });
-      renderList(
-        document.getElementById("mouse-list"),
-        document.getElementById("mouse-count"),
-        profiles,
-        "/api/mouse/profiles",
-        loadMouse
-      );
-    }
-
-    async function loadFace() {
-      const data = await fetch("/api/face/profiles").then((r) => r.json());
-      renderList(
-        document.getElementById("face-list"),
-        document.getElementById("face-count"),
-        data.profiles || {},
-        "/api/face/profiles",
-        loadFace
-      );
-    }
-
-    async function loadVoice() {
-      const data = await fetch("/api/voice/profiles").then((r) => r.json());
-      renderList(
-        document.getElementById("voice-list"),
-        document.getElementById("voice-count"),
-        data.profiles || {},
-        "/api/voice/profiles",
-        loadVoice
-      );
-    }
-
-    async function loadSignature() {
-      const data = await fetch("/api/signature/profiles").then((r) => r.json());
-      renderList(
-        document.getElementById("sig-list"),
-        document.getElementById("sig-count"),
-        data.profiles || {},
-        "/api/signature/profiles",
-        loadSignature
-      );
-    }
-
-    function loadAll() {
-      loadKeystroke();
-      loadMouse();
-      loadFace();
-      loadVoice();
-      loadSignature();
-    }
-
-    // ── Reset buttons ────────────────────────────────────────────────────────
-    async function doReset(url, label, reloadFn) {
-      if (!confirm(`Delete ALL ${label} profiles? This cannot be undone.`)) return;
-      await fetch(url, { method: "POST" });
-      showToast(`All ${label} profiles deleted`, "success");
-      reloadFn();
-    }
-
-    document.getElementById("ks-reset").addEventListener("click",
-      () => doReset("/api/reset", "keystroke", loadKeystroke));
-    document.getElementById("mouse-reset").addEventListener("click",
-      () => doReset("/api/mouse/reset", "mouse", loadMouse));
-    document.getElementById("face-reset").addEventListener("click",
-      () => doReset("/api/face/reset", "face", loadFace));
-    document.getElementById("voice-reset").addEventListener("click",
-      () => doReset("/api/voice/reset", "voice", loadVoice));
-    document.getElementById("sig-reset").addEventListener("click",
-      () => doReset("/api/signature/reset", "signature", loadSignature));
-
-    document.getElementById("btn-reset-all").addEventListener("click", async () => {
-      if (!confirm("Delete ALL profiles for ALL modalities? This cannot be undone.")) return;
-      await Promise.all([
-        fetch("/api/reset", { method: "POST" }),
-        fetch("/api/mouse/reset", { method: "POST" }),
-        fetch("/api/face/reset", { method: "POST" }),
-        fetch("/api/voice/reset", { method: "POST" }),
-        fetch("/api/signature/reset", { method: "POST" }),
-      ]);
-      showToast("All profiles deleted", "success");
-      loadAll();
-    });
-
-    // ── Change PIN ───────────────────────────────────────────────────────────
-    document.getElementById("btn-change-pin").addEventListener("click", async () => {
-      const newPin  = document.getElementById("new-pin-input").value.trim();
-      const confirm2 = document.getElementById("confirm-pin-input").value.trim();
-      const msg = document.getElementById("pin-change-msg");
-
-      msg.textContent = "";
-      msg.className = "pin-msg";
-
-      if (newPin.length < 4) {
-        msg.textContent = "PIN must be at least 4 characters.";
-        msg.className = "pin-msg error";
-        return;
-      }
-      if (newPin !== confirm2) {
-        msg.textContent = "PINs do not match.";
-        msg.className = "pin-msg error";
-        return;
-      }
-
-      const res = await fetch("/api/admin/change-pin", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ new_pin: newPin }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        msg.textContent = "PIN updated successfully.";
-        msg.className = "pin-msg success";
-        document.getElementById("new-pin-input").value = "";
-        document.getElementById("confirm-pin-input").value = "";
-      } else {
-        msg.textContent = data.error || "Failed to update PIN.";
-        msg.className = "pin-msg error";
-      }
-    });
-  </script>
-</body>
+    </script>
+  </body>
 </html>
