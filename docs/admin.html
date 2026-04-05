@@ -813,7 +813,9 @@
           }
           const parsedExisting = JSON.parse(localStorage.getItem(lsKey) || "{}");
           const existing =
-            parsedExisting !== null && typeof parsedExisting === "object" && !Array.isArray(parsedExisting)
+            parsedExisting !== null &&
+            typeof parsedExisting === "object" &&
+            !Array.isArray(parsedExisting)
               ? sanitizeObject(parsedExisting)
               : Object.create(null);
           const incoming = sanitizeObject(parsedIncoming);
