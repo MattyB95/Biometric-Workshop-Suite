@@ -84,6 +84,30 @@ _MOUSE_REQUIRED_LISTS = (
     "mean_curvatures",
     "std_curvatures",
 )
+_SIGNATURE_REQUIRED_FIELDS = (
+    "dur",
+    "pathLen",
+    "avgVel",
+    "maxVel",
+    "velVar",
+    "numStrokes",
+    "aspect",
+    "dirRate",
+)
+
+
+def _is_finite_number(x: Any) -> bool:
+    return (
+        isinstance(x, (int, float))
+        and not isinstance(x, bool)
+        and math.isfinite(x)
+    )
+
+
+def _is_numeric_list(lst: Any) -> bool:
+    return isinstance(lst, list) and len(lst) > 0 and all(
+        _is_finite_number(x) for x in lst
+    )
 
 
 def _valid_keystroke_profile(v: Any) -> bool:
@@ -91,7 +115,7 @@ def _valid_keystroke_profile(v: Any) -> bool:
         return False
     if not isinstance(v.get("num_samples"), int):
         return False
-    return all(isinstance(v.get(k), list) for k in _KEYSTROKE_REQUIRED_LISTS)
+    return all(_is_numeric_list(v.get(k)) for k in _KEYSTROKE_REQUIRED_LISTS)
 
 
 def _valid_mouse_profile(v: Any) -> bool:
@@ -99,15 +123,28 @@ def _valid_mouse_profile(v: Any) -> bool:
         return False
     if not isinstance(v.get("num_samples"), int):
         return False
-    return all(isinstance(v.get(k), list) for k in _MOUSE_REQUIRED_LISTS)
+    return all(_is_numeric_list(v.get(k)) for k in _MOUSE_REQUIRED_LISTS)
+
+
+def _valid_numeric_feature_vector(v: Any, allowed_lengths: tuple[int, ...]) -> bool:
+    if not isinstance(v, list):
+        return False
+    if len(v) not in allowed_lengths:
+        return False
+    return all(_is_finite_number(item) for item in v)
 
 
 def _valid_features_profile(v: Any) -> bool:
-    return isinstance(v, list) and len(v) > 0
+    # face: 16 numeric values; voice: 13 numeric values
+    return _valid_numeric_feature_vector(v, (13, 16))
 
 
 def _valid_signature_profile(v: Any) -> bool:
-    return isinstance(v, dict) and len(v) > 0
+    if not isinstance(v, dict):
+        return False
+    return all(
+        k in v and _is_finite_number(v[k]) for k in _SIGNATURE_REQUIRED_FIELDS
+    )
 
 
 # ---------------------------------------------------------------------------

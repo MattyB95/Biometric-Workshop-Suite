@@ -686,7 +686,9 @@ SIG_FEATURES = {
     "pathLen": 1.2,
     "avgVel": 0.48,
     "maxVel": 0.9,
+    "velVar": 0.05,
     "numStrokes": 3,
+    "aspect": 1.5,
     "dirRate": 0.6,
 }
 
@@ -1062,7 +1064,7 @@ class TestSignatureExportImport:
         _admin_login(client)
         resp = client.post(
             "/api/signature/import",
-            data=json.dumps({"Alice": [1, 2, 3]}),
+            data=json.dumps({"Alice": {"bad_key": 1.0}}),
             content_type="application/json",
         )
         assert resp.status_code == 400

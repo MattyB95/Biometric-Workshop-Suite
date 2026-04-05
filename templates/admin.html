@@ -857,33 +857,52 @@
 
       // ── Import ───────────────────────────────────────────────────────────────
       async function doImport(url, file, reloadFn) {
+        let profiles;
         try {
           const text = await file.text();
-          const profiles = JSON.parse(text);
-          if (
-            profiles === null ||
-            typeof profiles !== "object" ||
-            Array.isArray(profiles)
-          ) {
-            showToast("Invalid profile file", "error");
-            return;
-          }
+          profiles = JSON.parse(text);
+        } catch (_e) {
+          showToast("Invalid JSON file", "error");
+          return;
+        }
+
+        if (
+          profiles === null ||
+          typeof profiles !== "object" ||
+          Array.isArray(profiles)
+        ) {
+          showToast("Invalid profile file", "error");
+          return;
+        }
+
+        try {
           const res = await fetch(url, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(profiles),
           });
+          const responseText = await res.text();
+          let data = null;
+          if (responseText) {
+            try { data = JSON.parse(responseText); } catch (_e) {}
+          }
           if (res.ok) {
-            const d = await res.json();
-            const n = d.imported;
+            if (!data || typeof data.imported !== "number") {
+              showToast("Import failed", "error");
+              return;
+            }
+            const n = data.imported;
             showToast("Imported " + n + " profile" + (n !== 1 ? "s" : ""), "success");
             reloadFn();
           } else {
-            const err = await res.json();
-            showToast(err.error || "Import failed", "error");
+            const errorMessage =
+              data && typeof data.error === "string" && data.error.trim()
+                ? data.error
+                : responseText || "Import failed";
+            showToast(errorMessage, "error");
           }
         } catch (_e) {
-          showToast("Invalid JSON file", "error");
+          showToast("Import failed", "error");
         }
       }
 
@@ -921,15 +940,25 @@
 
       document.getElementById("btn-reset-all").addEventListener("click", async () => {
         if (!confirm("Delete ALL profiles for ALL modalities? This cannot be undone.")) return;
-        await Promise.all([
-          fetch("/api/reset", { method: "POST" }),
-          fetch("/api/mouse/reset", { method: "POST" }),
-          fetch("/api/face/reset", { method: "POST" }),
-          fetch("/api/voice/reset", { method: "POST" }),
-          fetch("/api/signature/reset", { method: "POST" }),
-        ]);
-        showToast("All profiles deleted", "success");
-        loadAll();
+        const resetUrls = [
+          "/api/reset",
+          "/api/mouse/reset",
+          "/api/face/reset",
+          "/api/voice/reset",
+          "/api/signature/reset",
+        ];
+        try {
+          const responses = await Promise.all(resetUrls.map((u) => fetch(u, { method: "POST" })));
+          const failed = responses.filter((r) => !r.ok);
+          if (failed.length > 0) {
+            showToast(`Reset failed for ${failed.length} modality/modalities`, "error");
+            return;
+          }
+          showToast("All profiles deleted", "success");
+          loadAll();
+        } catch (_e) {
+          showToast("Reset failed", "error");
+        }
       });
 
       // ── Export buttons ───────────────────────────────────────────────────────
