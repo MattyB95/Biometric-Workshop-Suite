@@ -33,13 +33,15 @@ The `floor` prevents division by near-zero standard deviations when a feature is
 
 ### Converting distances to confidence
 
-Distances are converted to confidence percentages using **softmax**:
+Distances are converted to confidence percentages using **scaled softmax**:
 
 ```
-confidence[i] = exp(−distance[i]) / sum(exp(−distance[j]) for all j)
+confidence[i] = exp(−scale × distance[i]) / sum(exp(−scale × distance[j]) for all j)
 ```
 
 The negative sign means smaller distances → higher confidence. The softmax ensures all confidences sum to 100%.
+
+The `scale` factor (default: `2.0`) is configurable per modality via the [Admin Panel](admin.md#settings). A higher value sharpens the separation — the best match receives a larger share of confidence relative to second-best. A lower value produces a flatter distribution when profiles are close together.
 
 ---
 

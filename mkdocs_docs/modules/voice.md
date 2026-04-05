@@ -8,21 +8,29 @@ Voice biometrics (speaker recognition) identifies a person by the unique charact
 
 The browser records a short audio clip and performs short-time Fourier analysis to produce a **spectrogram**. From the spectrogram, **Mel-Frequency Cepstral Coefficients (MFCCs)** are extracted per frame:
 
-| Feature | Description |
-|---|---|
+| Feature         | Description                                                            |
+| --------------- | ---------------------------------------------------------------------- |
 | **MFCC vector** | 13 coefficients per frame capturing the spectral envelope of the voice |
-| **Mean MFCC** | The mean across all frames — forms the enrolment profile |
-| **Pitch** | Fundamental frequency estimate, displayed for visualisation |
+| **Mean MFCC**   | The mean across all frames — forms the enrolment profile               |
+| **Pitch**       | Fundamental frequency estimate, displayed for visualisation            |
 
 MFCCs approximate how the human auditory system perceives sound, making them effective for speaker characterisation.
 
 ## Enrolment
 
-The student speaks for a few seconds into the microphone. The mean MFCC vector across all frames is stored as the profile.
+The student speaks into the microphone for the configured recording duration (default: 10 seconds). The mean MFCC vector across all frames is stored as the profile.
 
 ## Identification
 
-A second recording is taken. Its mean MFCC vector is compared against all enrolled profiles using **cosine similarity**. Similarities are normalised to confidence percentages. See [How It Works](../algorithms.md#voice-biometrics) for the formula.
+A second recording of the same duration is taken. Its mean MFCC vector is compared against all enrolled profiles using **cosine similarity**. Similarities are normalised to confidence percentages. See [How It Works](../algorithms.md#voice-biometrics) for the formula.
+
+## Configuration
+
+All settings are managed via the [Admin Panel](../admin.md#voice-biometrics) — no code changes required.
+
+| Setting                | Default | Description                                                                                                                                                     |
+| ---------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Recording duration** | `10 s`  | How many seconds of audio are captured per recording. Range: 3–60 seconds. Longer recordings produce a more stable MFCC profile but take more time per student. |
 
 ## Requirements
 

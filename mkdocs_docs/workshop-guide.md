@@ -21,14 +21,15 @@
 
 ### Keystroke Dynamics
 
-- Students type `the quick brown fox` **5 times** to build their profile. Encourage natural, consistent typing speed.
+- Students type the configured phrase (default: `the quick brown fox`) the required number of times (default: **5**) to build their profile. Encourage natural, consistent typing speed.
 - The fixed phrase keeps all profiles comparable. Changing it mid-session requires re-enrolling everyone.
-- The phrase can be changed in `src/app.py` by editing the `PHRASE` constant.
+- The phrase, enrolment count, and confidence sensitivity can all be adjusted in the [Admin Panel](admin.md#keystroke-dynamics) without restarting the server.
 
 ### Mouse Dynamics
 
-- Students click through **8 on-screen targets 5 times**. Movement paths are visualised live.
+- Students click through **8 on-screen targets** the required number of times (default: **5**). Movement paths are visualised live.
 - Results vary noticeably between a mouse and a trackpad — worth demonstrating to the group.
+- Enrolment attempts and confidence sensitivity are adjustable in the [Admin Panel](admin.md#mouse-dynamics).
 
 ### Face Recognition
 
@@ -38,15 +39,18 @@
 
 ### Voice Biometrics
 
-- Students speak for a few seconds to enrol. A second recording is used for identification.
+- Students speak into the microphone for the configured duration (default: **10 seconds**) to enrol. A second recording is used for identification.
 - Results are affected by background noise, microphone quality, and speaking style.
 - Encourage students to speak naturally and at a consistent distance from the microphone.
+- Recording duration can be adjusted in the [Admin Panel](admin.md#voice-biometrics) (range: 3–60 seconds).
 
 ### Signature Dynamics
 
-- Students draw their signature on screen using a mouse, trackpad, or touchscreen.
-- The system measures *how* the signature is drawn (speed, pressure proxy, stroke order), not just its shape.
+- Students draw their signature on screen using a mouse, trackpad, or touchscreen the required number of times (default: **3**). Progress dots show how many samples remain.
+- The features from all samples are averaged into a single profile — more attempts produce a more stable profile.
+- The system measures _how_ the signature is drawn (speed, stroke count, direction changes), not just its shape.
 - Encourage students to sign as they naturally would — not to draw slowly and carefully.
+- Enrolment attempts can be adjusted in the [Admin Panel](admin.md#signature-dynamics).
 
 ---
 
@@ -64,13 +68,13 @@
 
 ## Troubleshooting
 
-| Problem | Solution |
-|---|---|
-| Wrong key resets the keystroke attempt | Type carefully — the phrase must be typed exactly as shown |
-| Keystroke/mouse results always favour the same person | Ensure at least 3–4 students have enrolled before identifying |
-| Identification seems random | Try enrolling with more consistent speed and technique |
-| Server not reachable from other devices | Use `just run-network` or ensure `host="0.0.0.0"` in `src/app.py` |
-| Camera not working (Face module) | Check browser permissions — the page needs webcam access |
-| Microphone not working (Voice module) | Check browser permissions and ensure no other app holds the mic |
-| Face model fails to load | Model files in `static/models/` must be accessible — check browser console for 404 errors |
-| Admin PIN forgotten | Delete `admin_config.json` from the project root; the default PIN `1965` is restored on next start |
+| Problem                                               | Solution                                                                                           |
+| ----------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| Wrong key resets the keystroke attempt                | Type carefully — the phrase must be typed exactly as shown                                         |
+| Keystroke/mouse results always favour the same person | Ensure at least 3–4 students have enrolled before identifying                                      |
+| Identification seems random                           | Try enrolling with more consistent speed and technique                                             |
+| Server not reachable from other devices               | Use `just run-network` or ensure `host="0.0.0.0"` in `src/app.py`                                  |
+| Camera not working (Face module)                      | Check browser permissions — the page needs webcam access                                           |
+| Microphone not working (Voice module)                 | Check browser permissions and ensure no other app holds the mic                                    |
+| Face model fails to load                              | Model files in `static/models/` must be accessible — check browser console for 404 errors          |
+| Admin PIN forgotten                                   | Delete `admin_config.json` from the project root; the default PIN `1965` is restored on next start |

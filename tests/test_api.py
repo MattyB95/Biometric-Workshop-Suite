@@ -832,6 +832,15 @@ class TestKeystrokeExportImport:
         )
         assert resp.status_code == 400
 
+    def test_import_non_dict_profile_value_returns_400(self, client):
+        _admin_login(client)
+        resp = client.post(
+            "/api/import",
+            data=json.dumps({"Alice": 42}),
+            content_type="application/json",
+        )
+        assert resp.status_code == 400
+
 
 class TestMouseExportImport:
     def test_export_unauthenticated_returns_403(self, client):
@@ -885,6 +894,15 @@ class TestMouseExportImport:
         resp = client.post(
             "/api/mouse/import",
             data=json.dumps({"Alice": {"speeds": [1.0, 2.0]}}),
+            content_type="application/json",
+        )
+        assert resp.status_code == 400
+
+    def test_import_non_dict_profile_value_returns_400(self, client):
+        _admin_login(client)
+        resp = client.post(
+            "/api/mouse/import",
+            data=json.dumps({"Alice": "not_a_dict"}),
             content_type="application/json",
         )
         assert resp.status_code == 400
@@ -1086,3 +1104,318 @@ class TestSignatureExportImport:
             content_type="application/json",
         )
         assert resp.status_code == 400
+
+    def test_import_non_dict_profile_value_returns_400(self, client):
+        _admin_login(client)
+        resp = client.post(
+            "/api/signature/import",
+            data=json.dumps({"Alice": [1, 2, 3]}),
+            content_type="application/json",
+        )
+        assert resp.status_code == 400
+
+
+# ---------------------------------------------------------------------------
+# Admin settings endpoints
+# ---------------------------------------------------------------------------
+
+
+class TestKeystrokeSettings:
+    def test_get_unauthenticated_returns_403(self, client):
+        resp = client.get("/api/admin/keystroke-settings")
+        assert resp.status_code == 403
+
+    def test_post_unauthenticated_returns_403(self, client):
+        resp = client.post(
+            "/api/admin/keystroke-settings",
+            data=json.dumps({"phrase": "hello", "samples": 3, "softmax_scale": 2.0}),
+            content_type="application/json",
+        )
+        assert resp.status_code == 403
+
+    def test_get_returns_defaults(self, client):
+        _admin_login(client)
+        resp = client.get("/api/admin/keystroke-settings")
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert "phrase" in data
+        assert "samples" in data
+        assert "softmax_scale" in data
+
+    def test_post_saves_and_get_reflects_change(self, client):
+        _admin_login(client)
+        client.post(
+            "/api/admin/keystroke-settings",
+            data=json.dumps(
+                {"phrase": "hello world", "samples": 7, "softmax_scale": 3.5}
+            ),
+            content_type="application/json",
+        )
+        resp = client.get("/api/admin/keystroke-settings")
+        data = resp.get_json()
+        assert data["phrase"] == "hello world"
+        assert data["samples"] == 7
+        assert data["softmax_scale"] == pytest.approx(3.5)
+
+    def test_post_empty_phrase_returns_400(self, client):
+        _admin_login(client)
+        resp = client.post(
+            "/api/admin/keystroke-settings",
+            data=json.dumps({"phrase": "  ", "samples": 3, "softmax_scale": 2.0}),
+            content_type="application/json",
+        )
+        assert resp.status_code == 400
+
+    def test_post_invalid_samples_returns_400(self, client):
+        _admin_login(client)
+        resp = client.post(
+            "/api/admin/keystroke-settings",
+            data=json.dumps({"phrase": "test", "samples": 0, "softmax_scale": 2.0}),
+            content_type="application/json",
+        )
+        assert resp.status_code == 400
+
+    def test_post_invalid_softmax_returns_400(self, client):
+        _admin_login(client)
+        resp = client.post(
+            "/api/admin/keystroke-settings",
+            data=json.dumps({"phrase": "test", "samples": 3, "softmax_scale": -1.0}),
+            content_type="application/json",
+        )
+        assert resp.status_code == 400
+
+    def test_softmax_used_in_identify(self, client):
+        """Higher softmax scale increases separation between matches."""
+        _admin_login(client)
+
+        # Enroll with slow typing (high dwell) and fast typing (low dwell)
+        slow_samples = [
+            _sample(base_dwell=200.0 + j, base_flight=150.0 + j) for j in range(5)
+        ]
+        fast_samples = [
+            _sample(base_dwell=40.0 + j, base_flight=20.0 + j) for j in range(5)
+        ]
+        client.post(
+            "/api/enroll",
+            data=json.dumps({"name": "SlowTyper", "samples": slow_samples}),
+            content_type="application/json",
+        )
+        client.post(
+            "/api/enroll",
+            data=json.dumps({"name": "FastTyper", "samples": fast_samples}),
+            content_type="application/json",
+        )
+
+        # Set a very high softmax scale
+        client.post(
+            "/api/admin/keystroke-settings",
+            data=json.dumps({"phrase": PHRASE, "samples": 5, "softmax_scale": 20.0}),
+            content_type="application/json",
+        )
+
+        # Identify with a slow sample — should strongly prefer SlowTyper
+        resp = client.post(
+            "/api/identify",
+            data=json.dumps({"timing": _sample(base_dwell=200.0, base_flight=150.0)}),
+            content_type="application/json",
+        )
+        assert resp.status_code == 200
+        results = resp.get_json()["results"]
+        assert results[0]["name"] == "SlowTyper"
+        assert results[0]["confidence"] > 90.0
+
+
+class TestMouseSettings:
+    def test_get_unauthenticated_returns_403(self, client):
+        resp = client.get("/api/admin/mouse-settings")
+        assert resp.status_code == 403
+
+    def test_post_unauthenticated_returns_403(self, client):
+        resp = client.post(
+            "/api/admin/mouse-settings",
+            data=json.dumps({"samples": 3, "softmax_scale": 2.0}),
+            content_type="application/json",
+        )
+        assert resp.status_code == 403
+
+    def test_get_returns_defaults(self, client):
+        _admin_login(client)
+        resp = client.get("/api/admin/mouse-settings")
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert "samples" in data
+        assert "softmax_scale" in data
+
+    def test_post_saves_and_get_reflects_change(self, client):
+        _admin_login(client)
+        client.post(
+            "/api/admin/mouse-settings",
+            data=json.dumps({"samples": 8, "softmax_scale": 4.0}),
+            content_type="application/json",
+        )
+        resp = client.get("/api/admin/mouse-settings")
+        data = resp.get_json()
+        assert data["samples"] == 8
+        assert data["softmax_scale"] == pytest.approx(4.0)
+
+    def test_post_invalid_samples_returns_400(self, client):
+        _admin_login(client)
+        resp = client.post(
+            "/api/admin/mouse-settings",
+            data=json.dumps({"samples": 0, "softmax_scale": 2.0}),
+            content_type="application/json",
+        )
+        assert resp.status_code == 400
+
+    def test_post_invalid_softmax_returns_400(self, client):
+        _admin_login(client)
+        resp = client.post(
+            "/api/admin/mouse-settings",
+            data=json.dumps({"samples": 3, "softmax_scale": 0}),
+            content_type="application/json",
+        )
+        assert resp.status_code == 400
+
+
+class TestVoiceSettings:
+    def test_get_unauthenticated_returns_403(self, client):
+        resp = client.get("/api/admin/voice-settings")
+        assert resp.status_code == 403
+
+    def test_post_unauthenticated_returns_403(self, client):
+        resp = client.post(
+            "/api/admin/voice-settings",
+            data=json.dumps({"duration": 10}),
+            content_type="application/json",
+        )
+        assert resp.status_code == 403
+
+    def test_get_returns_defaults(self, client):
+        _admin_login(client)
+        resp = client.get("/api/admin/voice-settings")
+        assert resp.status_code == 200
+        assert "duration" in resp.get_json()
+
+    def test_post_saves_and_get_reflects_change(self, client):
+        _admin_login(client)
+        client.post(
+            "/api/admin/voice-settings",
+            data=json.dumps({"duration": 30}),
+            content_type="application/json",
+        )
+        resp = client.get("/api/admin/voice-settings")
+        assert resp.get_json()["duration"] == 30
+
+    def test_post_below_minimum_returns_400(self, client):
+        _admin_login(client)
+        resp = client.post(
+            "/api/admin/voice-settings",
+            data=json.dumps({"duration": 2}),
+            content_type="application/json",
+        )
+        assert resp.status_code == 400
+
+    def test_post_above_maximum_returns_400(self, client):
+        _admin_login(client)
+        resp = client.post(
+            "/api/admin/voice-settings",
+            data=json.dumps({"duration": 61}),
+            content_type="application/json",
+        )
+        assert resp.status_code == 400
+
+    def test_duration_injected_into_voice_template(self, client):
+        """Voice page should reflect configured duration as ENROL_FRAMES."""
+        _admin_login(client)
+        client.post(
+            "/api/admin/voice-settings",
+            data=json.dumps({"duration": 20}),
+            content_type="application/json",
+        )
+        resp = client.get("/voice")
+        assert resp.status_code == 200
+        assert b"1200" in resp.data  # 20 s × 60 fps
+
+
+class TestSignatureSettings:
+    def test_get_unauthenticated_returns_403(self, client):
+        resp = client.get("/api/admin/signature-settings")
+        assert resp.status_code == 403
+
+    def test_post_unauthenticated_returns_403(self, client):
+        resp = client.post(
+            "/api/admin/signature-settings",
+            data=json.dumps({"samples": 3}),
+            content_type="application/json",
+        )
+        assert resp.status_code == 403
+
+    def test_get_returns_defaults(self, client):
+        _admin_login(client)
+        resp = client.get("/api/admin/signature-settings")
+        assert resp.status_code == 200
+        assert "samples" in resp.get_json()
+
+    def test_post_saves_and_get_reflects_change(self, client):
+        _admin_login(client)
+        client.post(
+            "/api/admin/signature-settings",
+            data=json.dumps({"samples": 5}),
+            content_type="application/json",
+        )
+        resp = client.get("/api/admin/signature-settings")
+        assert resp.get_json()["samples"] == 5
+
+    def test_post_invalid_samples_returns_400(self, client):
+        _admin_login(client)
+        resp = client.post(
+            "/api/admin/signature-settings",
+            data=json.dumps({"samples": 0}),
+            content_type="application/json",
+        )
+        assert resp.status_code == 400
+
+    def test_samples_injected_into_signature_template(self, client):
+        """Signature page should embed the configured sample count."""
+        _admin_login(client)
+        client.post(
+            "/api/admin/signature-settings",
+            data=json.dumps({"samples": 6}),
+            content_type="application/json",
+        )
+        resp = client.get("/signature")
+        assert resp.status_code == 200
+        assert b'"6"' in resp.data  # parseInt("6", 10) in rendered template
+
+
+class TestSettingsPersistence:
+    """Verify settings survive across requests via the config file."""
+
+    def test_keystroke_settings_persist_across_requests(self, client):
+        _admin_login(client)
+        client.post(
+            "/api/admin/keystroke-settings",
+            data=json.dumps(
+                {"phrase": "persist test", "samples": 4, "softmax_scale": 1.5}
+            ),
+            content_type="application/json",
+        )
+        # New request — reads from the config file
+        resp = client.get("/api/admin/keystroke-settings")
+        data = resp.get_json()
+        assert data["phrase"] == "persist test"
+        assert data["samples"] == 4
+        assert data["softmax_scale"] == pytest.approx(1.5)
+
+    def test_cfg_file_read_branch_covered(self, client):
+        """Ensure _load_cfg takes the file-exists path after a save."""
+        _admin_login(client)
+        # First write — creates the file
+        client.post(
+            "/api/admin/voice-settings",
+            data=json.dumps({"duration": 15}),
+            content_type="application/json",
+        )
+        # Second read — exercises the open/json.load branch in _load_cfg
+        resp = client.get("/api/admin/voice-settings")
+        assert resp.get_json()["duration"] == 15
