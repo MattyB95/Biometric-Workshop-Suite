@@ -1449,7 +1449,7 @@
       }
 
       function setStatus(msg, type) {
-        statusBar.innerHTML = msg;
+        statusBar.textContent = msg;
         statusBar.className = `status-bar ${type}`;
       }
 
@@ -1478,7 +1478,7 @@
 
           overlayMsg.style.display = "none";
           btnStart.disabled = false;
-          setStatus("Models loaded. Press <strong>Start Camera</strong> to begin.", "");
+          setStatus("Models loaded. Press Start Camera to begin.", "");
         } catch (err) {
           overlayText.textContent = "Failed to load models";
           overlaySub.textContent = err.message;
