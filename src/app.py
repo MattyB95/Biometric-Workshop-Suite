@@ -74,8 +74,13 @@ def save_admin_pin(pin: str) -> None:
 
 def _load_cfg() -> dict[str, Any]:
     if os.path.exists(ADMIN_CONFIG_FILE):
-        with open(ADMIN_CONFIG_FILE) as f:
-            return dict(json.load(f))
+        try:
+            with open(ADMIN_CONFIG_FILE) as f:
+                loaded = json.load(f)
+            if isinstance(loaded, dict):
+                return loaded
+        except json.JSONDecodeError:
+            pass
     return {}
 
 
