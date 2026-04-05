@@ -1028,7 +1028,7 @@
               updateFeatGrid(f);
             }
             setStatus(
-              `Loaded profile for &ldquo;${n}&rdquo; &mdash; draw a signature to compare.`,
+              `Loaded profile for "${n}" — draw a signature to compare.`,
               ""
             );
           });
@@ -1067,7 +1067,7 @@
         saveProfiles();
         renderProfileList();
         setStatus(
-          `Enrolled &ldquo;${name}&rdquo;. Clear the canvas, draw again, then identify.`,
+          `Enrolled "${name}". Clear the canvas, draw again, then identify.`,
           "success"
         );
         verifyResult.style.display = "none";

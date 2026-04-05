@@ -903,7 +903,7 @@
         if (isRecording) {
           recordingFrames.push(frame.mfccs);
           const prog = Math.min((recordingFrames.length / ENROL_FRAMES) * 100, 100);
-          setStatus(`Recording&hellip; ${Math.round(prog)}%`, "recording");
+          setStatus(`Recording… ${Math.round(prog)}%`, "recording");
 
           if (recordingFrames.length >= ENROL_FRAMES) {
             finishRecording();
@@ -919,7 +919,7 @@
         // Stats
         statRms.textContent = frame.rms.toFixed(4);
         statRms.className = `stat-value ${frame.rms > 0.05 ? "accent" : "dim"}`;
-        statPitch.textContent = frame.pitch ? `${Math.round(frame.pitch)} Hz` : "&mdash;";
+        statPitch.textContent = frame.pitch ? `${Math.round(frame.pitch)} Hz` : "—";
         statPitch.className = `stat-value ${frame.pitch ? "accent" : "dim"}`;
         statCentroid.textContent = `${Math.round(frame.centroid)} Hz`;
         statCentroid.className = "stat-value accent";
@@ -946,7 +946,7 @@
         btnEnrol.disabled = false;
         btnVerify.disabled = Object.keys(profiles).length === 0;
         setStatus(
-          `Recording complete &mdash; ${recordingFrames.length} frames captured. Enter a name and click <strong>Enrol</strong>, or click <strong>Identify Speaker</strong>.`,
+          `Recording complete — ${recordingFrames.length} frames captured. Enter a name and click Enrol, or click Identify Speaker.`,
           "info"
         );
       }
@@ -1010,8 +1010,10 @@
         saveProfiles();
         renderProfileList();
         setStatus(
-          `Enrolled &ldquo;${name}&rdquo;. Press <strong>Start Recording</strong> to capture another sample.`,
-          "success"
+          `Enrolled "${name}". Press `,
+          "success",
+          "Start Recording",
+          " to capture another sample."
         );
         recordingFrames = [];
         nameInput.value = "";
@@ -1047,11 +1049,11 @@
 
         const best = results[0];
         const baseMsg = `Best match: ${best.name} (${best.sim}%) — ${best.sim >= 70 ? "Match" : "No confident match"}. Press `;
-        const suffixHtml = '<strong>Start Recording</strong> to try again.';
         setStatus(
           baseMsg,
           best.sim >= 70 ? "success" : "recording",
-          suffixHtml
+          "Start Recording",
+          " to try again."
         );
         recordingFrames = [];
         btnEnrol.disabled = true;
@@ -1093,16 +1095,20 @@
         setStatus(
           "Microphone stopped. Press ",
           "",
-          "<strong>Start Recording</strong> to reopen the microphone."
+          "Start Recording",
+          " to reopen the microphone."
         );
       }
 
-      function setStatus(msg, type, htmlSuffix = "") {
+      function setStatus(msg, type, boldSuffix = "", trailingSuffix = "") {
         statusBar.textContent = msg;
-        if (htmlSuffix) {
-          const wrapper = document.createElement("span");
-          wrapper.innerHTML = htmlSuffix;
-          statusBar.appendChild(wrapper);
+        if (boldSuffix) {
+          const strong = document.createElement("strong");
+          strong.textContent = boldSuffix;
+          statusBar.appendChild(strong);
+          if (trailingSuffix) {
+            statusBar.appendChild(document.createTextNode(trailingSuffix));
+          }
         }
         statusBar.className = `status-bar ${type}`;
       }
@@ -1125,7 +1131,7 @@
         btnEnrol.disabled = true;
         btnVerify.disabled = true;
         verifyResult.style.display = "none";
-        setStatus("Cleared. Press <strong>Start Recording</strong> to capture a new sample.", "");
+        setStatus("Cleared. Press ", "", "Start Recording", " to capture a new sample.");
       });
       btnEnrol.addEventListener("click", enrol);
       btnVerify.addEventListener("click", identify);
@@ -1153,8 +1159,10 @@
           return;
         }
         setStatus(
-          "Press <strong>Start Recording</strong> to open the microphone, then speak for ~10 seconds.",
-          ""
+          "Press ",
+          "",
+          "Start Recording",
+          " to open the microphone, then speak for ~10 seconds."
         );
         btnRecord.disabled = false;
       })();

@@ -1211,7 +1211,7 @@
               updateDescriptorGrid(fakeFeatures);
             }
             setStatus(
-              `Loaded profile for &ldquo;${n}&rdquo; &mdash; press Identify Face to compare.`,
+              `Loaded profile for "${n}" — press Identify Face to compare.`,
               "running"
             );
           });
@@ -1232,7 +1232,7 @@
         faceProfiles[name] = currentFeatureValues.slice();
         saveFaceProfiles();
         renderFaceProfileList();
-        setStatus(`Enrolled &ldquo;${name}&rdquo;. Press Identify Face to compare.`, "running");
+        setStatus(`Enrolled "${name}". Press Identify Face to compare.`, "running");
         nameInput.value = "";
       });
 
@@ -1263,7 +1263,7 @@
 
         const best = results[0];
         setStatus(
-          `Best match: ${best.name} (${best.sim}%) &mdash; ${best.sim >= 70 ? "Match" : "No confident match"}`,
+          `Best match: ${best.name} (${best.sim}%) — ${best.sim >= 70 ? "Match" : "No confident match"}`,
           best.sim >= 70 ? "running" : ""
         );
       });
@@ -1417,7 +1417,7 @@
           btnStop.disabled = false;
           running = true;
 
-          setStatus("Detecting&hellip;", "running");
+          setStatus("Detecting…", "running");
           detect();
         } catch (err) {
           setStatus(`Camera error: ${err.message}`, "error");
