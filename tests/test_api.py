@@ -764,11 +764,12 @@ class TestSignatureProfiles:
 
 def _admin_login(client) -> None:
     """Helper: log in as admin using the default PIN."""
-    client.post(
+    resp = client.post(
         "/api/admin/login",
         data=json.dumps({"pin": DEFAULT_ADMIN_PIN}),
         content_type="application/json",
     )
+    assert resp.status_code == 200
 
 
 class TestKeystrokeExportImport:
