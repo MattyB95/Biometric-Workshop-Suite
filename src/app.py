@@ -756,4 +756,5 @@ def import_signature_profiles() -> Response | tuple[Response, int]:
 
 
 if __name__ == "__main__":  # pragma: no cover
-    app.run(debug=True, port=5000)
+    debug_mode = os.environ.get("FLASK_DEBUG", "").lower() in {"1", "true", "yes"}
+    app.run(debug=debug_mode, port=5000)
