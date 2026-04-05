@@ -1101,10 +1101,8 @@
           btnRecord.disabled = true;
           setStatus("Opening microphone&hellip;", "info");
           await startMic();
-          if (stream) startRecording();
-        } else {
-          startRecording();
         }
+        if (stream) startRecording();
       });
       btnStop.addEventListener("click", () => {
         if (isRecording) finishRecording();
