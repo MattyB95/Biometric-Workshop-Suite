@@ -309,6 +309,16 @@
         display: flex;
         justify-content: flex-end;
       }
+      .action-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+      }
+      .btn-sm {
+        font-size: 0.8rem;
+        padding: 6px 12px;
+      }
 
       /* Change PIN */
       .pin-form {
@@ -436,10 +446,15 @@
           </div>
           <div class="card-body">
             <div class="profile-list" id="ks-list"></div>
-            <div class="reset-row">
-              <button class="btn btn-danger" id="ks-reset">
-                &#x1F5D1; Reset All Keystroke Profiles
-              </button>
+            <div class="action-row">
+              <div style="display: flex; gap: 6px">
+                <button class="btn btn-ghost btn-sm" id="ks-export">&#x2B07; Export</button>
+                <label class="btn btn-ghost btn-sm" for="ks-import-file" style="cursor: pointer"
+                  >&#x2B06; Import</label
+                >
+                <input type="file" id="ks-import-file" accept=".json" style="display: none" />
+              </div>
+              <button class="btn btn-danger btn-sm" id="ks-reset">&#x1F5D1; Reset All</button>
             </div>
           </div>
         </div>
@@ -455,10 +470,15 @@
           </div>
           <div class="card-body">
             <div class="profile-list" id="mouse-list"></div>
-            <div class="reset-row">
-              <button class="btn btn-danger" id="mouse-reset">
-                &#x1F5D1; Reset All Mouse Profiles
-              </button>
+            <div class="action-row">
+              <div style="display: flex; gap: 6px">
+                <button class="btn btn-ghost btn-sm" id="mouse-export">&#x2B07; Export</button>
+                <label class="btn btn-ghost btn-sm" for="mouse-import-file" style="cursor: pointer"
+                  >&#x2B06; Import</label
+                >
+                <input type="file" id="mouse-import-file" accept=".json" style="display: none" />
+              </div>
+              <button class="btn btn-danger btn-sm" id="mouse-reset">&#x1F5D1; Reset All</button>
             </div>
           </div>
         </div>
@@ -474,10 +494,15 @@
           </div>
           <div class="card-body">
             <div class="profile-list" id="face-list"></div>
-            <div class="reset-row">
-              <button class="btn btn-danger" id="face-reset">
-                &#x1F5D1; Reset All Face Profiles
-              </button>
+            <div class="action-row">
+              <div style="display: flex; gap: 6px">
+                <button class="btn btn-ghost btn-sm" id="face-export">&#x2B07; Export</button>
+                <label class="btn btn-ghost btn-sm" for="face-import-file" style="cursor: pointer"
+                  >&#x2B06; Import</label
+                >
+                <input type="file" id="face-import-file" accept=".json" style="display: none" />
+              </div>
+              <button class="btn btn-danger btn-sm" id="face-reset">&#x1F5D1; Reset All</button>
             </div>
           </div>
         </div>
@@ -493,10 +518,15 @@
           </div>
           <div class="card-body">
             <div class="profile-list" id="voice-list"></div>
-            <div class="reset-row">
-              <button class="btn btn-danger" id="voice-reset">
-                &#x1F5D1; Reset All Voice Profiles
-              </button>
+            <div class="action-row">
+              <div style="display: flex; gap: 6px">
+                <button class="btn btn-ghost btn-sm" id="voice-export">&#x2B07; Export</button>
+                <label class="btn btn-ghost btn-sm" for="voice-import-file" style="cursor: pointer"
+                  >&#x2B06; Import</label
+                >
+                <input type="file" id="voice-import-file" accept=".json" style="display: none" />
+              </div>
+              <button class="btn btn-danger btn-sm" id="voice-reset">&#x1F5D1; Reset All</button>
             </div>
           </div>
         </div>
@@ -512,10 +542,15 @@
           </div>
           <div class="card-body">
             <div class="profile-list" id="sig-list"></div>
-            <div class="reset-row">
-              <button class="btn btn-danger" id="sig-reset">
-                &#x1F5D1; Reset All Signature Profiles
-              </button>
+            <div class="action-row">
+              <div style="display: flex; gap: 6px">
+                <button class="btn btn-ghost btn-sm" id="sig-export">&#x2B07; Export</button>
+                <label class="btn btn-ghost btn-sm" for="sig-import-file" style="cursor: pointer"
+                  >&#x2B06; Import</label
+                >
+                <input type="file" id="sig-import-file" accept=".json" style="display: none" />
+              </div>
+              <button class="btn btn-danger btn-sm" id="sig-reset">&#x1F5D1; Reset All</button>
             </div>
           </div>
         </div>
@@ -727,6 +762,73 @@
         );
       }
 
+      // ── Export (localStorage) ────────────────────────────────────────────────
+      function doExportLS(lsKey, filename) {
+        const raw = localStorage.getItem(lsKey) || "{}";
+        const blob = new Blob([raw], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => {
+          URL.revokeObjectURL(url);
+          a.remove();
+        }, 0);
+        showToast("Exported " + filename, "success");
+      }
+
+      // ── Import (localStorage) ────────────────────────────────────────────────
+      function isDangerousKey(key) {
+        return key === "__proto__" || key === "constructor" || key === "prototype";
+      }
+
+      function sanitizeObject(value) {
+        if (Array.isArray(value)) {
+          return value.map(sanitizeObject);
+        }
+        if (value !== null && typeof value === "object") {
+          const sanitized = Object.create(null);
+          for (const [key, nestedValue] of Object.entries(value)) {
+            if (isDangerousKey(key)) continue;
+            sanitized[key] = sanitizeObject(nestedValue);
+          }
+          return sanitized;
+        }
+        return value;
+      }
+
+      async function doImportLS(lsKey, file, listId, countId) {
+        try {
+          const text = await file.text();
+          const parsedIncoming = JSON.parse(text);
+          if (
+            parsedIncoming === null ||
+            typeof parsedIncoming !== "object" ||
+            Array.isArray(parsedIncoming)
+          ) {
+            showToast("Invalid profile file", "error");
+            return;
+          }
+          const parsedExisting = JSON.parse(localStorage.getItem(lsKey) || "{}");
+          const existing =
+            parsedExisting !== null &&
+            typeof parsedExisting === "object" &&
+            !Array.isArray(parsedExisting)
+              ? sanitizeObject(parsedExisting)
+              : Object.create(null);
+          const incoming = sanitizeObject(parsedIncoming);
+          const merged = Object.assign(Object.create(null), existing, incoming);
+          localStorage.setItem(lsKey, JSON.stringify(merged));
+          const count = Object.keys(incoming).length;
+          showToast("Imported " + count + " profile" + (count !== 1 ? "s" : ""), "success");
+          renderModality(lsKey, listId, countId, () => {});
+        } catch (_e) {
+          showToast("Invalid JSON file", "error");
+        }
+      }
+
       // ── Reset buttons ────────────────────────────────────────────────────────
       function doReset(lsKey, label, listId, countId) {
         if (!confirm(`Delete ALL ${label} profiles? This cannot be undone.`)) return;
@@ -764,6 +866,50 @@
         Object.values(LS_KEYS).forEach((k) => localStorage.removeItem(k));
         showToast("All profiles deleted", "success");
         renderAll();
+      });
+
+      // ── Export buttons ───────────────────────────────────────────────────────
+      document
+        .getElementById("ks-export")
+        .addEventListener("click", () => doExportLS(LS_KEYS.keystroke, "keystroke-profiles.json"));
+      document
+        .getElementById("mouse-export")
+        .addEventListener("click", () => doExportLS(LS_KEYS.mouse, "mouse-profiles.json"));
+      document
+        .getElementById("face-export")
+        .addEventListener("click", () => doExportLS(LS_KEYS.face, "face-profiles.json"));
+      document
+        .getElementById("voice-export")
+        .addEventListener("click", () => doExportLS(LS_KEYS.voice, "voice-profiles.json"));
+      document
+        .getElementById("sig-export")
+        .addEventListener("click", () => doExportLS(LS_KEYS.signature, "signature-profiles.json"));
+
+      // ── Import file inputs ───────────────────────────────────────────────────
+      document.getElementById("ks-import-file").addEventListener("change", function () {
+        if (!this.files[0]) return;
+        doImportLS(LS_KEYS.keystroke, this.files[0], "ks-list", "ks-count");
+        this.value = "";
+      });
+      document.getElementById("mouse-import-file").addEventListener("change", function () {
+        if (!this.files[0]) return;
+        doImportLS(LS_KEYS.mouse, this.files[0], "mouse-list", "mouse-count");
+        this.value = "";
+      });
+      document.getElementById("face-import-file").addEventListener("change", function () {
+        if (!this.files[0]) return;
+        doImportLS(LS_KEYS.face, this.files[0], "face-list", "face-count");
+        this.value = "";
+      });
+      document.getElementById("voice-import-file").addEventListener("change", function () {
+        if (!this.files[0]) return;
+        doImportLS(LS_KEYS.voice, this.files[0], "voice-list", "voice-count");
+        this.value = "";
+      });
+      document.getElementById("sig-import-file").addEventListener("change", function () {
+        if (!this.files[0]) return;
+        doImportLS(LS_KEYS.signature, this.files[0], "sig-list", "sig-count");
+        this.value = "";
       });
 
       // ── Change PIN ───────────────────────────────────────────────────────────

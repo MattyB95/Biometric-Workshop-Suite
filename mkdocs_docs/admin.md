@@ -16,6 +16,8 @@ From the admin panel, an instructor can:
 - **Delete** an individual profile by name
 - **Reset** all profiles for a specific modality (clean slate for that module)
 - **Reset all** profiles across all five modalities at once
+- **Export** profiles for any modality as a JSON file (useful for saving a session or backing up data)
+- **Import** profiles from a previously exported JSON file (merges with any existing profiles)
 - **Change the admin PIN**
 
 ## Changing the PIN
@@ -26,10 +28,10 @@ If the PIN is forgotten, delete `admin_config.json` from the project root. The d
 
 ## Flask vs static version
 
-| Version | How auth works | Scope |
-|---|---|---|
-| Flask app (`/admin`) | Server-side session; PIN checked against `admin_config.json` | All connected students share one profile store |
-| Static site (`admin.html`) | Client-side PIN check; PIN stored in `localStorage` | Only manages data on the **current device** |
+| Version                    | How auth works                                               | Scope                                          |
+| -------------------------- | ------------------------------------------------------------ | ---------------------------------------------- |
+| Flask app (`/admin`)       | Server-side session; PIN checked against `admin_config.json` | All connected students share one profile store |
+| Static site (`admin.html`) | Client-side PIN check; PIN stored in `localStorage`          | Only manages data on the **current device**    |
 
 In the static version, each student's data is stored in their own browser's `localStorage`. The static admin page can only manage profiles on the device it is opened on.
 

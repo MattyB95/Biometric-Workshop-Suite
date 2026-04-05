@@ -467,7 +467,7 @@
         <h1>Voice Biometrics</h1>
         <p>Biometric Workshop Suite &mdash; Feature Visualisation</p>
       </div>
-      <a href="/" class="btn-home">&#x2190; All Modules</a>
+      <a href="./index.html" class="btn-home">&#x2190; All Modules</a>
     </header>
 
     <div class="workspace">
@@ -490,8 +490,8 @@
 
         <div class="controls">
           <button class="btn btn-primary" id="btnRecord" disabled>&#x1F3A4; Start Recording</button>
-          <button class="btn btn-ghost" id="btnStop" disabled>&#x25A0; Stop</button>
-          <button class="btn btn-ghost" id="btnClear">&#x239A; Clear</button>
+          <button class="btn btn-ghost" id="btnStop" disabled>&#x25A0; Stop Recording</button>
+          <button class="btn btn-ghost" id="btnClear">&#x2715; Clear</button>
         </div>
 
         <div id="statusBar" class="status-bar">Loading audio context&hellip;</div>
@@ -575,7 +575,9 @@
             <div class="pipeline-step">
               <div class="step-icon">&#x1F3A4;</div>
               <div class="step-title">1. Capture</div>
-              <div class="step-desc">Microphone samples audio at 44.1 kHz</div>
+              <div class="step-desc">
+                Microphone samples audio at 44.1 kHz &mdash; speak for ~10 seconds
+              </div>
             </div>
             <div class="pipeline-arrow">&#x2192;</div>
             <div class="pipeline-step">
@@ -643,7 +645,7 @@
       const N_MEL = 26;
       const N_MFCC = 13;
       const FFT_SIZE = 2048;
-      const ENROL_FRAMES = 80; // ~1.8 s at 60 fps
+      const ENROL_FRAMES = 600; // ~10 s at 60 fps
 
       // ─── State ────────────────────────────────────────────────────────────────
       let audioCtx = null;
@@ -932,6 +934,7 @@
         recordingFrames = [];
         isRecording = true;
         btnRecord.disabled = true;
+        btnStop.disabled = false;
         btnEnrol.disabled = true;
         btnVerify.disabled = true;
       }
@@ -939,9 +942,13 @@
       function finishRecording() {
         isRecording = false;
         btnRecord.disabled = false;
+        btnStop.disabled = false;
         btnEnrol.disabled = false;
         btnVerify.disabled = Object.keys(profiles).length === 0;
-        setStatus(`Recording complete &mdash; ${recordingFrames.length} frames captured.`, "info");
+        setStatus(
+          `Recording complete &mdash; ${recordingFrames.length} frames captured. Enter a name and click <strong>Enrol</strong>, or click <strong>Identify Speaker</strong>.`,
+          "info"
+        );
       }
 
       // ─── Profile storage ──────────────────────────────────────────────────────
@@ -1002,7 +1009,10 @@
         profiles[name] = meanVector(recordingFrames);
         saveProfiles();
         renderProfileList();
-        setStatus(`Enrolled &ldquo;${name}&rdquo;. Record another sample to identify.`, "success");
+        setStatus(
+          `Enrolled &ldquo;${name}&rdquo;. Press <strong>Start Recording</strong> to capture another sample.`,
+          "success"
+        );
         recordingFrames = [];
         nameInput.value = "";
         btnEnrol.disabled = true;
@@ -1037,10 +1047,11 @@
 
         const best = results[0];
         setStatus(
-          `Best match: ${best.name} (${best.sim}%) &mdash; ${best.sim >= 70 ? "Match" : "No confident match"}`,
+          `Best match: ${best.name} (${best.sim}%) &mdash; ${best.sim >= 70 ? "Match" : "No confident match"}. Press <strong>Start Recording</strong> to try again.`,
           best.sim >= 70 ? "success" : "recording"
         );
         recordingFrames = [];
+        btnEnrol.disabled = true;
         btnVerify.disabled = true;
       }
 
@@ -1059,11 +1070,9 @@
           melFilters = buildMelFilters(FFT_SIZE, sampleRate);
 
           running = true;
-          btnRecord.disabled = false;
-          btnStop.disabled = false;
-          setStatus("Microphone active. Press Record to capture a phrase.", "info");
           renderLoop();
         } catch (err) {
+          btnRecord.disabled = false;
           setStatus(`Microphone error: ${err.message}`, "recording");
         }
       }
@@ -1076,9 +1085,12 @@
         if (stream) stream.getTracks().forEach((t) => t.stop());
         if (audioCtx) audioCtx.close();
         stream = audioCtx = analyser = source = null;
-        btnRecord.disabled = true;
+        btnRecord.disabled = false;
         btnStop.disabled = true;
-        setStatus("Microphone stopped. Press Start Recording to resume.", "");
+        setStatus(
+          "Microphone stopped. Press <strong>Start Recording</strong> to reopen the microphone.",
+          ""
+        );
       }
 
       function setStatus(msg, type) {
@@ -1087,8 +1099,18 @@
       }
 
       // ─── Event listeners ──────────────────────────────────────────────────────
-      btnRecord.addEventListener("click", startRecording);
-      btnStop.addEventListener("click", stopMic);
+      btnRecord.addEventListener("click", async () => {
+        if (!stream) {
+          btnRecord.disabled = true;
+          setStatus("Opening microphone&hellip;", "info");
+          await startMic();
+        }
+        if (stream) startRecording();
+      });
+      btnStop.addEventListener("click", () => {
+        if (isRecording) finishRecording();
+        else stopMic();
+      });
       btnClear.addEventListener("click", () => {
         recordingFrames = [];
         btnEnrol.disabled = true;
@@ -1121,23 +1143,11 @@
           setStatus("getUserMedia not supported in this browser.", "recording");
           return;
         }
-        setStatus("Press <strong>Start Recording</strong> to open the microphone.", "");
-        btnRecord.disabled = false;
-
-        // Hijack the record button to first open the mic on first click
-        let micReady = false;
-        btnRecord.addEventListener(
-          "click",
-          async () => {
-            if (!micReady) {
-              micReady = true;
-              btnRecord.disabled = true;
-              setStatus("Opening microphone&hellip;", "info");
-              await startMic();
-            }
-          },
-          { once: true }
+        setStatus(
+          "Press <strong>Start Recording</strong> to open the microphone, then speak for ~10 seconds.",
+          ""
         );
+        btnRecord.disabled = false;
       })();
     </script>
   </body>

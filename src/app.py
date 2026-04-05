@@ -72,6 +72,83 @@ def save_admin_pin(pin: str) -> None:
 
 
 # ---------------------------------------------------------------------------
+# Import schema validation helpers
+# ---------------------------------------------------------------------------
+
+_KEYSTROKE_REQUIRED_LISTS = ("mean_dwell", "std_dwell", "mean_flight", "std_flight")
+_MOUSE_REQUIRED_LISTS = (
+    "mean_click_dwells",
+    "std_click_dwells",
+    "mean_movement_times",
+    "std_movement_times",
+    "mean_curvatures",
+    "std_curvatures",
+)
+_SIGNATURE_REQUIRED_FIELDS = (
+    "dur",
+    "pathLen",
+    "avgVel",
+    "maxVel",
+    "velVar",
+    "numStrokes",
+    "aspect",
+    "dirRate",
+)
+
+
+def _is_finite_number(x: Any) -> bool:
+    return isinstance(x, (int, float)) and not isinstance(x, bool) and math.isfinite(x)
+
+
+def _is_numeric_list(lst: Any) -> bool:
+    return (
+        isinstance(lst, list)
+        and len(lst) > 0
+        and all(_is_finite_number(x) for x in lst)
+    )
+
+
+def _valid_keystroke_profile(v: Any) -> bool:
+    if not isinstance(v, dict):
+        return False
+    if not isinstance(v.get("num_samples"), int):
+        return False
+    return all(_is_numeric_list(v.get(k)) for k in _KEYSTROKE_REQUIRED_LISTS)
+
+
+def _valid_mouse_profile(v: Any) -> bool:
+    if not isinstance(v, dict):
+        return False
+    if not isinstance(v.get("num_samples"), int):
+        return False
+    return all(_is_numeric_list(v.get(k)) for k in _MOUSE_REQUIRED_LISTS)
+
+
+def _valid_numeric_feature_vector(v: Any, allowed_lengths: tuple[int, ...]) -> bool:
+    if not isinstance(v, list):
+        return False
+    if len(v) not in allowed_lengths:
+        return False
+    return all(_is_finite_number(item) for item in v)
+
+
+def _valid_face_features_profile(v: Any) -> bool:
+    # face: exactly 16 finite numeric values
+    return _valid_numeric_feature_vector(v, (16,))
+
+
+def _valid_voice_features_profile(v: Any) -> bool:
+    # voice: exactly 13 finite numeric values
+    return _valid_numeric_feature_vector(v, (13,))
+
+
+def _valid_signature_profile(v: Any) -> bool:
+    if not isinstance(v, dict):
+        return False
+    return all(k in v and _is_finite_number(v[k]) for k in _SIGNATURE_REQUIRED_FIELDS)
+
+
+# ---------------------------------------------------------------------------
 # Maths helpers
 # ---------------------------------------------------------------------------
 
@@ -299,6 +376,30 @@ def reset() -> Response:
     return jsonify({"success": True})
 
 
+@app.route("/api/export", methods=["GET"])
+def export_profiles() -> Response | tuple[Response, int]:
+    if not session.get("admin"):
+        return jsonify({"error": "Not authenticated"}), 403
+    return jsonify(_load_json(PROFILES_FILE))
+
+
+@app.route("/api/import", methods=["POST"])
+def import_profiles() -> Response | tuple[Response, int]:
+    if not session.get("admin"):
+        return jsonify({"error": "Not authenticated"}), 403
+    data = request.json
+    if not isinstance(data, dict):
+        return jsonify({"error": "JSON body must be an object"}), 400
+    invalid = [k for k, v in data.items() if not _valid_keystroke_profile(v)]
+    if invalid:
+        names = ", ".join(invalid)
+        return jsonify({"error": f"Invalid profile shape for: {names}"}), 400
+    profiles = _load_json(PROFILES_FILE)
+    profiles.update(data)
+    _save_json(PROFILES_FILE, profiles)
+    return jsonify({"success": True, "imported": len(data)})
+
+
 # ---------------------------------------------------------------------------
 # Mouse dynamics API
 # ---------------------------------------------------------------------------
@@ -405,6 +506,30 @@ def mouse_reset() -> Response:
     return jsonify({"success": True})
 
 
+@app.route("/api/mouse/export", methods=["GET"])
+def export_mouse_profiles() -> Response | tuple[Response, int]:
+    if not session.get("admin"):
+        return jsonify({"error": "Not authenticated"}), 403
+    return jsonify(_load_json(MOUSE_PROFILES_FILE))
+
+
+@app.route("/api/mouse/import", methods=["POST"])
+def import_mouse_profiles() -> Response | tuple[Response, int]:
+    if not session.get("admin"):
+        return jsonify({"error": "Not authenticated"}), 403
+    data = request.json
+    if not isinstance(data, dict):
+        return jsonify({"error": "JSON body must be an object"}), 400
+    invalid = [k for k, v in data.items() if not _valid_mouse_profile(v)]
+    if invalid:
+        names = ", ".join(invalid)
+        return jsonify({"error": f"Invalid profile shape for: {names}"}), 400
+    profiles = _load_json(MOUSE_PROFILES_FILE)
+    profiles.update(data)
+    _save_json(MOUSE_PROFILES_FILE, profiles)
+    return jsonify({"success": True, "imported": len(data)})
+
+
 # ---------------------------------------------------------------------------
 # Admin API
 # ---------------------------------------------------------------------------
@@ -478,6 +603,30 @@ def face_reset() -> Response:
     return jsonify({"success": True})
 
 
+@app.route("/api/face/export", methods=["GET"])
+def export_face_profiles() -> Response | tuple[Response, int]:
+    if not session.get("admin"):
+        return jsonify({"error": "Not authenticated"}), 403
+    return jsonify(_load_json(FACE_PROFILES_FILE))
+
+
+@app.route("/api/face/import", methods=["POST"])
+def import_face_profiles() -> Response | tuple[Response, int]:
+    if not session.get("admin"):
+        return jsonify({"error": "Not authenticated"}), 403
+    data = request.json
+    if not isinstance(data, dict):
+        return jsonify({"error": "JSON body must be an object"}), 400
+    invalid = [k for k, v in data.items() if not _valid_face_features_profile(v)]
+    if invalid:
+        names = ", ".join(invalid)
+        return jsonify({"error": f"Invalid profile shape for: {names}"}), 400
+    profiles = _load_json(FACE_PROFILES_FILE)
+    profiles.update(data)
+    _save_json(FACE_PROFILES_FILE, profiles)
+    return jsonify({"success": True, "imported": len(data)})
+
+
 # ---------------------------------------------------------------------------
 # Voice profiles API
 # ---------------------------------------------------------------------------
@@ -518,6 +667,30 @@ def voice_reset() -> Response:
     return jsonify({"success": True})
 
 
+@app.route("/api/voice/export", methods=["GET"])
+def export_voice_profiles() -> Response | tuple[Response, int]:
+    if not session.get("admin"):
+        return jsonify({"error": "Not authenticated"}), 403
+    return jsonify(_load_json(VOICE_PROFILES_FILE))
+
+
+@app.route("/api/voice/import", methods=["POST"])
+def import_voice_profiles() -> Response | tuple[Response, int]:
+    if not session.get("admin"):
+        return jsonify({"error": "Not authenticated"}), 403
+    data = request.json
+    if not isinstance(data, dict):
+        return jsonify({"error": "JSON body must be an object"}), 400
+    invalid = [k for k, v in data.items() if not _valid_voice_features_profile(v)]
+    if invalid:
+        names = ", ".join(invalid)
+        return jsonify({"error": f"Invalid profile shape for: {names}"}), 400
+    profiles = _load_json(VOICE_PROFILES_FILE)
+    profiles.update(data)
+    _save_json(VOICE_PROFILES_FILE, profiles)
+    return jsonify({"success": True, "imported": len(data)})
+
+
 # ---------------------------------------------------------------------------
 # Signature profiles API
 # ---------------------------------------------------------------------------
@@ -556,6 +729,30 @@ def delete_signature_profile(name: str) -> Response:
 def signature_reset() -> Response:
     _save_json(SIGNATURE_PROFILES_FILE, {})
     return jsonify({"success": True})
+
+
+@app.route("/api/signature/export", methods=["GET"])
+def export_signature_profiles() -> Response | tuple[Response, int]:
+    if not session.get("admin"):
+        return jsonify({"error": "Not authenticated"}), 403
+    return jsonify(_load_json(SIGNATURE_PROFILES_FILE))
+
+
+@app.route("/api/signature/import", methods=["POST"])
+def import_signature_profiles() -> Response | tuple[Response, int]:
+    if not session.get("admin"):
+        return jsonify({"error": "Not authenticated"}), 403
+    data = request.json
+    if not isinstance(data, dict):
+        return jsonify({"error": "JSON body must be an object"}), 400
+    invalid = [k for k, v in data.items() if not _valid_signature_profile(v)]
+    if invalid:
+        names = ", ".join(invalid)
+        return jsonify({"error": f"Invalid profile shape for: {names}"}), 400
+    profiles = _load_json(SIGNATURE_PROFILES_FILE)
+    profiles.update(data)
+    _save_json(SIGNATURE_PROFILES_FILE, profiles)
+    return jsonify({"success": True, "imported": len(data)})
 
 
 if __name__ == "__main__":  # pragma: no cover
