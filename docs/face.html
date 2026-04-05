@@ -1182,23 +1182,22 @@
           btnIdentify.disabled = true;
           return;
         }
-        profileList.innerHTML = names
-          .map(
-            (n) => `
-          <div class="profile-item">
-            <span>&#x1F4CC;</span>
-            <span class="profile-item-name" data-name="${n}">${n}</span>
-          </div>`
-          )
-          .join("");
-        profileList.querySelectorAll(".profile-item-name").forEach((nameEl) => {
+        profileList.textContent = "";
+        names.forEach((n) => {
+          const item = document.createElement("div");
+          item.className = "profile-item";
+          const pin = document.createElement("span");
+          pin.textContent = "\uD83D\uDCCC";
+          const nameEl = document.createElement("span");
+          nameEl.className = "profile-item-name";
+          nameEl.dataset.name = n;
+          nameEl.textContent = n;
           nameEl.addEventListener("click", () => {
-            const n = nameEl.dataset.name;
             nameInput.value = n;
             profileList
               .querySelectorAll(".profile-item")
               .forEach((el) => el.classList.remove("selected"));
-            nameEl.closest(".profile-item").classList.add("selected");
+            item.classList.add("selected");
             const stored = faceProfiles[n];
             if (stored) {
               const fakeFeatures = stored.map((v, i) => ({
@@ -1210,11 +1209,11 @@
               renderFeatures(fakeFeatures);
               updateDescriptorGrid(fakeFeatures);
             }
-            setStatus(
-              `Loaded profile for &ldquo;${n}&rdquo; &mdash; press Identify Face to compare.`,
-              "running"
-            );
+            setStatus(`Loaded profile for "${n}" — press Identify Face to compare.`, "running");
           });
+          item.appendChild(pin);
+          item.appendChild(nameEl);
+          profileList.appendChild(item);
         });
         btnIdentify.disabled = currentFeatureValues === null;
       }
@@ -1232,7 +1231,7 @@
         faceProfiles[name] = currentFeatureValues.slice();
         saveFaceProfiles();
         renderFaceProfileList();
-        setStatus(`Enrolled &ldquo;${name}&rdquo;. Press Identify Face to compare.`, "running");
+        setStatus(`Enrolled "${name}". Press Identify Face to compare.`, "running");
         nameInput.value = "";
       });
 
@@ -1246,24 +1245,33 @@
           .sort((a, b) => b.sim - a.sim);
 
         identifyResult.style.display = "block";
-        resultList.innerHTML = results
-          .map(
-            (r, i) => `
-          <div class="result-row">
-            <div class="result-name-row">
-              <span${i === 0 ? ' class="result-best"' : ""}>${i === 0 ? "&#x2B50; " : ""}${r.name}</span>
-              <span>${r.sim}%</span>
-            </div>
-            <div class="bar-track">
-              <div class="bar-fill${i === 0 && r.sim >= 70 ? " match" : ""}" style="width:${r.sim}%"></div>
-            </div>
-          </div>`
-          )
-          .join("");
+        resultList.textContent = "";
+        results.forEach((r, i) => {
+          const row = document.createElement("div");
+          row.className = "result-row";
+          const nameRow = document.createElement("div");
+          nameRow.className = "result-name-row";
+          const nameSpan = document.createElement("span");
+          if (i === 0) nameSpan.className = "result-best";
+          nameSpan.textContent = (i === 0 ? "\u2B50 " : "") + r.name;
+          const simSpan = document.createElement("span");
+          simSpan.textContent = `${r.sim}%`;
+          nameRow.appendChild(nameSpan);
+          nameRow.appendChild(simSpan);
+          const barTrack = document.createElement("div");
+          barTrack.className = "bar-track";
+          const barFill = document.createElement("div");
+          barFill.className = "bar-fill" + (i === 0 && r.sim >= 70 ? " match" : "");
+          barFill.style.width = `${r.sim}%`;
+          barTrack.appendChild(barFill);
+          row.appendChild(nameRow);
+          row.appendChild(barTrack);
+          resultList.appendChild(row);
+        });
 
         const best = results[0];
         setStatus(
-          `Best match: ${best.name} (${best.sim}%) &mdash; ${best.sim >= 70 ? "Match" : "No confident match"}`,
+          `Best match: ${best.name} (${best.sim}%) — ${best.sim >= 70 ? "Match" : "No confident match"}`,
           best.sim >= 70 ? "running" : ""
         );
       });
@@ -1417,7 +1425,7 @@
           btnStop.disabled = false;
           running = true;
 
-          setStatus("Detecting&hellip;", "running");
+          setStatus("Detecting…", "running");
           detect();
         } catch (err) {
           setStatus(`Camera error: ${err.message}`, "error");
@@ -1449,7 +1457,7 @@
       }
 
       function setStatus(msg, type) {
-        statusBar.innerHTML = msg;
+        statusBar.textContent = msg;
         statusBar.className = `status-bar ${type}`;
       }
 
@@ -1478,7 +1486,7 @@
 
           overlayMsg.style.display = "none";
           btnStart.disabled = false;
-          setStatus("Models loaded. Press <strong>Start Camera</strong> to begin.", "");
+          setStatus("Models loaded. Press Start Camera to begin.", "");
         } catch (err) {
           overlayText.textContent = "Failed to load models";
           overlaySub.textContent = err.message;
