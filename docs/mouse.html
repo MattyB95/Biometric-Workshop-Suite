@@ -701,7 +701,7 @@
       "use strict";
 
       // ── Config ────────────────────────────────────────────────────────────────
-      const ENROLL_SAMPLES = 5;
+      const ENROLL_SAMPLES = parseInt(localStorage.getItem("mouse-enroll-samples") || "5", 10);
       const LS_KEY = "mouse_profiles";
 
       const TARGETS_NORM = [
@@ -1132,7 +1132,7 @@
         }));
         results.sort((a, b) => a.distance - b.distance);
 
-        const scale = 2.0;
+        const scale = parseFloat(localStorage.getItem("mouse-softmax-scale") || "2.0");
         const minDist = results[0].distance;
         const raw = results.map((r) => Math.exp(-scale * (r.distance - minDist)));
         const total = raw.reduce((s, v) => s + v, 0);

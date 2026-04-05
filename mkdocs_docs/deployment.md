@@ -51,16 +51,15 @@ Then share `http://<your-local-ip>:5000` with students on the same Wi-Fi. No acc
 
 ## Environment configuration
 
-Open `src/app.py` and edit the constants near the top:
+Most session settings — typing phrase, enrolment attempts, recording duration, confidence sensitivity — are configured at runtime via the [Admin Panel](admin.md#settings). No code changes or server restarts are required.
 
-| Variable                        | Default                 | Description                                   |
-| ------------------------------- | ----------------------- | --------------------------------------------- |
-| `PHRASE`                        | `"the quick brown fox"` | The phrase typed in the Keystroke module      |
-| `ENROLL_SAMPLES_REQUIRED`       | `5`                     | Keystroke enrolment attempts required         |
-| `MOUSE_ENROLL_SAMPLES_REQUIRED` | `5`                     | Mouse enrolment attempts required             |
-| `DEFAULT_ADMIN_PIN`             | `"1965"`                | Fallback PIN if `admin_config.json` is absent |
+The only value that must be set before the server starts is the fallback admin PIN:
 
-The admin PIN can also be changed at runtime via the [Admin Panel](admin.md) without restarting the server.
+| Variable            | Default  | Description                                          |
+| ------------------- | -------- | ---------------------------------------------------- |
+| `DEFAULT_ADMIN_PIN` | `1965`   | Fallback PIN used when `admin_config.json` is absent |
+
+The active PIN can be changed at any time via the [Admin Panel](admin.md#changing-the-pin) without restarting the server.
 
 ---
 
@@ -68,13 +67,13 @@ The admin PIN can also be changed at runtime via the [Admin Panel](admin.md) wit
 
 The Flask app auto-creates these files in the project root on first use:
 
-| File                      | Contents                    |
-| ------------------------- | --------------------------- |
-| `profiles.json`           | Keystroke profiles          |
-| `mouse_profiles.json`     | Mouse dynamics profiles     |
-| `face_profiles.json`      | Face recognition profiles   |
-| `voice_profiles.json`     | Voice biometric profiles    |
-| `signature_profiles.json` | Signature dynamics profiles |
-| `admin_config.json`       | Admin PIN                   |
+| File                      | Contents                            |
+| ------------------------- | ----------------------------------- |
+| `profiles.json`           | Keystroke profiles                  |
+| `mouse_profiles.json`     | Mouse dynamics profiles             |
+| `face_profiles.json`      | Face recognition profiles           |
+| `voice_profiles.json`     | Voice biometric profiles            |
+| `signature_profiles.json` | Signature dynamics profiles         |
+| `admin_config.json`       | Admin PIN and per-modality settings |
 
 All files are plain JSON. They are listed in `.gitignore` to avoid accidentally committing student data.

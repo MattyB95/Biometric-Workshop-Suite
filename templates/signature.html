@@ -380,6 +380,32 @@
         flex-shrink: 0;
       }
 
+      /* ── Enrolment dots ── */
+      .dots-wrap {
+        padding: 6px 0;
+      }
+      .attempt-dots {
+        display: flex;
+        gap: 8px;
+      }
+      .dot {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: var(--border);
+        border: 2px solid var(--border);
+        transition: all 0.3s;
+      }
+      .dot.done {
+        background: var(--success);
+        border-color: var(--success);
+      }
+      .dot.current {
+        background: var(--accent);
+        border-color: var(--accent);
+        box-shadow: 0 0 6px var(--accent);
+      }
+
       /* ── Named profile management ── */
       .name-row {
         display: flex;
@@ -429,18 +455,6 @@
       .profile-item-name:hover {
         color: var(--accent-h);
         text-decoration: underline;
-      }
-      .btn-del {
-        padding: 2px 7px;
-        background: none;
-        border: 1px solid rgba(239, 68, 68, 0.4);
-        border-radius: 4px;
-        color: #ef4444;
-        font-size: 0.72rem;
-        cursor: pointer;
-      }
-      .btn-del:hover {
-        background: rgba(239, 68, 68, 0.12);
       }
       .result-list {
         display: flex;
@@ -586,7 +600,10 @@
                 placeholder="Student name"
                 maxlength="40"
               />
-              <button class="btn btn-primary" id="btnEnrol" disabled>&#x1F4BE; Enrol</button>
+              <button class="btn btn-primary" id="btnEnrol" disabled>&#x1F4BE; Save Sample</button>
+            </div>
+            <div id="enrolDotsWrap" style="display: none">
+              <div class="dots-wrap"><div class="attempt-dots" id="enrolDots"></div></div>
             </div>
             <button class="btn btn-success" id="btnVerify" disabled style="width: 100%">
               &#x1F50D; Identify Signer
@@ -684,12 +701,16 @@
       const statStrokes = document.getElementById("statStrokes");
       const statDir = document.getElementById("statDir");
 
+      // ─── Config ───────────────────────────────────────────────────────────────
+      const ENROLL_SAMPLES = parseInt("{{ enroll_samples }}", 10);
+
       // ─── State ────────────────────────────────────────────────────────────────
       let profiles = {}; // name → feature object
       let isDrawing = false;
       let strokes = []; // array of stroke arrays
       let currentStroke = []; // [{x,y,t}] normalised 0–1
       let velocities = []; // flat velocity series for chart
+      let enrollSamples = []; // collected feature objects for multi-sample enrolment
 
       // ─── Canvas sizing ────────────────────────────────────────────────────────
       function sizeCanvases() {
@@ -997,10 +1018,10 @@
         profileList.innerHTML = names
           .map(
             (n) => `
-    <div class="profile-item">
-      <span>&#x1F4CC;</span>
-      <span class="profile-item-name" data-name="${escapeHtml(n)}">${escapeHtml(n)}</span>
-    </div>`
+      <div class="profile-item">
+        <span>&#x1F4CC;</span>
+        <span class="profile-item-name" data-name="${escapeHtml(n)}">${escapeHtml(n)}</span>
+      </div>`
           )
           .join("");
         profileList.querySelectorAll(".profile-item-name").forEach((nameEl) => {
@@ -1039,7 +1060,9 @@
         strokes = [];
         currentStroke = [];
         velocities = [];
+        enrollSamples = [];
         isDrawing = false;
+        document.getElementById("enrolDotsWrap").style.display = "none";
         redraw();
         drawVelChart([]);
         btnEnrol.disabled = true;
@@ -1052,6 +1075,25 @@
         setStatus("Canvas cleared. Draw your signature above.", "");
       });
 
+      function buildEnrolDots(done) {
+        const el = document.getElementById("enrolDots");
+        el.innerHTML = "";
+        for (let i = 0; i < ENROLL_SAMPLES; i++) {
+          const d = document.createElement("div");
+          d.className = "dot" + (i < done ? " done" : i === done ? " current" : "");
+          el.appendChild(d);
+        }
+      }
+
+      function avgFeatures(feats) {
+        const keys = Object.keys(feats[0]);
+        const result = {};
+        keys.forEach((k) => {
+          result[k] = feats.reduce((s, f) => s + f[k], 0) / feats.length;
+        });
+        return result;
+      }
+
       btnEnrol.addEventListener("click", async () => {
         const name = nameInput.value.trim();
         if (!name) {
@@ -1060,15 +1102,34 @@
         }
         const f = extractFeatures(strokes);
         if (!f) return;
+
+        enrollSamples.push(f);
+        document.getElementById("enrolDotsWrap").style.display = "block";
+        buildEnrolDots(enrollSamples.length);
+
+        if (enrollSamples.length < ENROLL_SAMPLES) {
+          setStatus(
+            `Sample ${enrollSamples.length}/${ENROLL_SAMPLES} saved \u2014 clear the canvas and draw again.`,
+            "success"
+          );
+          btnEnrol.disabled = true;
+          return;
+        }
+
+        // All samples collected — average and submit
+        const averaged = avgFeatures(enrollSamples);
+        enrollSamples = [];
+        document.getElementById("enrolDotsWrap").style.display = "none";
+
         await fetch("/api/signature/enroll", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name, features: f }),
+          body: JSON.stringify({ name, features: averaged }),
         });
-        profiles[name] = f;
+        profiles[name] = averaged;
         renderProfileList();
         setStatus(
-          `Enrolled &ldquo;${escapeHtml(name)}&rdquo;. Clear the canvas, draw again, then identify.`,
+          `Enrolled &ldquo;${escapeHtml(name)}&rdquo; (${ENROLL_SAMPLES} samples averaged). Clear the canvas and identify.`,
           "success"
         );
         verifyResult.style.display = "none";
@@ -1092,15 +1153,15 @@
         resultList.innerHTML = results
           .map(
             (r, i) => `
-    <div class="result-row">
-      <div class="result-name-row">
-        <span${i === 0 ? ' class="result-best"' : ""}>${i === 0 ? "&#x2B50; " : ""}${escapeHtml(r.name)}</span>
-        <span>${r.sim}%</span>
-      </div>
-      <div class="bar-track">
-        <div class="bar-fill${i === 0 && r.sim >= 60 ? " match" : ""}" style="width:${r.sim}%"></div>
-      </div>
-    </div>`
+      <div class="result-row">
+        <div class="result-name-row">
+          <span${i === 0 ? ' class="result-best"' : ""}>${i === 0 ? "&#x2B50; " : ""}${escapeHtml(r.name)}</span>
+          <span>${r.sim}%</span>
+        </div>
+        <div class="bar-track">
+          <div class="bar-fill${i === 0 && r.sim >= 60 ? " match" : ""}" style="width:${r.sim}%"></div>
+        </div>
+      </div>`
           )
           .join("");
 

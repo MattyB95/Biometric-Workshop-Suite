@@ -10,6 +10,7 @@ Specifically:
 
 - Biometric templates are stored as plain JSON with no encryption
 - The admin PIN is a lightweight teaching aid, not a hardened authentication mechanism
+- Changing the admin PIN does not invalidate existing authenticated sessions — open browser tabs remain logged in until closed
 - Matching algorithms are designed to be transparent and observable, not resistant to attack
 - No rate limiting, brute-force protection, or audit logging is implemented
 - The Flask secret key defaults to a static development value

@@ -17,8 +17,8 @@ app.secret_key = os.environ.get("BWS_SECRET_KEY", "bws-workshop-dev-key-change-i
 app.config["MAX_CONTENT_LENGTH"] = 1 * 1024 * 1024  # 1 MB upload limit
 
 PROFILES_FILE: str = os.path.join(_ROOT, "profiles.json")
-PHRASE = "the quick brown fox"
-ENROLL_SAMPLES_REQUIRED = 5
+DEFAULT_PHRASE = "the quick brown fox"
+DEFAULT_ENROLL_SAMPLES = 5
 
 MOUSE_PROFILES_FILE: str = os.path.join(_ROOT, "mouse_profiles.json")
 MOUSE_ENROLL_SAMPLES_REQUIRED = 5
@@ -67,8 +67,84 @@ def load_admin_pin() -> str:
 
 
 def save_admin_pin(pin: str) -> None:
+    cfg = _load_cfg()
+    cfg["pin"] = pin
+    _save_cfg(cfg)
+
+
+def _load_cfg() -> dict[str, Any]:
+    if os.path.exists(ADMIN_CONFIG_FILE):
+        try:
+            with open(ADMIN_CONFIG_FILE) as f:
+                loaded = json.load(f)
+            if isinstance(loaded, dict):
+                return loaded
+        except json.JSONDecodeError:
+            pass
+    return {}
+
+
+def _save_cfg(cfg: dict[str, Any]) -> None:
     with open(ADMIN_CONFIG_FILE, "w") as f:
-        json.dump({"pin": pin}, f)
+        json.dump(cfg, f)
+
+
+def load_keystroke_settings() -> dict[str, Any]:
+    cfg = _load_cfg()
+    return {
+        "phrase": str(cfg.get("keystroke_phrase", DEFAULT_PHRASE)),
+        "samples": int(cfg.get("keystroke_samples", DEFAULT_ENROLL_SAMPLES)),
+        "softmax_scale": float(cfg.get("keystroke_softmax_scale", 2.0)),
+    }
+
+
+def save_keystroke_settings(phrase: str, samples: int, softmax_scale: float) -> None:
+    cfg = _load_cfg()
+    cfg["keystroke_phrase"] = phrase
+    cfg["keystroke_samples"] = samples
+    cfg["keystroke_softmax_scale"] = softmax_scale
+    _save_cfg(cfg)
+
+
+def load_mouse_settings() -> dict[str, Any]:
+    cfg = _load_cfg()
+    return {
+        "samples": int(cfg.get("mouse_samples", 5)),
+        "softmax_scale": float(cfg.get("mouse_softmax_scale", 2.0)),
+    }
+
+
+def save_mouse_settings(samples: int, softmax_scale: float) -> None:
+    cfg = _load_cfg()
+    cfg["mouse_samples"] = samples
+    cfg["mouse_softmax_scale"] = softmax_scale
+    _save_cfg(cfg)
+
+
+def load_voice_settings() -> dict[str, Any]:
+    cfg = _load_cfg()
+    return {
+        "duration": int(cfg.get("voice_duration", 10)),
+    }
+
+
+def save_voice_settings(duration: int) -> None:
+    cfg = _load_cfg()
+    cfg["voice_duration"] = duration
+    _save_cfg(cfg)
+
+
+def load_signature_settings() -> dict[str, Any]:
+    cfg = _load_cfg()
+    return {
+        "samples": int(cfg.get("signature_samples", 3)),
+    }
+
+
+def save_signature_settings(samples: int) -> None:
+    cfg = _load_cfg()
+    cfg["signature_samples"] = samples
+    _save_cfg(cfg)
 
 
 # ---------------------------------------------------------------------------
@@ -246,8 +322,9 @@ def admin() -> str:
 
 @app.route("/keystroke")
 def keystroke() -> str:
+    ks = load_keystroke_settings()
     return render_template(
-        "keystroke.html", phrase=PHRASE, enroll_samples=ENROLL_SAMPLES_REQUIRED
+        "keystroke.html", phrase=ks["phrase"], enroll_samples=ks["samples"]
     )
 
 
@@ -258,17 +335,20 @@ def face() -> str:
 
 @app.route("/voice")
 def voice() -> str:
-    return render_template("voice.html")
+    vs = load_voice_settings()
+    return render_template("voice.html", enrol_frames=vs["duration"] * 60)
 
 
 @app.route("/signature")
 def signature() -> str:
-    return render_template("signature.html")
+    ss = load_signature_settings()
+    return render_template("signature.html", enroll_samples=ss["samples"])
 
 
 @app.route("/mouse")
 def mouse() -> str:
-    return render_template("mouse.html", enroll_samples=MOUSE_ENROLL_SAMPLES_REQUIRED)
+    ms = load_mouse_settings()
+    return render_template("mouse.html", enroll_samples=ms["samples"])
 
 
 @app.route("/api/enroll", methods=["POST"])
@@ -279,8 +359,9 @@ def enroll() -> Response | tuple[Response, int]:
 
     if not name:
         return jsonify({"error": "Name is required"}), 400
-    if len(samples) < ENROLL_SAMPLES_REQUIRED:
-        msg = f"Need {ENROLL_SAMPLES_REQUIRED} samples, got {len(samples)}"
+    required = load_keystroke_settings()["samples"]
+    if len(samples) < required:
+        msg = f"Need {required} samples, got {len(samples)}"
         return jsonify({"error": msg}), 400
 
     dwell_samples = [s["dwell"] for s in samples]
@@ -327,10 +408,9 @@ def identify() -> Response | tuple[Response, int]:
 
     # Convert distances to confidence scores via softmax relative to best match.
     # Scaling factor controls how sharply peaked the distribution is.
+    scale = load_keystroke_settings()["softmax_scale"]
     min_dist = results[0]["distance"]
-    raw_scores = [
-        math.exp(-SOFTMAX_SCALE * (r["distance"] - min_dist)) for r in results
-    ]
+    raw_scores = [math.exp(-scale * (r["distance"] - min_dist)) for r in results]
     total = sum(raw_scores)
 
     for i, r in enumerate(results):
@@ -351,7 +431,9 @@ def get_profiles() -> Response:
     enrolled = [
         {"name": k, "num_samples": v["num_samples"]} for k, v in profiles.items()
     ]
-    return jsonify({"enrolled": enrolled, "phrase": PHRASE})
+    return jsonify(
+        {"enrolled": enrolled, "phrase": load_keystroke_settings()["phrase"]}
+    )
 
 
 @app.route("/api/profiles/<name>", methods=["GET"])
@@ -413,8 +495,9 @@ def mouse_enroll() -> Response | tuple[Response, int]:
 
     if not name:
         return jsonify({"error": "Name is required"}), 400
-    if len(samples) < MOUSE_ENROLL_SAMPLES_REQUIRED:
-        msg = f"Need {MOUSE_ENROLL_SAMPLES_REQUIRED} samples, got {len(samples)}"
+    required = load_mouse_settings()["samples"]
+    if len(samples) < required:
+        msg = f"Need {required} samples, got {len(samples)}"
         return jsonify({"error": msg}), 400
 
     mean_cd, std_cd = mean_and_std([s["click_dwells"] for s in samples])
@@ -458,10 +541,9 @@ def mouse_identify() -> Response | tuple[Response, int]:
 
     results.sort(key=lambda r: r["distance"])
 
+    scale = load_mouse_settings()["softmax_scale"]
     min_dist = results[0]["distance"]
-    raw_scores = [
-        math.exp(-SOFTMAX_SCALE * (r["distance"] - min_dist)) for r in results
-    ]
+    raw_scores = [math.exp(-scale * (r["distance"] - min_dist)) for r in results]
     total = sum(raw_scores)
     for i, r in enumerate(results):
         r["confidence"] = round(raw_scores[i] / total * 100, 1)
@@ -560,6 +642,118 @@ def admin_change_pin() -> Response | tuple[Response, int]:
     if len(new_pin) < 4:
         return jsonify({"error": "PIN must be at least 4 characters"}), 400
     save_admin_pin(new_pin)
+    # Note: existing authenticated sessions remain valid after a PIN change.
+    # The PIN is only checked at login time, not on every request. This is
+    # intentional for workshop use — see SECURITY.md.
+    return jsonify({"success": True})
+
+
+@app.route("/api/admin/keystroke-settings", methods=["GET"])
+def get_keystroke_settings() -> Response | tuple[Response, int]:
+    if not session.get("admin"):
+        return jsonify({"error": "Not authenticated"}), 403
+    return jsonify(load_keystroke_settings())
+
+
+@app.route("/api/admin/keystroke-settings", methods=["POST"])
+def set_keystroke_settings() -> Response | tuple[Response, int]:
+    if not session.get("admin"):
+        return jsonify({"error": "Not authenticated"}), 403
+    data = request.json or {}
+    phrase = str(data.get("phrase", "")).strip()
+    if not phrase:
+        return jsonify({"error": "Phrase cannot be empty"}), 400
+    try:
+        samples = int(data.get("samples", 0))
+        if samples < 1:
+            raise ValueError
+    except TypeError, ValueError:
+        return jsonify({"error": "Samples must be a positive integer"}), 400
+    try:
+        softmax_scale = float(data.get("softmax_scale", 2.0))
+        if softmax_scale <= 0:
+            raise ValueError
+    except TypeError, ValueError:
+        return (
+            jsonify({"error": "Confidence sensitivity must be a positive number"}),
+            400,
+        )
+    save_keystroke_settings(phrase, samples, softmax_scale)
+    return jsonify({"success": True})
+
+
+@app.route("/api/admin/mouse-settings", methods=["GET"])
+def get_mouse_settings() -> Response | tuple[Response, int]:
+    if not session.get("admin"):
+        return jsonify({"error": "Not authenticated"}), 403
+    return jsonify(load_mouse_settings())
+
+
+@app.route("/api/admin/mouse-settings", methods=["POST"])
+def set_mouse_settings() -> Response | tuple[Response, int]:
+    if not session.get("admin"):
+        return jsonify({"error": "Not authenticated"}), 403
+    data = request.json or {}
+    try:
+        samples = int(data.get("samples", 0))
+        if samples < 1:
+            raise ValueError
+    except TypeError, ValueError:
+        return jsonify({"error": "Samples must be a positive integer"}), 400
+    try:
+        softmax_scale = float(data.get("softmax_scale", 2.0))
+        if softmax_scale <= 0:
+            raise ValueError
+    except TypeError, ValueError:
+        return (
+            jsonify({"error": "Confidence sensitivity must be a positive number"}),
+            400,
+        )
+    save_mouse_settings(samples, softmax_scale)
+    return jsonify({"success": True})
+
+
+@app.route("/api/admin/voice-settings", methods=["GET"])
+def get_voice_settings() -> Response | tuple[Response, int]:
+    if not session.get("admin"):
+        return jsonify({"error": "Not authenticated"}), 403
+    return jsonify(load_voice_settings())
+
+
+@app.route("/api/admin/voice-settings", methods=["POST"])
+def set_voice_settings() -> Response | tuple[Response, int]:
+    if not session.get("admin"):
+        return jsonify({"error": "Not authenticated"}), 403
+    data = request.json or {}
+    try:
+        duration = int(data.get("duration", 0))
+        if duration < 3 or duration > 60:
+            raise ValueError
+    except TypeError, ValueError:
+        return jsonify({"error": "Duration must be between 3 and 60 seconds"}), 400
+    save_voice_settings(duration)
+    return jsonify({"success": True})
+
+
+@app.route("/api/admin/signature-settings", methods=["GET"])
+def get_signature_settings() -> Response | tuple[Response, int]:
+    if not session.get("admin"):
+        return jsonify({"error": "Not authenticated"}), 403
+    return jsonify(load_signature_settings())
+
+
+@app.route("/api/admin/signature-settings", methods=["POST"])
+def set_signature_settings() -> Response | tuple[Response, int]:
+    if not session.get("admin"):
+        return jsonify({"error": "Not authenticated"}), 403
+    data = request.json or {}
+    try:
+        samples = int(data.get("samples", 0))
+        if samples < 1:
+            raise ValueError
+    except TypeError, ValueError:
+        return jsonify({"error": "Samples must be a positive integer"}), 400
+    save_signature_settings(samples)
     return jsonify({"success": True})
 
 

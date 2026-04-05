@@ -709,37 +709,6 @@
           <div class="card-header">Enrolled Students</div>
           <div class="card-body">
             <div id="student-list"><div class="empty-msg">Loading&hellip;</div></div>
-            <div class="btn-row" style="margin-top: 4px">
-              <button class="btn btn-success" id="btn-export" style="flex: 1">
-                &#x1F4E4; Export
-              </button>
-              <label
-                class="btn btn-ghost"
-                style="flex: 1; cursor: pointer; justify-content: center"
-              >
-                &#x1F4E5; Import
-                <input type="file" id="import-file" accept=".json" style="display: none" />
-              </label>
-            </div>
-          </div>
-        </div>
-
-        <!-- Settings card -->
-        <div class="card">
-          <div class="card-header">Settings</div>
-          <div class="card-body">
-            <div>
-              <label for="settings-phrase">Typing phrase</label>
-              <input type="text" id="settings-phrase" />
-            </div>
-            <div>
-              <label for="settings-samples">Enrolment attempts required</label>
-              <input type="text" id="settings-samples" style="width: 80px" />
-            </div>
-            <p class="tip">Changing the phrase will clear all existing profiles.</p>
-            <button class="btn btn-primary" id="btn-save-settings" style="width: 100%">
-              Save Settings
-            </button>
           </div>
         </div>
       </div>
@@ -876,12 +845,6 @@
       const btnIdentifyAgain = document.getElementById("btn-identify-again");
 
       const studentListEl = document.getElementById("student-list");
-      const btnExport = document.getElementById("btn-export");
-      const importFile = document.getElementById("import-file");
-
-      const settingsPhrase = document.getElementById("settings-phrase");
-      const settingsSamples = document.getElementById("settings-samples");
-      const btnSaveSettings = document.getElementById("btn-save-settings");
 
       // ── Unified status ────────────────────────────────────────────────────────
       function setStatus(msg, type) {
@@ -967,7 +930,7 @@
           .map((name) => ({ name, distance: computeDistance(timing, profiles[name]) }))
           .sort((a, b) => a.distance - b.distance);
 
-        const scale = 2.0;
+        const scale = parseFloat(localStorage.getItem("ks-softmax-scale") || "2.0");
         const minDist = results[0].distance;
         const raw = results.map((r) => Math.exp(-scale * (r.distance - minDist)));
         const total = raw.reduce((s, x) => s + x, 0);
@@ -1275,91 +1238,6 @@
         });
       }
 
-      // Export
-      btnExport.addEventListener("click", () => {
-        const profiles = loadProfiles();
-        if (Object.keys(profiles).length === 0) {
-          alert("No profiles to export.");
-          return;
-        }
-        const blob = new Blob([JSON.stringify({ phrase: getPhrase(), profiles }, null, 2)], {
-          type: "application/json",
-        });
-        const a = document.createElement("a");
-        a.href = URL.createObjectURL(blob);
-        a.download = "keystroke-profiles.json";
-        a.click();
-        URL.revokeObjectURL(a.href);
-      });
-
-      // Import
-      importFile.addEventListener("change", (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = (ev) => {
-          try {
-            const data = JSON.parse(ev.target.result);
-            const profiles = data.profiles || data;
-            if (typeof profiles !== "object") throw new Error("Invalid format");
-            saveProfiles(profiles);
-            if (data.phrase && data.phrase !== getPhrase()) {
-              localStorage.setItem(STORAGE_PHRASE, data.phrase);
-              settingsPhrase.value = data.phrase;
-              renderPhrase(phraseDisplay, data.phrase, 0);
-            }
-            loadStudents();
-            alert(`Imported ${Object.keys(profiles).length} profile(s).`);
-          } catch {
-            alert("Could not read file. Make sure it is a valid exported JSON file.");
-          }
-          importFile.value = "";
-        };
-        reader.readAsText(file);
-      });
-
-      // ====================================================================
-      // SETTINGS
-      // ====================================================================
-
-      function loadSettings() {
-        settingsPhrase.value = getPhrase();
-        settingsSamples.value = getSamples();
-        enrollSamplesLabel.textContent = getSamples();
-      }
-
-      btnSaveSettings.addEventListener("click", () => {
-        const newPhrase = settingsPhrase.value.trim();
-        const newSamples = parseInt(settingsSamples.value, 10);
-
-        if (!newPhrase) {
-          alert("Phrase cannot be empty.");
-          return;
-        }
-        if (isNaN(newSamples) || newSamples < 1 || newSamples > 20) {
-          alert("Attempts must be between 1 and 20.");
-          return;
-        }
-
-        const phraseChanged = newPhrase !== getPhrase();
-
-        if (phraseChanged && Object.keys(loadProfiles()).length > 0) {
-          if (!confirm("Changing the phrase will delete all existing profiles. Continue?")) return;
-          saveProfiles({});
-        }
-
-        localStorage.setItem(STORAGE_PHRASE, newPhrase);
-        localStorage.setItem(STORAGE_SAMPLES, String(newSamples));
-
-        enrollSamplesLabel.textContent = newSamples;
-        renderPhrase(phraseDisplay, newPhrase, 0);
-        currentMode = "idle";
-        setStatus("Settings saved. Choose Enrol or Identify to continue.", "");
-        if (phraseChanged) loadStudents();
-
-        alert("Settings saved.");
-      });
-
       // ====================================================================
       // PROFILE STATS MODAL
       // ====================================================================
@@ -1532,7 +1410,6 @@
       }
 
       // ── Initialise on load ────────────────────────────────────────────────────
-      loadSettings();
       loadStudents();
     </script>
   </body>

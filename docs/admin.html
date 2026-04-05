@@ -566,6 +566,157 @@
           </button>
         </div>
 
+        <!-- Keystroke Settings -->
+        <p class="section-title">Settings</p>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-header-left">
+              <span class="modality-icon">&#x2328;&#xFE0F;</span>
+              <span class="modality-name">Keystroke Dynamics</span>
+            </div>
+          </div>
+          <div class="card-body">
+            <div style="display: flex; flex-direction: column; gap: 12px">
+              <div>
+                <div class="field-label">Typing phrase</div>
+                <input
+                  type="text"
+                  class="text-input"
+                  id="ks-phrase-input"
+                  placeholder="e.g. the quick brown fox"
+                  maxlength="120"
+                  autocomplete="off"
+                />
+              </div>
+              <div>
+                <div class="field-label">Enrolment attempts required</div>
+                <input
+                  type="number"
+                  class="text-input"
+                  id="ks-samples-input"
+                  min="1"
+                  max="20"
+                  style="width: 100px"
+                />
+              </div>
+              <div>
+                <div class="field-label">
+                  Confidence sensitivity (default 2.0 — higher = sharper separation)
+                </div>
+                <input
+                  type="number"
+                  class="text-input"
+                  id="ks-softmax-input"
+                  min="0.1"
+                  max="10"
+                  step="0.1"
+                  style="width: 100px"
+                />
+              </div>
+              <div class="pin-msg" id="ks-settings-msg"></div>
+              <p style="font-size: 0.8rem; color: var(--text-dim); margin: 0">
+                Changing the phrase will require students to re-enrol.
+              </p>
+              <button class="btn btn-primary" id="btn-save-ks-settings">Save Settings</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mouse Settings -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-header-left">
+              <span class="modality-icon">&#x1F5B1;&#xFE0F;</span>
+              <span class="modality-name">Mouse Dynamics</span>
+            </div>
+          </div>
+          <div class="card-body">
+            <div style="display: flex; flex-direction: column; gap: 12px">
+              <div>
+                <div class="field-label">Enrolment attempts required</div>
+                <input
+                  type="number"
+                  class="text-input"
+                  id="mouse-samples-input"
+                  min="1"
+                  max="20"
+                  style="width: 100px"
+                />
+              </div>
+              <div>
+                <div class="field-label">
+                  Confidence sensitivity (default 2.0 — higher = sharper separation)
+                </div>
+                <input
+                  type="number"
+                  class="text-input"
+                  id="mouse-softmax-input"
+                  min="0.1"
+                  max="10"
+                  step="0.1"
+                  style="width: 100px"
+                />
+              </div>
+              <div class="pin-msg" id="mouse-settings-msg"></div>
+              <button class="btn btn-primary" id="btn-save-mouse-settings">Save Settings</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Voice Settings -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-header-left">
+              <span class="modality-icon">&#x1F3A4;</span>
+              <span class="modality-name">Voice Biometrics</span>
+            </div>
+          </div>
+          <div class="card-body">
+            <div style="display: flex; flex-direction: column; gap: 12px">
+              <div>
+                <div class="field-label">Recording duration (seconds, 3&ndash;60)</div>
+                <input
+                  type="number"
+                  class="text-input"
+                  id="voice-duration-input"
+                  min="3"
+                  max="60"
+                  style="width: 100px"
+                />
+              </div>
+              <div class="pin-msg" id="voice-settings-msg"></div>
+              <button class="btn btn-primary" id="btn-save-voice-settings">Save Settings</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Signature Settings -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-header-left">
+              <span class="modality-icon">&#x270D;&#xFE0F;</span>
+              <span class="modality-name">Signature Dynamics</span>
+            </div>
+          </div>
+          <div class="card-body">
+            <div style="display: flex; flex-direction: column; gap: 12px">
+              <div>
+                <div class="field-label">Enrolment attempts required</div>
+                <input
+                  type="number"
+                  class="text-input"
+                  id="sig-samples-input"
+                  min="1"
+                  max="10"
+                  style="width: 100px"
+                />
+              </div>
+              <div class="pin-msg" id="sig-settings-msg"></div>
+              <button class="btn btn-primary" id="btn-save-sig-settings">Save Settings</button>
+            </div>
+          </div>
+        </div>
+
         <!-- Change PIN -->
         <p class="section-title">Security</p>
         <div class="card">
@@ -619,6 +770,20 @@
       // ── localStorage keys ────────────────────────────────────────────────────
       const PIN_KEY = "bws_admin_pin";
       const DEFAULT_PIN = "1965";
+      const KS_PHRASE_KEY = "kd-phrase";
+      const KS_SAMPLES_KEY = "kd-samples";
+      const KS_SOFTMAX_KEY = "ks-softmax-scale";
+      const DEFAULT_KS_PHRASE = "the quick brown fox";
+      const DEFAULT_KS_SAMPLES = 5;
+      const DEFAULT_KS_SOFTMAX = 2.0;
+      const MOUSE_SAMPLES_KEY = "mouse-enroll-samples";
+      const MOUSE_SOFTMAX_KEY = "mouse-softmax-scale";
+      const DEFAULT_MOUSE_SAMPLES = 5;
+      const DEFAULT_MOUSE_SOFTMAX = 2.0;
+      const VOICE_DURATION_KEY = "voice-duration";
+      const DEFAULT_VOICE_DURATION = 10;
+      const SIG_SAMPLES_KEY = "sig-enroll-samples";
+      const DEFAULT_SIG_SAMPLES = 3;
       const LS_KEYS = {
         keystroke: "kd-profiles",
         mouse: "mouse_profiles",
@@ -744,7 +909,37 @@
         });
       }
 
+      function loadKsSettings() {
+        document.getElementById("ks-phrase-input").value =
+          localStorage.getItem(KS_PHRASE_KEY) || DEFAULT_KS_PHRASE;
+        document.getElementById("ks-samples-input").value =
+          localStorage.getItem(KS_SAMPLES_KEY) || DEFAULT_KS_SAMPLES;
+        document.getElementById("ks-softmax-input").value =
+          localStorage.getItem(KS_SOFTMAX_KEY) || DEFAULT_KS_SOFTMAX;
+      }
+
+      function loadMouseSettings() {
+        document.getElementById("mouse-samples-input").value =
+          localStorage.getItem(MOUSE_SAMPLES_KEY) || DEFAULT_MOUSE_SAMPLES;
+        document.getElementById("mouse-softmax-input").value =
+          localStorage.getItem(MOUSE_SOFTMAX_KEY) || DEFAULT_MOUSE_SOFTMAX;
+      }
+
+      function loadVoiceSettings() {
+        document.getElementById("voice-duration-input").value =
+          localStorage.getItem(VOICE_DURATION_KEY) || DEFAULT_VOICE_DURATION;
+      }
+
+      function loadSigSettings() {
+        document.getElementById("sig-samples-input").value =
+          localStorage.getItem(SIG_SAMPLES_KEY) || DEFAULT_SIG_SAMPLES;
+      }
+
       function renderAll() {
+        loadKsSettings();
+        loadMouseSettings();
+        loadVoiceSettings();
+        loadSigSettings();
         renderModality(LS_KEYS.keystroke, "ks-list", "ks-count", () =>
           renderModality(LS_KEYS.keystroke, "ks-list", "ks-count", () => {})
         );
@@ -910,6 +1105,91 @@
         if (!this.files[0]) return;
         doImportLS(LS_KEYS.signature, this.files[0], "sig-list", "sig-count");
         this.value = "";
+      });
+
+      // ── Keystroke Settings ───────────────────────────────────────────────────
+      document.getElementById("btn-save-ks-settings").addEventListener("click", () => {
+        const phrase = document.getElementById("ks-phrase-input").value.trim();
+        const samples = document.getElementById("ks-samples-input").value.trim();
+        const softmax = document.getElementById("ks-softmax-input").value.trim();
+        const msg = document.getElementById("ks-settings-msg");
+        msg.textContent = "";
+        msg.className = "pin-msg";
+        if (!phrase) {
+          msg.textContent = "Phrase cannot be empty.";
+          msg.className = "pin-msg error";
+          return;
+        }
+        if (!samples || isNaN(Number(samples)) || Number(samples) < 1) {
+          msg.textContent = "Enrolment attempts must be a positive number.";
+          msg.className = "pin-msg error";
+          return;
+        }
+        if (!softmax || isNaN(Number(softmax)) || Number(softmax) <= 0) {
+          msg.textContent = "Confidence sensitivity must be a positive number.";
+          msg.className = "pin-msg error";
+          return;
+        }
+        localStorage.setItem(KS_PHRASE_KEY, phrase);
+        localStorage.setItem(KS_SAMPLES_KEY, String(Number(samples)));
+        localStorage.setItem(KS_SOFTMAX_KEY, String(Number(softmax)));
+        msg.textContent = "Settings saved.";
+        msg.className = "pin-msg success";
+      });
+
+      // ── Mouse Settings ───────────────────────────────────────────────────────
+      document.getElementById("btn-save-mouse-settings").addEventListener("click", () => {
+        const samples = document.getElementById("mouse-samples-input").value.trim();
+        const softmax = document.getElementById("mouse-softmax-input").value.trim();
+        const msg = document.getElementById("mouse-settings-msg");
+        msg.textContent = "";
+        msg.className = "pin-msg";
+        if (!samples || isNaN(Number(samples)) || Number(samples) < 1) {
+          msg.textContent = "Enrolment attempts must be a positive number.";
+          msg.className = "pin-msg error";
+          return;
+        }
+        if (!softmax || isNaN(Number(softmax)) || Number(softmax) <= 0) {
+          msg.textContent = "Confidence sensitivity must be a positive number.";
+          msg.className = "pin-msg error";
+          return;
+        }
+        localStorage.setItem(MOUSE_SAMPLES_KEY, String(Number(samples)));
+        localStorage.setItem(MOUSE_SOFTMAX_KEY, String(Number(softmax)));
+        msg.textContent = "Settings saved.";
+        msg.className = "pin-msg success";
+      });
+
+      // ── Voice Settings ───────────────────────────────────────────────────────
+      document.getElementById("btn-save-voice-settings").addEventListener("click", () => {
+        const duration = document.getElementById("voice-duration-input").value.trim();
+        const msg = document.getElementById("voice-settings-msg");
+        msg.textContent = "";
+        msg.className = "pin-msg";
+        if (!duration || isNaN(Number(duration)) || Number(duration) < 3 || Number(duration) > 60) {
+          msg.textContent = "Duration must be between 3 and 60 seconds.";
+          msg.className = "pin-msg error";
+          return;
+        }
+        localStorage.setItem(VOICE_DURATION_KEY, String(Number(duration)));
+        msg.textContent = "Settings saved.";
+        msg.className = "pin-msg success";
+      });
+
+      // ── Signature Settings ───────────────────────────────────────────────────
+      document.getElementById("btn-save-sig-settings").addEventListener("click", () => {
+        const samples = document.getElementById("sig-samples-input").value.trim();
+        const msg = document.getElementById("sig-settings-msg");
+        msg.textContent = "";
+        msg.className = "pin-msg";
+        if (!samples || isNaN(Number(samples)) || Number(samples) < 1) {
+          msg.textContent = "Enrolment attempts must be a positive number.";
+          msg.className = "pin-msg error";
+          return;
+        }
+        localStorage.setItem(SIG_SAMPLES_KEY, String(Number(samples)));
+        msg.textContent = "Settings saved.";
+        msg.className = "pin-msg success";
       });
 
       // ── Change PIN ───────────────────────────────────────────────────────────
