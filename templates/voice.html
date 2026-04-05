@@ -941,7 +941,7 @@
       function finishRecording() {
         isRecording = false;
         btnRecord.disabled = false;
-        btnStop.disabled = true;
+        btnStop.disabled = false;
         btnEnrol.disabled = false;
         btnVerify.disabled = Object.keys(profiles).length === 0;
         setStatus(
@@ -1106,6 +1106,7 @@
       btnRecord.addEventListener("click", startRecording);
       btnStop.addEventListener("click", () => {
         if (isRecording) finishRecording();
+        else stopMic();
       });
       btnClear.addEventListener("click", () => {
         recordingFrames = [];

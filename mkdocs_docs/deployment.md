@@ -13,7 +13,7 @@ The `docs/` folder is a fully self-contained static version — all logic runs i
 3. Your suite will be live at `https://<username>.github.io/<repo-name>/` and the documentation at `https://<username>.github.io/<repo-name>/documentation/`.
 
 !!! note
-In the static version, each student's data is stored in _their own browser_. The admin page on the static version can only manage data on the device where it is opened. For a shared server where all students connect to the same backend, use Option B or C.
+    In the static version, each student's data is stored in _their own browser_. The admin page on the static version can only manage data on the device where it is opened. For a shared server where all students connect to the same backend, use Option B or C.
 
 ---
 
@@ -27,7 +27,7 @@ The Flask version stores all profiles on the server — all students share the s
 4. Click **Deploy** and share the URL with students.
 
 !!! note
-Render's free tier spins down after 15 minutes of inactivity — the first request after a sleep may take ~30 seconds. Profile data stored on disk will be reset on each redeploy.
+    Render's free tier spins down after 15 minutes of inactivity — the first request after a sleep may take ~30 seconds. Profile data stored on disk will be reset on each redeploy.
 
 To run in production mode locally (mirrors the Render environment):
 

@@ -766,26 +766,59 @@
       function doExportLS(lsKey, filename) {
         const raw = localStorage.getItem(lsKey) || "{}";
         const blob = new Blob([raw], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
-        a.href = URL.createObjectURL(blob);
+        a.href = url;
         a.download = filename;
+        document.body.appendChild(a);
         a.click();
-        URL.revokeObjectURL(a.href);
+        setTimeout(() => {
+          URL.revokeObjectURL(url);
+          a.remove();
+        }, 0);
         showToast("Exported " + filename, "success");
       }
 
       // ── Import (localStorage) ────────────────────────────────────────────────
+      function isDangerousKey(key) {
+        return key === "__proto__" || key === "constructor" || key === "prototype";
+      }
+
+      function sanitizeObject(value) {
+        if (Array.isArray(value)) {
+          return value.map(sanitizeObject);
+        }
+        if (value !== null && typeof value === "object") {
+          const sanitized = Object.create(null);
+          for (const [key, nestedValue] of Object.entries(value)) {
+            if (isDangerousKey(key)) continue;
+            sanitized[key] = sanitizeObject(nestedValue);
+          }
+          return sanitized;
+        }
+        return value;
+      }
+
       async function doImportLS(lsKey, file, listId, countId) {
         try {
           const text = await file.text();
-          const incoming = JSON.parse(text);
-          if (typeof incoming !== "object" || Array.isArray(incoming)) {
+          const parsedIncoming = JSON.parse(text);
+          if (
+            parsedIncoming === null ||
+            typeof parsedIncoming !== "object" ||
+            Array.isArray(parsedIncoming)
+          ) {
             showToast("Invalid profile file", "error");
             return;
           }
-          const existing = JSON.parse(localStorage.getItem(lsKey) || "{}");
-          Object.assign(existing, incoming);
-          localStorage.setItem(lsKey, JSON.stringify(existing));
+          const parsedExisting = JSON.parse(localStorage.getItem(lsKey) || "{}");
+          const existing =
+            parsedExisting !== null && typeof parsedExisting === "object" && !Array.isArray(parsedExisting)
+              ? sanitizeObject(parsedExisting)
+              : Object.create(null);
+          const incoming = sanitizeObject(parsedIncoming);
+          const merged = Object.assign(Object.create(null), existing, incoming);
+          localStorage.setItem(lsKey, JSON.stringify(merged));
           const count = Object.keys(incoming).length;
           showToast("Imported " + count + " profile" + (count !== 1 ? "s" : ""), "success");
           renderModality(lsKey, listId, countId, () => {});

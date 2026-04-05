@@ -810,15 +810,36 @@
 
       // ── Export ───────────────────────────────────────────────────────────────
       async function doExport(url, filename) {
-        const res = await fetch(url);
-        const data = await res.json();
-        const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-        const a = document.createElement("a");
-        a.href = URL.createObjectURL(blob);
-        a.download = filename;
-        a.click();
-        URL.revokeObjectURL(a.href);
-        showToast("Exported " + filename, "success");
+        try {
+          const res = await fetch(url);
+          const text = await res.text();
+          let data;
+          try {
+            data = JSON.parse(text);
+          } catch (_e) {
+            showToast(res.ok ? "Export returned invalid JSON" : "Export failed", "error");
+            return;
+          }
+          if (!res.ok) {
+            showToast(data.error || "Export failed", "error");
+            return;
+          }
+          const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+          const objectUrl = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = objectUrl;
+          a.download = filename;
+          a.style.display = "none";
+          document.body.appendChild(a);
+          a.click();
+          setTimeout(() => {
+            a.remove();
+            URL.revokeObjectURL(objectUrl);
+          }, 0);
+          showToast("Exported " + filename, "success");
+        } catch (_e) {
+          showToast("Export failed", "error");
+        }
       }
 
       // ── Import ───────────────────────────────────────────────────────────────
