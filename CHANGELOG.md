@@ -11,6 +11,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.2.0] - 2026-04-05
+
+### Added
+
+- Import and export for all five modalities in the admin panel — instructors can back up and restore profiles as JSON files
+- New API routes `/api/export`, `/api/mouse/export`, `/api/face/export`, `/api/voice/export`, `/api/signature/export` (GET) and corresponding `/api/import`, `/api/mouse/import`, `/api/face/import`, `/api/voice/import`, `/api/signature/import` (POST) for the Flask backend
+- Import/export in the static version reads and writes `localStorage` directly (no server required)
+
+### Changed
+
+- Voice `ENROL_FRAMES` increased from 80 to 600 (~10 seconds at 60 fps) for a more representative voice profile
+- Voice Stop button now stops frame collection only — the microphone stays open so the user can re-record without reloading
+- Voice UI status messages guide the user through the open-mic → record → stop → enrol/identify flow
+- Voice enrolment instruction updated to "speak for ~10 seconds"
+- CI workflow inlines npm lint commands directly rather than calling `just`, removing the dependency on `just` being installed on the Actions runner
+
+### Fixed
+
+- Clear button icon (`&#x239A;`) replaced with `&#x2715;` — the previous codepoint is absent from most system fonts and rendered as a square
+- "All Modules" back links in `docs/face.html`, `docs/signature.html`, and `docs/voice.html` corrected from `href="/"` to `href="./index.html"` (GitHub Pages does not serve a root index)
+- Algorithm documentation floor values corrected to match source constants: mouse click dwell 15 ms (was 20 ms), mouse curvature 0.03 (was 0.05)
+- Deployment documentation updated to reflect GitHub Actions as the GitHub Pages source (not "Deploy from a branch")
+
+---
+
 ## [0.1.0] - 2026-04-04
 
 Initial public release of the Biometric Workshop Suite.
