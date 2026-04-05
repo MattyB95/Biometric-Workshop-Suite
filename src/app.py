@@ -132,9 +132,14 @@ def _valid_numeric_feature_vector(v: Any, allowed_lengths: tuple[int, ...]) -> b
     return all(_is_finite_number(item) for item in v)
 
 
-def _valid_features_profile(v: Any) -> bool:
-    # face: 16 numeric values; voice: 13 numeric values
-    return _valid_numeric_feature_vector(v, (13, 16))
+def _valid_face_features_profile(v: Any) -> bool:
+    # face: exactly 16 finite numeric values
+    return _valid_numeric_feature_vector(v, (16,))
+
+
+def _valid_voice_features_profile(v: Any) -> bool:
+    # voice: exactly 13 finite numeric values
+    return _valid_numeric_feature_vector(v, (13,))
 
 
 def _valid_signature_profile(v: Any) -> bool:
@@ -612,7 +617,7 @@ def import_face_profiles() -> Response | tuple[Response, int]:
     data = request.json
     if not isinstance(data, dict):
         return jsonify({"error": "JSON body must be an object"}), 400
-    invalid = [k for k, v in data.items() if not _valid_features_profile(v)]
+    invalid = [k for k, v in data.items() if not _valid_face_features_profile(v)]
     if invalid:
         names = ", ".join(invalid)
         return jsonify({"error": f"Invalid profile shape for: {names}"}), 400
@@ -676,7 +681,7 @@ def import_voice_profiles() -> Response | tuple[Response, int]:
     data = request.json
     if not isinstance(data, dict):
         return jsonify({"error": "JSON body must be an object"}), 400
-    invalid = [k for k, v in data.items() if not _valid_features_profile(v)]
+    invalid = [k for k, v in data.items() if not _valid_voice_features_profile(v)]
     if invalid:
         names = ", ".join(invalid)
         return jsonify({"error": f"Invalid profile shape for: {names}"}), 400

@@ -949,6 +949,15 @@ class TestFaceExportImport:
         )
         assert resp.status_code == 400
 
+    def test_import_voice_features_into_face_returns_400(self, client):
+        _admin_login(client)
+        resp = client.post(
+            "/api/face/import",
+            data=json.dumps({"Alice": VOICE_FEATURES}),
+            content_type="application/json",
+        )
+        assert resp.status_code == 400
+
 
 class TestVoiceExportImport:
     def test_export_unauthenticated_returns_403(self, client):
@@ -1005,6 +1014,15 @@ class TestVoiceExportImport:
         resp = client.post(
             "/api/voice/import",
             data=json.dumps({"Alice": []}),
+            content_type="application/json",
+        )
+        assert resp.status_code == 400
+
+    def test_import_face_features_into_voice_returns_400(self, client):
+        _admin_login(client)
+        resp = client.post(
+            "/api/voice/import",
+            data=json.dumps({"Alice": FACE_FEATURES}),
             content_type="application/json",
         )
         assert resp.status_code == 400
