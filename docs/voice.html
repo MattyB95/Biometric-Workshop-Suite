@@ -1253,7 +1253,7 @@
           "info"
         );
       });
-      btnSubmitRec.addEventListener("click", () => {
+      btnSubmitRec.addEventListener("click", async () => {
         if (!recordingFrames.length) {
           btnSubmitRec.disabled = true;
           setStatus(
@@ -1268,10 +1268,8 @@
         if (!meanVec) {
           btnSubmitRec.disabled = true;
           setStatus(
-            "No recording was captured. Press ",
-            "info",
-            "Start Recording",
-            " and try again."
+            "Could not process this recording. Please record a new sample and try again.",
+            "info"
           );
           return;
         }
