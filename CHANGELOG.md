@@ -11,6 +11,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.4.0] - 2026-04-06
+
+### Added
+
+- **Guided multi-sample enrolment for Voice** — Name + Start button locks input, progress dots track samples collected, Submit Recording saves each recording, features are averaged across all samples before the profile is stored, and "Enrol Another Student" resets the flow; applied to both Flask template and static site
+- **Guided multi-sample enrolment for Face** — same state machine (idle / enrol), progress dots with pulse animation, Capture button with a 1-second cooldown flash after each capture, averaged feature vectors; applied to both Flask template and static site
+- **Voice enrolment samples admin setting** — instructors can now configure the number of voice recordings required per enrolment (1–10, default 3) via the admin panel; persisted to `admin_config.json` (Flask) or `localStorage` (static site)
+
+### Changed
+
+- **Signature enrolment workflow redesigned** — replaces the previous single-button flow with the guided pattern: Name + Start locks input, progress dots show collection progress, Submit Signature saves each sample, the workflow auto-advances between samples, and "Enrol Another Student" completes the session; Clear relabelled "Redo" during enrolment and no longer resets previously captured samples
+- All enrolment-capable modalities (keystroke, mouse, signature, face, voice) now follow the same guided workflow pattern for UI consistency
+
+### Fixed
+
+- Signature Clear button incorrectly reset the `enrollSamples` array during multi-sample enrolment, discarding all previously captured samples
+
+---
+
 ## [0.3.0] - 2026-04-05
 
 ### Added

@@ -18,7 +18,7 @@ Normalising by face size makes the features independent of how close the student
 
 ## Enrolment
 
-A single webcam capture is taken. The face model extracts the 16-element feature vector, which is stored directly as the profile. Because only one sample is taken, the enrolment process is fast but the profile has no variance information.
+The student makes three webcam captures. After each capture the page shows progress dots and prompts for the next attempt. The 16-element feature vector from each capture is averaged into a single representative profile, reducing the impact of any single pose or expression.
 
 ## Identification
 
@@ -34,5 +34,5 @@ Identification uses **cosine similarity** between the enrolment vector and the l
 
 - Demonstrate how lighting changes affect the match score.
 - Ask students: does the system recognise faces it has never seen? (No — it only ranks enrolled profiles.)
-- What is the difference between *identification* (who is this?) and *verification* (is this person who they claim to be)?
+- What is the difference between _identification_ (who is this?) and _verification_ (is this person who they claim to be)?
 - Why might geometric ratios be more robust than raw pixel comparison?

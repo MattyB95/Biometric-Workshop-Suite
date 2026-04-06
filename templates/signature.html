@@ -404,6 +404,17 @@
         background: var(--accent);
         border-color: var(--accent);
         box-shadow: 0 0 6px var(--accent);
+        animation: pulse 1.2s infinite;
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.6;
+        }
       }
 
       /* ── Named profile management ── */
@@ -527,6 +538,9 @@
 
         <div class="controls">
           <button class="btn btn-ghost" id="btnClear">&#x2715; Clear</button>
+          <button class="btn btn-primary" id="btnSubmitSig" style="display: none" disabled>
+            &#x1F4BE; Submit Signature
+          </button>
         </div>
 
         <div class="vel-legend">
@@ -600,10 +614,23 @@
                 placeholder="Student name"
                 maxlength="40"
               />
-              <button class="btn btn-primary" id="btnEnrol" disabled>&#x1F4BE; Save Sample</button>
+              <button class="btn btn-primary" id="btnStartEnrol">&#x25B6; Start</button>
             </div>
+            <p id="enrolTip" style="font-size: 0.75rem; color: var(--text-dim); line-height: 1.5">
+              Sign <strong>{{ enroll_samples }} times</strong> &mdash; your rhythm is the biometric.
+            </p>
             <div id="enrolDotsWrap" style="display: none">
               <div class="dots-wrap"><div class="attempt-dots" id="enrolDots"></div></div>
+            </div>
+            <div id="enrolDoneMsg" style="display: none">
+              <div class="status-bar success" id="enrolSuccessText"></div>
+              <button
+                class="btn btn-ghost"
+                id="btnEnrolAnother"
+                style="margin-top: 8px; width: 100%"
+              >
+                Enrol Another Student
+              </button>
             </div>
             <button class="btn btn-success" id="btnVerify" disabled style="width: 100%">
               &#x1F50D; Identify Signer
@@ -686,10 +713,14 @@
       const sigCtx = sigCanvas.getContext("2d");
       const velCtx = velCanvas.getContext("2d");
       const btnClear = document.getElementById("btnClear");
-      const btnEnrol = document.getElementById("btnEnrol");
+      const btnSubmitSig = document.getElementById("btnSubmitSig");
+      const btnStartEnrol = document.getElementById("btnStartEnrol");
+      const btnEnrolAnother = document.getElementById("btnEnrolAnother");
       const btnVerify = document.getElementById("btnVerify");
       const statusBar = document.getElementById("statusBar");
       const nameInput = document.getElementById("nameInput");
+      const enrolDoneMsg = document.getElementById("enrolDoneMsg");
+      const enrolSuccessText = document.getElementById("enrolSuccessText");
       const profileList = document.getElementById("profileList");
       const verifyResult = document.getElementById("verifyResult");
       const resultList = document.getElementById("resultList");
@@ -705,6 +736,7 @@
       const ENROLL_SAMPLES = parseInt("{{ enroll_samples }}", 10);
 
       // ─── State ────────────────────────────────────────────────────────────────
+      let currentMode = "idle"; // 'idle' | 'enrol'
       let profiles = {}; // name → feature object
       let isDrawing = false;
       let strokes = []; // array of stroke arrays
@@ -938,8 +970,8 @@
           (el) => (el.className = "stat-value accent")
         );
         updateFeatGrid(f);
-        btnEnrol.disabled = false;
-        btnVerify.disabled = Object.keys(profiles).length === 0;
+        if (currentMode === "enrol") btnSubmitSig.disabled = false;
+        if (currentMode === "idle") btnVerify.disabled = Object.keys(profiles).length === 0;
       }
 
       function setStatus(msg, type) {
@@ -984,7 +1016,11 @@
 
         const f = extractFeatures(strokes);
         if (f) updateStats(f);
-        setStatus(`${strokes.length} stroke(s) drawn. Press Enrol or Verify.`, "info");
+        if (currentMode === "enrol") {
+          setStatus("Signature drawn \u2014 click Submit when ready.", "info");
+        } else {
+          setStatus(`${strokes.length} stroke(s) drawn. Press Verify.`, "info");
+        }
       }
 
       // Mouse
@@ -1055,25 +1091,21 @@
         btnVerify.disabled = strokes.length === 0;
       }
 
-      // ─── Button handlers ──────────────────────────────────────────────────────
-      btnClear.addEventListener("click", () => {
+      // ─── Canvas helpers ───────────────────────────────────────────────────────
+      function clearCanvas() {
         strokes = [];
         currentStroke = [];
         velocities = [];
-        enrollSamples = [];
         isDrawing = false;
-        document.getElementById("enrolDotsWrap").style.display = "none";
         redraw();
         drawVelChart([]);
-        btnEnrol.disabled = true;
-        btnVerify.disabled = true;
+        btnSubmitSig.disabled = true;
         [statDur, statLen, statAvgVel, statMaxVel, statStrokes, statDir].forEach((el) => {
           el.textContent = "\u2014";
           el.className = "stat-value dim";
         });
         initFeatGrid();
-        setStatus("Canvas cleared. Draw your signature above.", "");
-      });
+      }
 
       function buildEnrolDots(done) {
         const el = document.getElementById("enrolDots");
@@ -1094,47 +1126,109 @@
         return result;
       }
 
-      btnEnrol.addEventListener("click", async () => {
+      // ─── Button handlers ──────────────────────────────────────────────────────
+      btnClear.addEventListener("click", () => {
+        clearCanvas();
+        if (currentMode === "enrol") {
+          setStatus(
+            `Canvas cleared. Draw signature ${enrollSamples.length + 1}/${ENROLL_SAMPLES} again.`,
+            ""
+          );
+        } else {
+          btnVerify.disabled = true;
+          setStatus("Canvas cleared. Draw your signature above.", "");
+        }
+      });
+
+      nameInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") btnStartEnrol.click();
+      });
+
+      btnStartEnrol.addEventListener("click", () => {
         const name = nameInput.value.trim();
         if (!name) {
-          setStatus("Enter a student name before enrolling.", "info");
+          nameInput.focus();
+          nameInput.style.borderColor = "var(--error)";
+          setTimeout(() => {
+            nameInput.style.borderColor = "";
+          }, 1500);
           return;
         }
+        currentMode = "enrol";
+        enrollSamples = [];
+        nameInput.disabled = true;
+        btnStartEnrol.disabled = true;
+        btnVerify.disabled = true;
+        document.getElementById("enrolTip").style.display = "none";
+        document.getElementById("enrolDotsWrap").style.display = "block";
+        enrolDoneMsg.style.display = "none";
+        btnSubmitSig.style.display = "";
+        btnClear.innerHTML = "\u2715 Redo";
+        buildEnrolDots(0);
+        clearCanvas();
+        setStatus(`Attempt 1 of ${ENROLL_SAMPLES} \u2014 draw your signature above.`, "info");
+      });
+
+      btnSubmitSig.addEventListener("click", () => {
         const f = extractFeatures(strokes);
         if (!f) return;
-
         enrollSamples.push(f);
-        document.getElementById("enrolDotsWrap").style.display = "block";
         buildEnrolDots(enrollSamples.length);
-
+        btnSubmitSig.disabled = true;
         if (enrollSamples.length < ENROLL_SAMPLES) {
           setStatus(
-            `Sample ${enrollSamples.length}/${ENROLL_SAMPLES} saved \u2014 clear the canvas and draw again.`,
+            `Good! ${enrollSamples.length}/${ENROLL_SAMPLES} done \u2014 prepare for the next.`,
             "success"
           );
-          btnEnrol.disabled = true;
+          setTimeout(() => {
+            clearCanvas();
+            setStatus(
+              `Attempt ${enrollSamples.length + 1} of ${ENROLL_SAMPLES} \u2014 draw your signature above.`,
+              "info"
+            );
+          }, 1000);
+        } else {
+          setStatus("All attempts done! Saving profile\u2026", "info");
+          submitEnrolment(nameInput.value.trim());
+        }
+      });
+
+      async function submitEnrolment(name) {
+        const averaged = avgFeatures(enrollSamples);
+        try {
+          await fetch("/api/signature/enroll", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name, features: averaged }),
+          });
+        } catch (_e) {
+          setStatus("Network error \u2014 is the server running?", "");
           return;
         }
-
-        // All samples collected — average and submit
-        const averaged = avgFeatures(enrollSamples);
-        enrollSamples = [];
-        document.getElementById("enrolDotsWrap").style.display = "none";
-
-        await fetch("/api/signature/enroll", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name, features: averaged }),
-        });
         profiles[name] = averaged;
         renderProfileList();
-        setStatus(
-          `Enrolled &ldquo;${escapeHtml(name)}&rdquo; (${ENROLL_SAMPLES} samples averaged). Clear the canvas and identify.`,
-          "success"
-        );
+        currentMode = "idle";
+        enrollSamples = [];
+        document.getElementById("enrolDotsWrap").style.display = "none";
+        btnSubmitSig.style.display = "none";
+        btnClear.innerHTML = "\u2715 Clear";
+        enrolDoneMsg.style.display = "block";
+        enrolSuccessText.textContent = `\u201c${name}\u201d enrolled \u2014 ${ENROLL_SAMPLES} samples averaged.`;
         verifyResult.style.display = "none";
+        setStatus(`Profile saved for \u201c${escapeHtml(name)}\u201d.`, "success");
+      }
+
+      btnEnrolAnother.addEventListener("click", () => {
+        currentMode = "idle";
+        enrollSamples = [];
         nameInput.value = "";
-        btnEnrol.disabled = true;
+        nameInput.disabled = false;
+        btnStartEnrol.disabled = false;
+        document.getElementById("enrolTip").style.display = "";
+        enrolDoneMsg.style.display = "none";
+        clearCanvas();
+        btnVerify.disabled = true;
+        setStatus("Ready \u2014 enter a student name to enrol.", "");
       });
 
       btnVerify.addEventListener("click", () => {
@@ -1177,7 +1271,7 @@
       sizeCanvases();
       loadProfiles();
       window.addEventListener("resize", sizeCanvases);
-      setStatus("Draw your signature in the box above. Use a mouse, trackpad, or touchscreen.", "");
+      setStatus("Ready \u2014 enter a student name and click Start to enrol.", "");
 
       function escapeHtml(str) {
         return String(str)

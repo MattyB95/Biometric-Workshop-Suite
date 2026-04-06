@@ -18,7 +18,7 @@ MFCCs approximate how the human auditory system perceives sound, making them eff
 
 ## Enrolment
 
-The student speaks into the microphone for the configured recording duration (default: 10 seconds). The mean MFCC vector across all frames is stored as the profile.
+The student makes the configured number of recordings (default: 3) each lasting the configured duration (default: 10 seconds). After each recording the page shows progress dots and prompts for the next attempt. Once all recordings are collected, the mean MFCC vector from each is averaged into a single representative profile.
 
 ## Identification
 
@@ -28,9 +28,10 @@ A second recording of the same duration is taken. Its mean MFCC vector is compar
 
 All settings are managed via the [Admin Panel](../admin.md#voice-biometrics) — no code changes required.
 
-| Setting                | Default | Description                                                                                                                                                     |
-| ---------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Recording duration** | `10 s`  | How many seconds of audio are captured per recording. Range: 3–60 seconds. Longer recordings produce a more stable MFCC profile but take more time per student. |
+| Setting                         | Default | Description                                                                                                                                                     |
+| ------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Recording duration**          | `10 s`  | How many seconds of audio are captured per recording. Range: 3–60 seconds. Longer recordings produce a more stable MFCC profile but take more time per student. |
+| **Enrolment attempts required** | `3`     | How many voice recordings to collect during enrolment. Each recording's mean MFCC is averaged with the others to form the final profile. Range: 1–10.           |
 
 ## Requirements
 
