@@ -988,7 +988,7 @@
       const resultList = document.getElementById("resultList");
 
       // ─── Config ───────────────────────────────────────────────────────────────
-      const ENROL_SAMPLES = 3;
+      const ENROL_SAMPLES = parseInt(localStorage.getItem("face-enrol-samples") || "3", 10);
 
       // ─── State ────────────────────────────────────────────────────────────────
       const FACE_STORAGE_KEY = "bws_face_profiles";

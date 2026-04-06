@@ -40,6 +40,12 @@ The **Settings** section lets instructors tune each module's behaviour for the s
 | **Enrolment attempts required** | `5`     | How many times a student must complete the target-clicking sequence to build their profile.             |
 | **Confidence sensitivity**      | `2.0`   | Softmax scale factor. Higher values increase the confidence gap between the best and second-best match. |
 
+### Face Recognition
+
+| Setting                         | Default | Description                                                                                                                                                      |
+| ------------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Enrolment captures required** | `3`     | How many webcam captures a student must make during enrolment. Each capture's feature vector is averaged with the others to form the final profile. Range: 1–10. |
+
 ### Voice Biometrics
 
 | Setting                         | Default | Description                                                                                                                                                                                                                                              |

@@ -18,7 +18,15 @@ Normalising by face size makes the features independent of how close the student
 
 ## Enrolment
 
-The student makes three webcam captures. After each capture the page shows progress dots and prompts for the next attempt. The 16-element feature vector from each capture is averaged into a single representative profile, reducing the impact of any single pose or expression.
+The student makes the configured number of captures (default: 3). After each capture the page shows progress dots and prompts for the next attempt. The 16-element feature vector from each capture is averaged into a single representative profile, reducing the impact of any single pose or expression.
+
+## Configuration
+
+All settings are managed via the [Admin Panel](../admin.md#face-recognition) — no code changes required.
+
+| Setting                         | Default | Description                                                                                                 |
+| ------------------------------- | ------- | ----------------------------------------------------------------------------------------------------------- |
+| **Enrolment captures required** | `3`     | How many webcam captures to collect during enrolment. More captures improve profile stability. Range: 1–10. |
 
 ## Identification
 
