@@ -1435,6 +1435,96 @@ class TestSignatureSettings:
         assert b'"6"' in resp.data  # parseInt("6", 10) in rendered template
 
 
+class TestFaceSettings:
+    def test_get_unauthenticated_returns_403(self, client):
+        resp = client.get("/api/admin/face-settings")
+        assert resp.status_code == 403
+
+    def test_post_unauthenticated_returns_403(self, client):
+        resp = client.post(
+            "/api/admin/face-settings",
+            data=json.dumps({"enrol_samples": 3}),
+            content_type="application/json",
+        )
+        assert resp.status_code == 403
+
+    def test_get_returns_defaults(self, client):
+        _admin_login(client)
+        resp = client.get("/api/admin/face-settings")
+        data = resp.get_json()
+        assert resp.status_code == 200
+        assert data["enrol_samples"] == 3
+
+    def test_post_saves_and_get_reflects_change(self, client):
+        _admin_login(client)
+        client.post(
+            "/api/admin/face-settings",
+            data=json.dumps({"enrol_samples": 5}),
+            content_type="application/json",
+        )
+        resp = client.get("/api/admin/face-settings")
+        assert resp.get_json()["enrol_samples"] == 5
+
+    def test_post_below_minimum_returns_400(self, client):
+        _admin_login(client)
+        resp = client.post(
+            "/api/admin/face-settings",
+            data=json.dumps({"enrol_samples": 0}),
+            content_type="application/json",
+        )
+        assert resp.status_code == 400
+
+    def test_post_above_maximum_returns_400(self, client):
+        _admin_login(client)
+        resp = client.post(
+            "/api/admin/face-settings",
+            data=json.dumps({"enrol_samples": 11}),
+            content_type="application/json",
+        )
+        assert resp.status_code == 400
+
+    def test_enrol_samples_injected_into_face_template(self, client):
+        """Face page should embed the configured enrol_samples value."""
+        _admin_login(client)
+        client.post(
+            "/api/admin/face-settings",
+            data=json.dumps({"enrol_samples": 4}),
+            content_type="application/json",
+        )
+        resp = client.get("/face")
+        assert resp.status_code == 200
+        assert b'parseInt("4"' in resp.data
+
+    def test_post_non_object_json_returns_400(self, client):
+        _admin_login(client)
+        resp = client.post(
+            "/api/admin/face-settings",
+            data=json.dumps([1, 2, 3]),
+            content_type="application/json",
+        )
+        assert resp.status_code == 400
+
+    def test_get_corrupted_config_falls_back_to_default(self, tmp_path, monkeypatch):
+        """load_face_settings should return default=3 when config has a non-integer value."""
+        import src.app as app_module
+
+        cfg_file = tmp_path / "admin_config.json"
+        cfg_file.write_text(json.dumps({"face_enrol_samples": "not-a-number"}))
+        monkeypatch.setattr(app_module, "ADMIN_CONFIG_FILE", str(cfg_file))
+        settings = app_module.load_face_settings()
+        assert settings["enrol_samples"] == 3
+
+    def test_get_out_of_range_config_falls_back_to_default(self, tmp_path, monkeypatch):
+        """load_face_settings should return default=3 when config value is out of 1–10 range."""
+        import src.app as app_module
+
+        cfg_file = tmp_path / "admin_config.json"
+        cfg_file.write_text(json.dumps({"face_enrol_samples": 99}))
+        monkeypatch.setattr(app_module, "ADMIN_CONFIG_FILE", str(cfg_file))
+        settings = app_module.load_face_settings()
+        assert settings["enrol_samples"] == 3
+
+
 class TestSettingsPersistence:
     """Verify settings survive across requests via the config file."""
 

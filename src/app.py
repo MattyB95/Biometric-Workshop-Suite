@@ -136,6 +136,25 @@ def save_voice_settings(duration: int, enrol_samples: int) -> None:
     _save_cfg(cfg)
 
 
+def load_face_settings() -> dict[str, Any]:
+    cfg = _load_cfg()
+    try:
+        enrol_samples = int(cfg.get("face_enrol_samples", 3))
+        if enrol_samples < 1 or enrol_samples > 10:
+            raise ValueError
+    except TypeError, ValueError:
+        enrol_samples = 3
+    return {
+        "enrol_samples": enrol_samples,
+    }
+
+
+def save_face_settings(enrol_samples: int) -> None:
+    cfg = _load_cfg()
+    cfg["face_enrol_samples"] = enrol_samples
+    _save_cfg(cfg)
+
+
 def load_signature_settings() -> dict[str, Any]:
     cfg = _load_cfg()
     return {
@@ -332,7 +351,8 @@ def keystroke() -> str:
 
 @app.route("/face")
 def face() -> str:
-    return render_template("face.html")
+    fs = load_face_settings()
+    return render_template("face.html", enrol_samples=fs["enrol_samples"])
 
 
 @app.route("/voice")
@@ -766,6 +786,30 @@ def set_signature_settings() -> Response | tuple[Response, int]:
     except TypeError, ValueError:
         return jsonify({"error": "Samples must be a positive integer"}), 400
     save_signature_settings(samples)
+    return jsonify({"success": True})
+
+
+@app.route("/api/admin/face-settings", methods=["GET"])
+def get_face_settings() -> Response | tuple[Response, int]:
+    if not session.get("admin"):
+        return jsonify({"error": "Not authenticated"}), 403
+    return jsonify(load_face_settings())
+
+
+@app.route("/api/admin/face-settings", methods=["POST"])
+def set_face_settings() -> Response | tuple[Response, int]:
+    if not session.get("admin"):
+        return jsonify({"error": "Not authenticated"}), 403
+    data = request.json
+    if not isinstance(data, dict):
+        return jsonify({"error": "JSON body must be an object"}), 400
+    try:
+        enrol_samples = int(data.get("enrol_samples", 0))
+        if enrol_samples < 1 or enrol_samples > 10:
+            raise ValueError
+    except TypeError, ValueError:
+        return jsonify({"error": "Enrolment samples must be between 1 and 10"}), 400
+    save_face_settings(enrol_samples)
     return jsonify({"success": True})
 
 

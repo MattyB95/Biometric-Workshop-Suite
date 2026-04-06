@@ -671,6 +671,33 @@
           </div>
         </div>
 
+        <!-- Face Settings -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-header-left">
+              <span class="modality-icon">&#x1F464;</span>
+              <span class="modality-name">Face Recognition</span>
+            </div>
+          </div>
+          <div class="card-body">
+            <div style="display: flex; flex-direction: column; gap: 12px">
+              <div>
+                <div class="field-label">Enrolment captures required (1&ndash;10)</div>
+                <input
+                  type="number"
+                  class="text-input"
+                  id="face-enrol-samples-input"
+                  min="1"
+                  max="10"
+                  style="width: 100px"
+                />
+              </div>
+              <div class="pin-msg" id="face-settings-msg"></div>
+              <button class="btn btn-primary" id="btn-save-face-settings">Save Settings</button>
+            </div>
+          </div>
+        </div>
+
         <!-- Voice Settings -->
         <div class="card">
           <div class="card-header">
@@ -983,6 +1010,7 @@
         loadSignature();
         loadKsSettings();
         loadMouseSettings();
+        loadFaceSettings();
         loadVoiceSettings();
         loadSigSettings();
       }
@@ -1236,6 +1264,22 @@
         if (!samples || samples < 1) { msg.textContent = "Enrolment attempts must be a positive number."; msg.className = "pin-msg error"; return; }
         if (!softmax_scale || softmax_scale <= 0) { msg.textContent = "Confidence sensitivity must be a positive number."; msg.className = "pin-msg error"; return; }
         saveSettings("/api/admin/mouse-settings", "mouse-settings-msg", { samples, softmax_scale });
+      });
+
+      // Face settings
+      async function loadFaceSettings() {
+        await loadSettings("/api/admin/face-settings", [
+          ["face-enrol-samples-input", "enrol_samples"],
+        ]);
+      }
+
+      document.getElementById("btn-save-face-settings").addEventListener("click", () => {
+        const enrol_samples = Number(document.getElementById("face-enrol-samples-input").value);
+        const msg = document.getElementById("face-settings-msg");
+        msg.textContent = "";
+        msg.className = "pin-msg";
+        if (!enrol_samples || enrol_samples < 1 || enrol_samples > 10) { msg.textContent = "Enrolment captures must be between 1 and 10."; msg.className = "pin-msg error"; return; }
+        saveSettings("/api/admin/face-settings", "face-settings-msg", { enrol_samples });
       });
 
       // Voice settings

@@ -663,6 +663,33 @@
           </div>
         </div>
 
+        <!-- Face Settings -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-header-left">
+              <span class="modality-icon">&#x1F464;</span>
+              <span class="modality-name">Face Recognition</span>
+            </div>
+          </div>
+          <div class="card-body">
+            <div style="display: flex; flex-direction: column; gap: 12px">
+              <div>
+                <div class="field-label">Enrolment captures required (1&ndash;10)</div>
+                <input
+                  type="number"
+                  class="text-input"
+                  id="face-enrol-samples-input"
+                  min="1"
+                  max="10"
+                  style="width: 100px"
+                />
+              </div>
+              <div class="pin-msg" id="face-settings-msg"></div>
+              <button class="btn btn-primary" id="btn-save-face-settings">Save Settings</button>
+            </div>
+          </div>
+        </div>
+
         <!-- Voice Settings -->
         <div class="card">
           <div class="card-header">
@@ -791,6 +818,8 @@
       const MOUSE_SOFTMAX_KEY = "mouse-softmax-scale";
       const DEFAULT_MOUSE_SAMPLES = 5;
       const DEFAULT_MOUSE_SOFTMAX = 2.0;
+      const FACE_ENROL_SAMPLES_KEY = "face-enrol-samples";
+      const DEFAULT_FACE_ENROL_SAMPLES = 3;
       const VOICE_DURATION_KEY = "voice-duration";
       const DEFAULT_VOICE_DURATION = 10;
       const VOICE_ENROL_SAMPLES_KEY = "voice-enrol-samples";
@@ -938,6 +967,11 @@
           localStorage.getItem(MOUSE_SOFTMAX_KEY) || DEFAULT_MOUSE_SOFTMAX;
       }
 
+      function loadFaceSettings() {
+        document.getElementById("face-enrol-samples-input").value =
+          localStorage.getItem(FACE_ENROL_SAMPLES_KEY) || DEFAULT_FACE_ENROL_SAMPLES;
+      }
+
       function loadVoiceSettings() {
         document.getElementById("voice-duration-input").value =
           localStorage.getItem(VOICE_DURATION_KEY) || DEFAULT_VOICE_DURATION;
@@ -953,6 +987,7 @@
       function renderAll() {
         loadKsSettings();
         loadMouseSettings();
+        loadFaceSettings();
         loadVoiceSettings();
         loadSigSettings();
         renderModality(LS_KEYS.keystroke, "ks-list", "ks-count", () =>
@@ -1171,6 +1206,22 @@
         }
         localStorage.setItem(MOUSE_SAMPLES_KEY, String(Number(samples)));
         localStorage.setItem(MOUSE_SOFTMAX_KEY, String(Number(softmax)));
+        msg.textContent = "Settings saved.";
+        msg.className = "pin-msg success";
+      });
+
+      // ── Face Settings ────────────────────────────────────────────────────────
+      document.getElementById("btn-save-face-settings").addEventListener("click", () => {
+        const samples = document.getElementById("face-enrol-samples-input").value.trim();
+        const msg = document.getElementById("face-settings-msg");
+        msg.textContent = "";
+        msg.className = "pin-msg";
+        if (!samples || isNaN(Number(samples)) || Number(samples) < 1 || Number(samples) > 10) {
+          msg.textContent = "Enrolment captures must be between 1 and 10.";
+          msg.className = "pin-msg error";
+          return;
+        }
+        localStorage.setItem(FACE_ENROL_SAMPLES_KEY, String(Number(samples)));
         msg.textContent = "Settings saved.";
         msg.className = "pin-msg success";
       });

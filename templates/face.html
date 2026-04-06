@@ -988,7 +988,7 @@
       const resultList = document.getElementById("resultList");
 
       // ─── Config ───────────────────────────────────────────────────────────────
-      const ENROL_SAMPLES = 3;
+      const ENROL_SAMPLES = parseInt("{{ enrol_samples }}", 10); // configurable via admin
 
       // ─── State ────────────────────────────────────────────────────────────────
       const FACE_FEATURE_LABELS = [

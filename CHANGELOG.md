@@ -11,6 +11,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.4.1] - 2026-04-06
+
+### Added
+
+- **Face Recognition enrolment captures admin setting** — instructors can now configure the number of webcam captures required per enrolment (1–10, default 3) via the admin panel, bringing face into line with all other modalities; persisted to `admin_config.json` (Flask) and `localStorage` (static site)
+- New API endpoints `GET/POST /api/admin/face-settings` with auth guard and range validation
+- 7 new tests in `TestFaceSettings` covering auth, defaults, save/read-back, min/max validation, and template injection
+
+---
+
 ## [0.4.0] - 2026-04-06
 
 ### Added
