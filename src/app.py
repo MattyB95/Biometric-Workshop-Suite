@@ -138,8 +138,14 @@ def save_voice_settings(duration: int, enrol_samples: int) -> None:
 
 def load_face_settings() -> dict[str, Any]:
     cfg = _load_cfg()
+    try:
+        enrol_samples = int(cfg.get("face_enrol_samples", 3))
+        if enrol_samples < 1 or enrol_samples > 10:
+            raise ValueError
+    except (TypeError, ValueError):
+        enrol_samples = 3
     return {
-        "enrol_samples": int(cfg.get("face_enrol_samples", 3)),
+        "enrol_samples": enrol_samples,
     }
 
 
@@ -794,12 +800,14 @@ def get_face_settings() -> Response | tuple[Response, int]:
 def set_face_settings() -> Response | tuple[Response, int]:
     if not session.get("admin"):
         return jsonify({"error": "Not authenticated"}), 403
-    data = request.json or {}
+    data = request.json
+    if not isinstance(data, dict):
+        return jsonify({"error": "JSON body must be an object"}), 400
     try:
         enrol_samples = int(data.get("enrol_samples", 0))
         if enrol_samples < 1 or enrol_samples > 10:
             raise ValueError
-    except TypeError, ValueError:
+    except (TypeError, ValueError):
         return jsonify({"error": "Enrolment samples must be between 1 and 10"}), 400
     save_face_settings(enrol_samples)
     return jsonify({"success": True})

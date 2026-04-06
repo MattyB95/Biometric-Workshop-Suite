@@ -1495,6 +1495,35 @@ class TestFaceSettings:
         assert resp.status_code == 200
         assert b'parseInt("4"' in resp.data
 
+    def test_post_non_object_json_returns_400(self, client):
+        _admin_login(client)
+        resp = client.post(
+            "/api/admin/face-settings",
+            data=json.dumps([1, 2, 3]),
+            content_type="application/json",
+        )
+        assert resp.status_code == 400
+
+    def test_get_corrupted_config_falls_back_to_default(self, client, tmp_path):
+        """load_face_settings should return default=3 when config has a non-integer value."""
+        import src.app as app_module
+
+        (tmp_path / "admin_config.json").write_text(
+            json.dumps({"face_enrol_samples": "not-a-number"})
+        )
+        settings = app_module.load_face_settings()
+        assert settings["enrol_samples"] == 3
+
+    def test_get_out_of_range_config_falls_back_to_default(self, client, tmp_path):
+        """load_face_settings should return default=3 when config value is out of 1–10 range."""
+        import src.app as app_module
+
+        (tmp_path / "admin_config.json").write_text(
+            json.dumps({"face_enrol_samples": 99})
+        )
+        settings = app_module.load_face_settings()
+        assert settings["enrol_samples"] == 3
+
 
 class TestSettingsPersistence:
     """Verify settings survive across requests via the config file."""
