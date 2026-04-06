@@ -142,7 +142,7 @@ def load_face_settings() -> dict[str, Any]:
         enrol_samples = int(cfg.get("face_enrol_samples", 3))
         if enrol_samples < 1 or enrol_samples > 10:
             raise ValueError
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         enrol_samples = 3
     return {
         "enrol_samples": enrol_samples,
@@ -807,7 +807,7 @@ def set_face_settings() -> Response | tuple[Response, int]:
         enrol_samples = int(data.get("enrol_samples", 0))
         if enrol_samples < 1 or enrol_samples > 10:
             raise ValueError
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         return jsonify({"error": "Enrolment samples must be between 1 and 10"}), 400
     save_face_settings(enrol_samples)
     return jsonify({"success": True})
