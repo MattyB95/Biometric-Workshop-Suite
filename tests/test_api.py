@@ -1504,23 +1504,23 @@ class TestFaceSettings:
         )
         assert resp.status_code == 400
 
-    def test_get_corrupted_config_falls_back_to_default(self, client, tmp_path):
+    def test_get_corrupted_config_falls_back_to_default(self, tmp_path, monkeypatch):
         """load_face_settings should return default=3 when config has a non-integer value."""
         import src.app as app_module
 
-        (tmp_path / "admin_config.json").write_text(
-            json.dumps({"face_enrol_samples": "not-a-number"})
-        )
+        cfg_file = tmp_path / "admin_config.json"
+        cfg_file.write_text(json.dumps({"face_enrol_samples": "not-a-number"}))
+        monkeypatch.setattr(app_module, "ADMIN_CONFIG_FILE", str(cfg_file))
         settings = app_module.load_face_settings()
         assert settings["enrol_samples"] == 3
 
-    def test_get_out_of_range_config_falls_back_to_default(self, client, tmp_path):
+    def test_get_out_of_range_config_falls_back_to_default(self, tmp_path, monkeypatch):
         """load_face_settings should return default=3 when config value is out of 1–10 range."""
         import src.app as app_module
 
-        (tmp_path / "admin_config.json").write_text(
-            json.dumps({"face_enrol_samples": 99})
-        )
+        cfg_file = tmp_path / "admin_config.json"
+        cfg_file.write_text(json.dumps({"face_enrol_samples": 99}))
+        monkeypatch.setattr(app_module, "ADMIN_CONFIG_FILE", str(cfg_file))
         settings = app_module.load_face_settings()
         assert settings["enrol_samples"] == 3
 
