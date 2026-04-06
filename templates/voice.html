@@ -697,6 +697,7 @@
       const FFT_SIZE = 2048;
       const ENROL_FRAMES = parseInt("{{ enrol_frames }}", 10); // configurable via admin
       const ENROL_SAMPLES = parseInt("{{ enrol_samples }}", 10); // number of recordings per enrolment
+      const ENROL_DURATION_SECS = Math.round(ENROL_FRAMES / 60);
 
       // ─── State ────────────────────────────────────────────────────────────────
       let currentMode = "idle"; // 'idle' | 'enrol'
@@ -873,19 +874,46 @@
 
       async function submitEnrolment(name) {
         const avgFeatures = meanVector(enrollSamples);
-        await fetch("/api/voice/enroll", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name, features: avgFeatures }),
-        });
-        profiles[name] = avgFeatures;
-        renderProfileList();
-        enrolSuccessText.textContent = `"${name}" enrolled successfully with ${ENROL_SAMPLES} samples!`;
-        enrolDotsWrap.style.display = "none";
-        enrolDoneMsg.style.display = "block";
-        btnSubmitRec.style.display = "none";
-        btnRecord.disabled = true;
-        btnStop.disabled = true;
+        try {
+          const response = await fetch("/api/voice/enroll", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name, features: avgFeatures }),
+          });
+          if (!response.ok) {
+            let errorMessage = `Enrolment failed with status ${response.status}.`;
+            try {
+              const errorData = await response.json();
+              if (errorData && typeof errorData.error === "string" && errorData.error.trim()) {
+                errorMessage = errorData.error;
+              }
+            } catch {
+              try {
+                const errorText = await response.text();
+                if (errorText && errorText.trim()) {
+                  errorMessage = errorText;
+                }
+              } catch {
+                // Keep the default status-based error message.
+              }
+            }
+            throw new Error(errorMessage);
+          }
+          profiles[name] = avgFeatures;
+          renderProfileList();
+          enrolSuccessText.textContent = `"${name}" enrolled successfully with ${ENROL_SAMPLES} samples!`;
+          enrolDotsWrap.style.display = "none";
+          enrolDoneMsg.style.display = "block";
+          btnSubmitRec.style.display = "none";
+          btnRecord.disabled = true;
+          btnStop.disabled = true;
+        } catch (error) {
+          enrolSuccessText.textContent =
+            error && error.message
+              ? `Failed to enroll "${name}": ${error.message}`
+              : `Failed to enroll "${name}". Please try again.`;
+          enrolDoneMsg.style.display = "block";
+        }
       }
 
       // ─── Draw waveform ────────────────────────────────────────────────────────
@@ -1213,12 +1241,28 @@
         btnSubmitRec.disabled = true;
         btnClear.textContent = "\u21A9 Redo";
         setStatus(
-          `Press <strong>Start Recording</strong>, speak for ~10 seconds, then click <strong>Submit Recording</strong>. Repeat ${ENROL_SAMPLES} times.`,
+          `Press <strong>Start Recording</strong>, speak for ~${ENROL_DURATION_SECS} seconds, then click <strong>Submit Recording</strong>. Repeat ${ENROL_SAMPLES} times.`,
           "info"
         );
       });
       btnSubmitRec.addEventListener("click", async () => {
+        if (recordingFrames.length === 0) {
+          btnSubmitRec.disabled = true;
+          setStatus(
+            "No recording was captured. Press <strong>Start Recording</strong> and try again.",
+            "info"
+          );
+          return;
+        }
         const meanVec = meanVector(recordingFrames);
+        if (!meanVec) {
+          btnSubmitRec.disabled = true;
+          setStatus(
+            "Could not process this recording. Please record a new sample and try again.",
+            "info"
+          );
+          return;
+        }
         enrollSamples.push(meanVec);
         recordingFrames = [];
         btnSubmitRec.disabled = true;
@@ -1235,7 +1279,6 @@
           setStatus(`All ${ENROL_SAMPLES} samples collected. Enrolling&hellip;`, "info");
           await submitEnrolment(name);
           currentMode = "idle";
-          setStatus(`&ldquo;${escapeHtml(name)}&rdquo; enrolled successfully!`, "success");
         } else {
           const nextIdx = enrollSamples.length;
           if (dots[nextIdx]) dots[nextIdx].classList.add("current");

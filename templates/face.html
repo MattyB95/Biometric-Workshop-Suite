@@ -1351,18 +1351,37 @@
         }
       });
 
+      function resetEnrolUiForRetry() {
+        currentMode = "idle";
+        enrollSamples = [];
+        enrollCooldown = false;
+        nameInput.disabled = false;
+        btnStartEnrol.disabled = !nameInput.value.trim();
+        btnCapture.disabled = true;
+        document.getElementById("enrolDotsWrap").style.display = "none";
+        document.getElementById("enrolTip").style.display = "";
+        enrolDoneMsg.style.display = "none";
+      }
+
       async function submitEnrolment(name) {
         const avg = enrollSamples[0].map(
           (_, i) => enrollSamples.reduce((sum, s) => sum + s[i], 0) / enrollSamples.length
         );
+        let response;
         try {
-          await fetch("/api/face/enroll", {
+          response = await fetch("/api/face/enroll", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ name, features: avg }),
           });
         } catch (_e) {
           setStatus("Network error \u2014 is the server running?", "error");
+          resetEnrolUiForRetry();
+          return;
+        }
+        if (!response.ok) {
+          setStatus("Could not save profile \u2014 please try again.", "error");
+          resetEnrolUiForRetry();
           return;
         }
         faceProfiles[name] = avg;

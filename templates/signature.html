@@ -1169,7 +1169,7 @@
         setStatus(`Attempt 1 of ${ENROLL_SAMPLES} \u2014 draw your signature above.`, "info");
       });
 
-      btnSubmitSig.addEventListener("click", () => {
+      btnSubmitSig.addEventListener("click", async () => {
         const f = extractFeatures(strokes);
         if (!f) return;
         enrollSamples.push(f);
@@ -1189,20 +1189,29 @@
           }, 1000);
         } else {
           setStatus("All attempts done! Saving profile\u2026", "info");
-          submitEnrolment(nameInput.value.trim());
+          await submitEnrolment(nameInput.value.trim());
         }
       });
 
       async function submitEnrolment(name) {
         const averaged = avgFeatures(enrollSamples);
+        let response;
         try {
-          await fetch("/api/signature/enroll", {
+          response = await fetch("/api/signature/enroll", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ name, features: averaged }),
           });
         } catch (_e) {
           setStatus("Network error \u2014 is the server running?", "");
+          nameInput.disabled = false;
+          btnStartEnrol.disabled = !nameInput.value.trim();
+          return;
+        }
+        if (!response.ok) {
+          setStatus("Could not save profile \u2014 please try again.", "");
+          nameInput.disabled = false;
+          btnStartEnrol.disabled = !nameInput.value.trim();
           return;
         }
         profiles[name] = averaged;
