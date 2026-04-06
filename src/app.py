@@ -125,12 +125,14 @@ def load_voice_settings() -> dict[str, Any]:
     cfg = _load_cfg()
     return {
         "duration": int(cfg.get("voice_duration", 10)),
+        "enrol_samples": int(cfg.get("voice_enrol_samples", 3)),
     }
 
 
-def save_voice_settings(duration: int) -> None:
+def save_voice_settings(duration: int, enrol_samples: int) -> None:
     cfg = _load_cfg()
     cfg["voice_duration"] = duration
+    cfg["voice_enrol_samples"] = enrol_samples
     _save_cfg(cfg)
 
 
@@ -336,7 +338,11 @@ def face() -> str:
 @app.route("/voice")
 def voice() -> str:
     vs = load_voice_settings()
-    return render_template("voice.html", enrol_frames=vs["duration"] * 60)
+    return render_template(
+        "voice.html",
+        enrol_frames=vs["duration"] * 60,
+        enrol_samples=vs["enrol_samples"],
+    )
 
 
 @app.route("/signature")
@@ -731,7 +737,13 @@ def set_voice_settings() -> Response | tuple[Response, int]:
             raise ValueError
     except TypeError, ValueError:
         return jsonify({"error": "Duration must be between 3 and 60 seconds"}), 400
-    save_voice_settings(duration)
+    try:
+        enrol_samples = int(data.get("enrol_samples", 3))
+        if enrol_samples < 1 or enrol_samples > 10:
+            raise ValueError
+    except TypeError, ValueError:
+        return jsonify({"error": "Enrolment samples must be between 1 and 10"}), 400
+    save_voice_settings(duration, enrol_samples)
     return jsonify({"success": True})
 
 

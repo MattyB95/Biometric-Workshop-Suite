@@ -1336,6 +1336,53 @@ class TestVoiceSettings:
         assert resp.status_code == 200
         assert b"1200" in resp.data  # 20 s × 60 fps
 
+    def test_get_returns_enrol_samples_in_response(self, client):
+        _admin_login(client)
+        resp = client.get("/api/admin/voice-settings")
+        data = resp.get_json()
+        assert "enrol_samples" in data
+        assert data["enrol_samples"] == 3  # default
+
+    def test_post_enrol_samples_saves_and_get_reflects_change(self, client):
+        _admin_login(client)
+        client.post(
+            "/api/admin/voice-settings",
+            data=json.dumps({"duration": 10, "enrol_samples": 5}),
+            content_type="application/json",
+        )
+        resp = client.get("/api/admin/voice-settings")
+        assert resp.get_json()["enrol_samples"] == 5
+
+    def test_post_enrol_samples_below_minimum_returns_400(self, client):
+        _admin_login(client)
+        resp = client.post(
+            "/api/admin/voice-settings",
+            data=json.dumps({"duration": 10, "enrol_samples": 0}),
+            content_type="application/json",
+        )
+        assert resp.status_code == 400
+
+    def test_post_enrol_samples_above_maximum_returns_400(self, client):
+        _admin_login(client)
+        resp = client.post(
+            "/api/admin/voice-settings",
+            data=json.dumps({"duration": 10, "enrol_samples": 11}),
+            content_type="application/json",
+        )
+        assert resp.status_code == 400
+
+    def test_enrol_samples_injected_into_voice_template(self, client):
+        """Voice page should reflect configured enrol_samples as ENROL_SAMPLES."""
+        _admin_login(client)
+        client.post(
+            "/api/admin/voice-settings",
+            data=json.dumps({"duration": 10, "enrol_samples": 7}),
+            content_type="application/json",
+        )
+        resp = client.get("/voice")
+        assert resp.status_code == 200
+        assert b'parseInt("7"' in resp.data
+
 
 class TestSignatureSettings:
     def test_get_unauthenticated_returns_403(self, client):

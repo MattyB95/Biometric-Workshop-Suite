@@ -446,6 +446,41 @@
         border-top: 1px solid var(--border);
         margin-top: auto;
       }
+
+      .dots-wrap {
+        padding: 6px 0;
+      }
+      .attempt-dots {
+        display: flex;
+        gap: 8px;
+      }
+      .dot {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: var(--border);
+        border: 2px solid var(--border);
+        transition: all 0.3s;
+      }
+      .dot.done {
+        background: var(--success);
+        border-color: var(--success);
+      }
+      .dot.current {
+        background: var(--accent);
+        border-color: var(--accent);
+        box-shadow: 0 0 6px var(--accent);
+        animation: pulse 1.2s infinite;
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.6;
+        }
+      }
     </style>
   </head>
   <body>
@@ -480,6 +515,9 @@
           <button class="btn btn-primary" id="btnRecord" disabled>&#x1F3A4; Start Recording</button>
           <button class="btn btn-ghost" id="btnStop" disabled>&#x25A0; Stop Recording</button>
           <button class="btn btn-ghost" id="btnClear">&#x2715; Clear</button>
+          <button class="btn btn-primary" id="btnSubmitRec" style="display: none" disabled>
+            &#x1F4BE; Submit Recording
+          </button>
         </div>
 
         <div id="statusBar" class="status-bar">Loading audio context&hellip;</div>
@@ -534,7 +572,24 @@
                 placeholder="Student name"
                 maxlength="40"
               />
-              <button class="btn btn-primary" id="btnEnrol" disabled>&#x1F4BE; Enrol</button>
+              <button class="btn btn-primary" id="btnStartEnrol">&#x25B6; Start</button>
+            </div>
+            <p id="enrolTip" style="font-size: 0.75rem; color: var(--text-dim); line-height: 1.5">
+              Record <strong><span id="enrolSamplesCount">3</span> times</strong> &mdash; your voice
+              pattern is the biometric.
+            </p>
+            <div id="enrolDotsWrap" style="display: none">
+              <div class="dots-wrap"><div class="attempt-dots" id="enrolDots"></div></div>
+            </div>
+            <div id="enrolDoneMsg" style="display: none">
+              <div class="status-bar success" id="enrolSuccessText"></div>
+              <button
+                class="btn btn-ghost"
+                id="btnEnrolAnother"
+                style="margin-top: 8px; width: 100%"
+              >
+                Enrol Another Student
+              </button>
             </div>
             <button class="btn btn-success" id="btnVerify" disabled style="width: 100%">
               &#x1F50D; Identify Speaker
@@ -616,10 +671,17 @@
       const btnRecord = document.getElementById("btnRecord");
       const btnStop = document.getElementById("btnStop");
       const btnClear = document.getElementById("btnClear");
-      const btnEnrol = document.getElementById("btnEnrol");
+      const btnSubmitRec = document.getElementById("btnSubmitRec");
+      const btnStartEnrol = document.getElementById("btnStartEnrol");
+      const btnEnrolAnother = document.getElementById("btnEnrolAnother");
       const btnVerify = document.getElementById("btnVerify");
       const statusBar = document.getElementById("statusBar");
       const nameInput = document.getElementById("nameInput");
+      const enrolTip = document.getElementById("enrolTip");
+      const enrolDotsWrap = document.getElementById("enrolDotsWrap");
+      const enrolDots = document.getElementById("enrolDots");
+      const enrolDoneMsg = document.getElementById("enrolDoneMsg");
+      const enrolSuccessText = document.getElementById("enrolSuccessText");
       const profileList = document.getElementById("profileList");
       const verifyResult = document.getElementById("verifyResult");
       const resultList = document.getElementById("resultList");
@@ -636,8 +698,21 @@
       const ENROL_FRAMES = Math.round(
         parseFloat(localStorage.getItem("voice-duration") || "10") * 60
       ); // configurable via admin
+      function getValidEnrolSamples(value) {
+        const parsed = parseInt(value, 10);
+        if (!Number.isInteger(parsed)) {
+          return 3;
+        }
+        return Math.min(10, Math.max(1, parsed));
+      }
+      const ENROL_SAMPLES = getValidEnrolSamples(
+        localStorage.getItem("voice-enrol-samples") || "3"
+      );
+      const ENROL_DURATION_SECS = Math.round(ENROL_FRAMES / 60);
 
       // ─── State ────────────────────────────────────────────────────────────────
+      let currentMode = "idle"; // 'idle' | 'enrol'
+      let enrollSamples = []; // mean MFCC vectors collected per sample
       let audioCtx = null;
       let analyser = null;
       let source = null;
@@ -799,6 +874,29 @@
         return mean.map((v) => v / frames.length);
       }
 
+      // ─── Enrol dot UI ─────────────────────────────────────────────────────────
+      function buildEnrolDots() {
+        enrolDots.innerHTML = "";
+        for (let i = 0; i < ENROL_SAMPLES; i++) {
+          const dot = document.createElement("div");
+          dot.className = "dot" + (i === 0 ? " current" : "");
+          enrolDots.appendChild(dot);
+        }
+      }
+
+      function submitEnrolment(name) {
+        const avgFeatures = meanVector(enrollSamples);
+        profiles[name] = avgFeatures;
+        saveProfiles();
+        renderProfileList();
+        enrolSuccessText.textContent = `"${name}" enrolled successfully with ${ENROL_SAMPLES} samples!`;
+        enrolDotsWrap.style.display = "none";
+        enrolDoneMsg.style.display = "block";
+        btnSubmitRec.style.display = "none";
+        btnRecord.disabled = true;
+        btnStop.disabled = true;
+      }
+
       // ─── Draw waveform ────────────────────────────────────────────────────────
       function drawWave(timeData) {
         const w = waveCanvas.width,
@@ -925,7 +1023,7 @@
         isRecording = true;
         btnRecord.disabled = true;
         btnStop.disabled = false;
-        btnEnrol.disabled = true;
+        btnSubmitRec.disabled = true;
         btnVerify.disabled = true;
       }
 
@@ -933,12 +1031,23 @@
         isRecording = false;
         btnRecord.disabled = false;
         btnStop.disabled = false;
-        btnEnrol.disabled = false;
-        btnVerify.disabled = Object.keys(profiles).length === 0;
-        setStatus(
-          `Recording complete — ${recordingFrames.length} frames captured. Enter a name and click Enrol, or click Identify Speaker.`,
-          "info"
-        );
+        if (currentMode === "enrol") {
+          btnSubmitRec.disabled = false;
+          setStatus(
+            `Recording complete \u2014 ${recordingFrames.length} frames. Click `,
+            "info",
+            "Submit Recording",
+            " to save this sample."
+          );
+        } else {
+          btnVerify.disabled = Object.keys(profiles).length === 0;
+          setStatus(
+            `Recording complete \u2014 ${recordingFrames.length} frames. Click `,
+            "info",
+            "Identify Speaker",
+            " to identify."
+          );
+        }
       }
 
       // ─── Profile storage ──────────────────────────────────────────────────────
@@ -987,28 +1096,6 @@
         btnVerify.disabled = recordingFrames.length === 0;
       }
 
-      // ─── Enrol ────────────────────────────────────────────────────────────────
-      function enrol() {
-        const name = nameInput.value.trim();
-        if (!name) {
-          setStatus("Enter a student name before enrolling.", "info");
-          return;
-        }
-        if (recordingFrames.length === 0) return;
-        profiles[name] = meanVector(recordingFrames);
-        saveProfiles();
-        renderProfileList();
-        setStatus(
-          `Enrolled "${name}". Press `,
-          "success",
-          "Start Recording",
-          " to capture another sample."
-        );
-        recordingFrames = [];
-        nameInput.value = "";
-        btnEnrol.disabled = true;
-      }
-
       // ─── Identify ─────────────────────────────────────────────────────────────
       function identify() {
         if (Object.keys(profiles).length === 0 || recordingFrames.length === 0) return;
@@ -1054,7 +1141,6 @@
           " to try again."
         );
         recordingFrames = [];
-        btnEnrol.disabled = true;
         btnVerify.disabled = true;
       }
 
@@ -1090,6 +1176,18 @@
         stream = audioCtx = analyser = source = null;
         btnRecord.disabled = false;
         btnStop.disabled = true;
+        btnSubmitRec.disabled = true;
+        if (currentMode === "enrol") {
+          currentMode = "idle";
+          enrollSamples = [];
+          nameInput.disabled = false;
+          btnStartEnrol.disabled = false;
+          enrolTip.style.display = "block";
+          enrolDotsWrap.style.display = "none";
+          enrolDoneMsg.style.display = "none";
+          btnSubmitRec.style.display = "none";
+          btnClear.textContent = "\u2715 Clear";
+        }
         setStatus(
           "Microphone stopped. Press ",
           "",
@@ -1115,7 +1213,7 @@
       btnRecord.addEventListener("click", async () => {
         if (!stream) {
           btnRecord.disabled = true;
-          setStatus("Opening microphone…", "info");
+          setStatus("Opening microphone\u2026", "info");
           await startMic();
         }
         if (stream) startRecording();
@@ -1126,12 +1224,100 @@
       });
       btnClear.addEventListener("click", () => {
         recordingFrames = [];
-        btnEnrol.disabled = true;
-        btnVerify.disabled = true;
-        verifyResult.style.display = "none";
+        btnSubmitRec.disabled = true;
+        if (currentMode !== "enrol") {
+          btnVerify.disabled = true;
+          verifyResult.style.display = "none";
+        }
         setStatus("Cleared. Press ", "", "Start Recording", " to capture a new sample.");
       });
-      btnEnrol.addEventListener("click", enrol);
+      btnStartEnrol.addEventListener("click", () => {
+        const name = nameInput.value.trim();
+        if (!name) {
+          setStatus("Enter a student name first.", "info");
+          return;
+        }
+        currentMode = "enrol";
+        enrollSamples = [];
+        recordingFrames = [];
+        nameInput.disabled = true;
+        btnStartEnrol.disabled = true;
+        enrolTip.style.display = "none";
+        buildEnrolDots();
+        enrolDotsWrap.style.display = "block";
+        btnSubmitRec.style.display = "inline-flex";
+        btnSubmitRec.disabled = true;
+        btnClear.textContent = "\u21A9 Redo";
+        setStatus(
+          `Press Start Recording, speak for ~${ENROL_DURATION_SECS} seconds, then Submit Recording. Repeat ${ENROL_SAMPLES} times.`,
+          "info"
+        );
+      });
+      btnSubmitRec.addEventListener("click", async () => {
+        if (!recordingFrames.length) {
+          btnSubmitRec.disabled = true;
+          setStatus(
+            "No recording was captured. Press ",
+            "info",
+            "Start Recording",
+            " and try again."
+          );
+          return;
+        }
+        const meanVec = meanVector(recordingFrames);
+        if (!meanVec) {
+          btnSubmitRec.disabled = true;
+          setStatus(
+            "Could not process this recording. Please record a new sample and try again.",
+            "info"
+          );
+          return;
+        }
+        enrollSamples.push(meanVec);
+        recordingFrames = [];
+        btnSubmitRec.disabled = true;
+
+        const dots = enrolDots.querySelectorAll(".dot");
+        const sampleIdx = enrollSamples.length - 1;
+        if (dots[sampleIdx]) {
+          dots[sampleIdx].classList.remove("current");
+          dots[sampleIdx].classList.add("done");
+        }
+
+        if (enrollSamples.length >= ENROL_SAMPLES) {
+          const name = nameInput.value.trim();
+          setStatus(`All ${ENROL_SAMPLES} samples collected. Enrolling\u2026`, "info");
+          submitEnrolment(name);
+          currentMode = "idle";
+          setStatus(`"${name}" enrolled successfully!`, "success");
+        } else {
+          const nextIdx = enrollSamples.length;
+          if (dots[nextIdx]) dots[nextIdx].classList.add("current");
+          setStatus(
+            `Sample ${enrollSamples.length} of ${ENROL_SAMPLES} saved. Press `,
+            "info",
+            "Start Recording",
+            " for the next sample."
+          );
+        }
+      });
+      btnEnrolAnother.addEventListener("click", () => {
+        currentMode = "idle";
+        enrollSamples = [];
+        recordingFrames = [];
+        nameInput.disabled = false;
+        nameInput.value = "";
+        btnStartEnrol.disabled = false;
+        enrolTip.style.display = "block";
+        enrolDotsWrap.style.display = "none";
+        enrolDoneMsg.style.display = "none";
+        btnSubmitRec.style.display = "none";
+        btnRecord.disabled = false;
+        btnStop.disabled = true;
+        btnClear.textContent = "\u2715 Clear";
+        verifyResult.style.display = "none";
+        setStatus("Enter a student name and press ", "", "▶ Start", " to begin enrolment.");
+      });
       btnVerify.addEventListener("click", identify);
 
       // ─── Init ─────────────────────────────────────────────────────────────────
@@ -1139,6 +1325,9 @@
         initMfccBars();
         loadProfiles();
         renderProfileList();
+
+        // Populate enrol samples count in tip
+        document.getElementById("enrolSamplesCount").textContent = String(ENROL_SAMPLES);
 
         // Size canvases to their container width
         function sizeCanvases() {
@@ -1157,10 +1346,10 @@
           return;
         }
         setStatus(
-          "Press ",
+          "Enter a student name and press \u25B6 Start to enrol, or press ",
           "",
           "Start Recording",
-          " to open the microphone, then speak for ~10 seconds."
+          " to identify."
         );
         btnRecord.disabled = false;
       })();

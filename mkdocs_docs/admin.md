@@ -42,9 +42,10 @@ The **Settings** section lets instructors tune each module's behaviour for the s
 
 ### Voice Biometrics
 
-| Setting                | Default | Description                                                                                                                                                                                  |
-| ---------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Recording duration** | `10 s`  | How many seconds of audio are captured for each enrolment or identification recording. Range: 3–60 seconds. Longer recordings produce a more representative MFCC profile but take more time. |
+| Setting                         | Default | Description                                                                                                                                                                                                                                              |
+| ------------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Recording duration**          | `10 s`  | How many seconds of audio are captured for each enrolment or identification recording. Range: 3–60 seconds. Longer recordings produce a more representative MFCC profile but take more time.                                                             |
+| **Enrolment attempts required** | `3`     | How many voice recordings a student must make during enrolment. Each recording's mean MFCC vector is extracted, then all are averaged into a single representative profile. More attempts improve stability at the cost of additional time. Range: 1–10. |
 
 ### Signature Dynamics
 

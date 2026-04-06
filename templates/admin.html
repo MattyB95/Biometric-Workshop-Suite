@@ -692,6 +692,17 @@
                   style="width: 100px"
                 />
               </div>
+              <div>
+                <div class="field-label">Enrolment recordings per student (1&ndash;10)</div>
+                <input
+                  type="number"
+                  class="text-input"
+                  id="voice-enrol-samples-input"
+                  min="1"
+                  max="10"
+                  style="width: 100px"
+                />
+              </div>
               <div class="pin-msg" id="voice-settings-msg"></div>
               <button class="btn btn-primary" id="btn-save-voice-settings">Save Settings</button>
             </div>
@@ -1231,16 +1242,19 @@
       async function loadVoiceSettings() {
         await loadSettings("/api/admin/voice-settings", [
           ["voice-duration-input", "duration"],
+          ["voice-enrol-samples-input", "enrol_samples"],
         ]);
       }
 
       document.getElementById("btn-save-voice-settings").addEventListener("click", () => {
         const duration = Number(document.getElementById("voice-duration-input").value);
+        const enrol_samples = Number(document.getElementById("voice-enrol-samples-input").value);
         const msg = document.getElementById("voice-settings-msg");
         msg.textContent = "";
         msg.className = "pin-msg";
         if (!duration || duration < 3 || duration > 60) { msg.textContent = "Duration must be between 3 and 60 seconds."; msg.className = "pin-msg error"; return; }
-        saveSettings("/api/admin/voice-settings", "voice-settings-msg", { duration });
+        if (!enrol_samples || enrol_samples < 1 || enrol_samples > 10) { msg.textContent = "Enrolment recordings must be between 1 and 10."; msg.className = "pin-msg error"; return; }
+        saveSettings("/api/admin/voice-settings", "voice-settings-msg", { duration, enrol_samples });
       });
 
       // Signature settings

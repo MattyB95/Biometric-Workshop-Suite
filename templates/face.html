@@ -599,6 +599,53 @@
         border-top: 1px solid var(--border);
         margin-top: auto;
       }
+
+      .btn-success {
+        background: #15803d;
+        color: #bbf7d0;
+      }
+      .btn-success:hover:not(:disabled) {
+        background: #166534;
+      }
+      .status-bar.success {
+        background: #0c2a1a;
+        border-color: var(--success);
+        color: #86efac;
+      }
+      .dots-wrap {
+        padding: 6px 0;
+      }
+      .attempt-dots {
+        display: flex;
+        gap: 8px;
+      }
+      .dot {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: var(--border);
+        border: 2px solid var(--border);
+        transition: all 0.3s;
+      }
+      .dot.done {
+        background: var(--success);
+        border-color: var(--success);
+      }
+      .dot.current {
+        background: var(--accent);
+        border-color: var(--accent);
+        box-shadow: 0 0 6px var(--accent);
+        animation: pulse 1.2s infinite;
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.6;
+        }
+      }
     </style>
   </head>
   <body>
@@ -793,7 +840,31 @@
                 placeholder="Student name"
                 maxlength="40"
               />
-              <button class="btn btn-primary" id="btnCapture" disabled>&#x1F4F8; Capture</button>
+              <button class="btn btn-primary" id="btnStartEnrol">&#x25B6; Start</button>
+            </div>
+            <p id="enrolTip" style="font-size: 0.75rem; color: var(--text-dim); line-height: 1.5">
+              Capture <strong>3</strong> times &mdash; move naturally between each shot.
+            </p>
+            <div id="enrolDotsWrap" style="display: none">
+              <div class="dots-wrap"><div class="attempt-dots" id="enrolDots"></div></div>
+              <button
+                class="btn btn-primary"
+                id="btnCapture"
+                disabled
+                style="margin-top: 8px; width: 100%"
+              >
+                &#x1F4F8; Capture
+              </button>
+            </div>
+            <div id="enrolDoneMsg" style="display: none">
+              <div class="status-bar success" id="enrolSuccessText"></div>
+              <button
+                class="btn btn-ghost"
+                id="btnEnrolAnother"
+                style="margin-top: 8px; width: 100%"
+              >
+                Enrol Another Student
+              </button>
             </div>
             <button class="btn btn-success" id="btnIdentify" disabled style="width: 100%">
               &#x1F50D; Identify Face
@@ -906,11 +977,18 @@
       const featureList = document.getElementById("featureList");
       const descriptorGrid = document.getElementById("descriptorGrid");
       const nameInput = document.getElementById("nameInput");
+      const btnStartEnrol = document.getElementById("btnStartEnrol");
       const btnCapture = document.getElementById("btnCapture");
+      const btnEnrolAnother = document.getElementById("btnEnrolAnother");
       const btnIdentify = document.getElementById("btnIdentify");
+      const enrolDoneMsg = document.getElementById("enrolDoneMsg");
+      const enrolSuccessText = document.getElementById("enrolSuccessText");
       const profileList = document.getElementById("profileList");
       const identifyResult = document.getElementById("identifyResult");
       const resultList = document.getElementById("resultList");
+
+      // ─── Config ───────────────────────────────────────────────────────────────
+      const ENROL_SAMPLES = 3;
 
       // ─── State ────────────────────────────────────────────────────────────────
       const FACE_FEATURE_LABELS = [
@@ -933,6 +1011,9 @@
       ];
       let faceProfiles = {}; // name → array of 16 normalised feature values
       let currentFeatureValues = null; // updated each detection frame
+      let currentMode = "idle"; // 'idle' | 'enrol'
+      let enrollSamples = []; // captured feature vectors during enrolment
+      let enrollCooldown = false; // brief cooldown between captures
 
       let running = false;
       let showOverlay = true;
@@ -1204,28 +1285,129 @@
         btnIdentify.disabled = currentFeatureValues === null;
       }
 
-      btnCapture.addEventListener("click", async () => {
+      function buildEnrolDots(done) {
+        const el = document.getElementById("enrolDots");
+        el.innerHTML = "";
+        for (let i = 0; i < ENROL_SAMPLES; i++) {
+          const d = document.createElement("div");
+          d.className = "dot" + (i < done ? " done" : i === done ? " current" : "");
+          el.appendChild(d);
+        }
+      }
+
+      nameInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") btnStartEnrol.click();
+      });
+
+      btnStartEnrol.addEventListener("click", () => {
         const name = nameInput.value.trim();
         if (!name) {
-          setStatus("Enter a student name before capturing.", "loading");
+          nameInput.focus();
+          nameInput.style.borderColor = "var(--error)";
+          setTimeout(() => {
+            nameInput.style.borderColor = "";
+          }, 1500);
           return;
         }
-        if (!currentFeatureValues) {
-          setStatus("No face detected — position yourself in frame first.", "error");
+        if (!running) {
+          setStatus("Start the camera first before enrolling.", "loading");
           return;
         }
-        await fetch("/api/face/enroll", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name, features: currentFeatureValues.slice() }),
-        });
-        faceProfiles[name] = currentFeatureValues.slice();
-        renderFaceProfileList();
-        setStatus(
-          `Enrolled &ldquo;${escapeHtml(name)}&rdquo;. Press Identify Face to compare.`,
-          "running"
+        currentMode = "enrol";
+        enrollSamples = [];
+        enrollCooldown = false;
+        nameInput.disabled = true;
+        btnStartEnrol.disabled = true;
+        btnIdentify.disabled = true;
+        document.getElementById("enrolTip").style.display = "none";
+        document.getElementById("enrolDotsWrap").style.display = "block";
+        enrolDoneMsg.style.display = "none";
+        buildEnrolDots(0);
+        setStatus(`Capture 1 of ${ENROL_SAMPLES} \u2014 look at the camera.`, "running");
+      });
+
+      btnCapture.addEventListener("click", () => {
+        if (!currentFeatureValues || enrollCooldown) return;
+        enrollSamples.push(currentFeatureValues.slice());
+        buildEnrolDots(enrollSamples.length);
+        enrollCooldown = true;
+        btnCapture.disabled = true;
+
+        if (enrollSamples.length < ENROL_SAMPLES) {
+          setStatus(
+            `Good! ${enrollSamples.length}/${ENROL_SAMPLES} captured \u2014 adjust your position.`,
+            "running"
+          );
+          setTimeout(() => {
+            enrollCooldown = false;
+            setStatus(
+              `Capture ${enrollSamples.length + 1} of ${ENROL_SAMPLES} \u2014 look at the camera.`,
+              "running"
+            );
+          }, 1000);
+        } else {
+          setStatus("All captures done! Saving profile\u2026", "loading");
+          submitEnrolment(nameInput.value.trim());
+        }
+      });
+
+      function resetEnrolUiForRetry() {
+        currentMode = "idle";
+        enrollSamples = [];
+        enrollCooldown = false;
+        nameInput.disabled = false;
+        btnStartEnrol.disabled = !nameInput.value.trim();
+        btnCapture.disabled = true;
+        document.getElementById("enrolDotsWrap").style.display = "none";
+        document.getElementById("enrolTip").style.display = "";
+        enrolDoneMsg.style.display = "none";
+      }
+
+      async function submitEnrolment(name) {
+        const avg = enrollSamples[0].map(
+          (_, i) => enrollSamples.reduce((sum, s) => sum + s[i], 0) / enrollSamples.length
         );
+        let response;
+        try {
+          response = await fetch("/api/face/enroll", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name, features: avg }),
+          });
+        } catch (_e) {
+          setStatus("Network error \u2014 is the server running?", "error");
+          resetEnrolUiForRetry();
+          return;
+        }
+        if (!response.ok) {
+          setStatus("Could not save profile \u2014 please try again.", "error");
+          resetEnrolUiForRetry();
+          return;
+        }
+        faceProfiles[name] = avg;
+        renderFaceProfileList();
+        currentMode = "idle";
+        enrollSamples = [];
+        enrollCooldown = false;
+        document.getElementById("enrolDotsWrap").style.display = "none";
+        enrolDoneMsg.style.display = "block";
+        enrolSuccessText.textContent = `\u201c${name}\u201d enrolled \u2014 ${ENROL_SAMPLES} samples averaged.`;
+        identifyResult.style.display = "none";
+        setStatus(`Profile saved for \u201c${escapeHtml(name)}\u201d.`, "running");
+      }
+
+      btnEnrolAnother.addEventListener("click", () => {
+        currentMode = "idle";
+        enrollSamples = [];
+        enrollCooldown = false;
         nameInput.value = "";
+        nameInput.disabled = false;
+        btnStartEnrol.disabled = false;
+        document.getElementById("enrolTip").style.display = "";
+        enrolDoneMsg.style.display = "none";
+        btnIdentify.disabled =
+          Object.keys(faceProfiles).length === 0 || currentFeatureValues === null;
+        setStatus("Ready \u2014 enter a student name to enrol.", "running");
       });
 
       btnIdentify.addEventListener("click", () => {
@@ -1367,8 +1549,8 @@
           renderFeatures(features);
           updateDescriptorGrid(features);
           currentFeatureValues = features.map((f) => f.value);
-          btnCapture.disabled = false;
-          btnIdentify.disabled = Object.keys(faceProfiles).length === 0;
+          if (currentMode === "enrol") btnCapture.disabled = enrollCooldown;
+          if (currentMode === "idle") btnIdentify.disabled = Object.keys(faceProfiles).length === 0;
         } else {
           statStatus.textContent = "No face";
           statStatus.className = "stat-value dim";
@@ -1380,7 +1562,7 @@
           detectBadge.style.color = "#94a3b8";
           currentFeatureValues = null;
           btnCapture.disabled = true;
-          btnIdentify.disabled = true;
+          if (currentMode === "idle") btnIdentify.disabled = true;
         }
 
         // FPS counter
@@ -1437,6 +1619,16 @@
         currentFeatureValues = null;
         btnCapture.disabled = true;
         btnIdentify.disabled = true;
+        if (currentMode === "enrol") {
+          currentMode = "idle";
+          enrollSamples = [];
+          enrollCooldown = false;
+          nameInput.disabled = false;
+          btnStartEnrol.disabled = false;
+          document.getElementById("enrolTip").style.display = "";
+          document.getElementById("enrolDotsWrap").style.display = "none";
+          enrolDoneMsg.style.display = "none";
+        }
         setStatus("Camera stopped. Press Start Camera to resume.", "");
       }
 

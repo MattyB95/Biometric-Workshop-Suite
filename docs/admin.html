@@ -684,6 +684,17 @@
                   style="width: 100px"
                 />
               </div>
+              <div>
+                <div class="field-label">Enrolment attempts required (1&ndash;10)</div>
+                <input
+                  type="number"
+                  class="text-input"
+                  id="voice-enrol-samples-input"
+                  min="1"
+                  max="10"
+                  style="width: 100px"
+                />
+              </div>
               <div class="pin-msg" id="voice-settings-msg"></div>
               <button class="btn btn-primary" id="btn-save-voice-settings">Save Settings</button>
             </div>
@@ -782,6 +793,8 @@
       const DEFAULT_MOUSE_SOFTMAX = 2.0;
       const VOICE_DURATION_KEY = "voice-duration";
       const DEFAULT_VOICE_DURATION = 10;
+      const VOICE_ENROL_SAMPLES_KEY = "voice-enrol-samples";
+      const DEFAULT_VOICE_ENROL_SAMPLES = 3;
       const SIG_SAMPLES_KEY = "sig-enroll-samples";
       const DEFAULT_SIG_SAMPLES = 3;
       const LS_KEYS = {
@@ -928,6 +941,8 @@
       function loadVoiceSettings() {
         document.getElementById("voice-duration-input").value =
           localStorage.getItem(VOICE_DURATION_KEY) || DEFAULT_VOICE_DURATION;
+        document.getElementById("voice-enrol-samples-input").value =
+          localStorage.getItem(VOICE_ENROL_SAMPLES_KEY) || DEFAULT_VOICE_ENROL_SAMPLES;
       }
 
       function loadSigSettings() {
@@ -1163,6 +1178,7 @@
       // ── Voice Settings ───────────────────────────────────────────────────────
       document.getElementById("btn-save-voice-settings").addEventListener("click", () => {
         const duration = document.getElementById("voice-duration-input").value.trim();
+        const enrolSamples = document.getElementById("voice-enrol-samples-input").value.trim();
         const msg = document.getElementById("voice-settings-msg");
         msg.textContent = "";
         msg.className = "pin-msg";
@@ -1171,7 +1187,18 @@
           msg.className = "pin-msg error";
           return;
         }
+        if (
+          !enrolSamples ||
+          isNaN(Number(enrolSamples)) ||
+          Number(enrolSamples) < 1 ||
+          Number(enrolSamples) > 10
+        ) {
+          msg.textContent = "Enrolment attempts must be between 1 and 10.";
+          msg.className = "pin-msg error";
+          return;
+        }
         localStorage.setItem(VOICE_DURATION_KEY, String(Number(duration)));
+        localStorage.setItem(VOICE_ENROL_SAMPLES_KEY, String(Number(enrolSamples)));
         msg.textContent = "Settings saved.";
         msg.className = "pin-msg success";
       });
