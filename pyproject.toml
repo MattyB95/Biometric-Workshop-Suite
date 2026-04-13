@@ -11,15 +11,15 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "black>=26.3.0",
+    "black>=26.3.1",
     "mkdocs-material>=9.7.6",
-    "mypy>=1.20.0",
-    "pre-commit>=4.5.0",
+    "mypy>=1.20.1",
+    "pre-commit>=4.5.1",
     "pytest-cov>=7.1.0",
-    "pytest-playwright>=0.7.0",
-    "pytest>=9.0.0",
-    "ruff>=0.15.0",
-    "ty>=0.0.28",
+    "pytest-playwright>=0.7.2",
+    "pytest>=9.0.3",
+    "ruff>=0.15.10",
+    "ty>=0.0.29",
 ]
 
 [tool.ruff]
